@@ -1,0 +1,9 @@
+# إعداد فحص العقد. التشغيل من جذر المستودع:
+#   npx @redocly/cli@2.72.1 lint contracts/openapi.yaml --config contracts/redocly.yaml
+extends:
+  - recommended
+
+rules:
+  # الرخصة لم يقررها المالك بعد.
+  info-license: off
+  info-license-strict: off

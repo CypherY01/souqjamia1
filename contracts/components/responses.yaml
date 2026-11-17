@@ -1,0 +1,842 @@
+# ردود مشتركة. كل رد ناجح بصيغة {data, meta?} وكل خطأ بغلاف Error (الفصل 09).
+
+# ---------- أخطاء ----------
+
+BadRequest:
+  description: بنية طلب غير صالحة أو مؤشر صفحة مزوّر أو حمولة أكبر من 128 KiB (NFR10).
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+Unauthorized:
+  description: لا توجد جلسة صالحة، أو بيانات الدخول غير صحيحة برسالة عامة.
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+Forbidden:
+  description: >-
+    إجراء غير مسموح. يشمل CSRF أو Origin غير صالح (SEC05)، والبريد غير المؤكد،
+    وعدم الإقرار بالشروط (DEC36)، والحساب المقيّد، ونقص MFA أو إعادة التحقق (DEC38).
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+NotFound:
+  description: المورد غير متاح. نفس الرد سواء لم يوجد أو كان خاصاً، بلا كشف لوجوده.
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+Conflict:
+  description: تعارض في الحالة أو النسخة (STATE_CONFLICT) أو في حمولة مفتاح منع التكرار (IDEMPOTENCY_CONFLICT).
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+Unprocessable:
+  description: مدخلات سليمة البنية تخالف قاعدة عمل، مع field_errors عند الحاجة.
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+TooManyRequests:
+  description: تجاوز حد الطلبات (SEC07).
+  headers:
+    Retry-After:
+      $ref: 'headers.yaml#/RetryAfter'
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+ServiceUnavailable:
+  description: تعطل مؤقت قابل لإعادة المحاولة، أو عداد حد الكتابة غير متاح (SEC07).
+  headers:
+    Retry-After:
+      $ref: 'headers.yaml#/RetryAfter'
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Error'
+
+# ---------- ردود عامة ----------
+
+NoContent:
+  description: تم بلا محتوى.
+
+Accepted:
+  description: تم القبول. الرد عام ولا يكشف وجود حساب أو بريد.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            type: object
+            required: [status]
+            properties:
+              status:
+                const: accepted
+
+Processing:
+  description: الطلب نفسه بنفس مفتاح منع التكرار ما زال قيد المعالجة. أعد المحاولة بعد Retry-After.
+  headers:
+    Retry-After:
+      $ref: 'headers.yaml#/RetryAfter'
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            type: object
+            required: [status]
+            properties:
+              status:
+                const: processing
+
+LinkRedirect:
+  description: استُهلك الرابط مرة واحدة، والتوجيه لمسار محلي (الفصل 09). لا تُنشأ جلسة سوق تلقائياً.
+  headers:
+    Location:
+      $ref: 'headers.yaml#/Location'
+
+# ---------- الهوية والحساب ----------
+
+CsrfOk:
+  description: رمز CSRF مرتبط بجلسة العضو أو كوكي الزائر، بلا تخزين مؤقت.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/CsrfToken'
+
+LoginOk:
+  description: نتيجة الدخول. الجلسة في كوكيز يديرها الخادم.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/LoginResult'
+
+ReauthOk:
+  description: بدأت نافذة إعادة التحقق لخمس دقائق (DEC38).
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/ReauthResult'
+
+MfaEnrollOk:
+  description: عامل TOTP جديد بانتظار التحقق.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/MfaEnrollResult'
+
+MfaVerifyOk:
+  description: الجلسة صارت بمستوى aal2.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/MfaVerifyResult'
+
+MeOk:
+  description: بيانات الحساب الخاصة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Me'
+
+PreferencesOk:
+  description: تفضيلات البريد بعد التحديث.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Preferences'
+
+PublicProfileOk:
+  description: الملف العام بلا بريد.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/PublicProfile'
+
+PolicyVersionsOk:
+  description: النسخ الحالية من الشروط والخصوصية.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/PolicyVersions'
+
+# ---------- السوق ----------
+
+CatalogOk:
+  description: الفئات والكليات ونقاط اللقاء النشطة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Catalog'
+
+ListingCardPage:
+  description: صفحة إعلانات عامة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/ListingCard'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+ListingDetailOk:
+  description: تفاصيل الإعلان وحالته الحالية.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/ListingDetail'
+
+OwnerListingOk:
+  description: الإعلان كما يراه صاحبه.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/OwnerListing'
+
+OwnerListingPage:
+  description: إعلانات العضو حسب الحالة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/OwnerListing'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+FavoritePage:
+  description: المفضلة الخاصة بالعضو.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/FavoriteItem'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+WantedCardPage:
+  description: صفحة طلبات شراء نشطة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/WantedCard'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+WantedDetailOk:
+  description: تفاصيل الطلب وحالته.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/WantedDetail'
+
+OwnerWantedOk:
+  description: الطلب كما يراه صاحبه، مع الانتهاء وإمكانية إعادة الفتح.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/OwnerWanted'
+
+OwnerWantedPage:
+  description: طلبات العضو حسب الحالة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/OwnerWanted'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+# ---------- الصور ----------
+
+UploadAuthorizationOk:
+  description: إذن رفع إلى الحجر.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/UploadAuthorization'
+
+UploadOk:
+  description: حالة الرفع والمعالجة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Upload'
+
+MediaAccessOk:
+  description: رابط خاص قصير العمر.
+  headers:
+    Cache-Control:
+      schema:
+        const: no-store
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/MediaAccess'
+
+# ---------- المحادثة ----------
+
+ConversationOk:
+  description: المحادثة وسياقها وصلاحيات الواجهة الحالية.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/ConversationDetail'
+
+ConversationPage:
+  description: ملخصات المحادثات مع عدّين منفصلين (FR30).
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/ConversationSummary'
+          meta:
+            allOf:
+              - $ref: 'schemas.yaml#/PageMeta'
+              - type: object
+                required: [conversation_count, unread_incoming_total]
+                properties:
+                  conversation_count:
+                    type: integer
+                    minimum: 0
+                  unread_incoming_total:
+                    type: integer
+                    minimum: 0
+
+MessagePage:
+  description: رسائل مرتبة بالتسلسل مع آخر تسلسل ملتزم.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/Message'
+          meta:
+            type: object
+            required: [last_seq, has_more]
+            properties:
+              last_seq:
+                $ref: 'schemas.yaml#/Seq'
+              has_more:
+                type: boolean
+
+MessageSavedOk:
+  description: الرسالة محفوظة. المحاولة المكررة ترجع نفس الرسالة (TC13).
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/MessageSaved'
+
+ReadOk:
+  description: مؤشر القراءة بعد التحديث، ولا ينقص أبداً (BR31).
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/ReadResult'
+
+OfferOk:
+  description: العرض بحالته الحالية.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Offer'
+
+OfferPage:
+  description: عروض العضو المرسلة أو المستلمة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/OfferListItem'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+MeetupOk:
+  description: اقتراح اللقاء بحالته الحالية.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Meetup'
+
+BlockPage:
+  description: قائمة حظر المستخدم الخاصة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/BlockedUser'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+# ---------- الصفقات والتقييمات ----------
+
+DealOk:
+  description: الصفقة وإمكانيات الطرف الحالي.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Deal'
+
+DealPage:
+  description: صفقات العضو.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/Deal'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+ReviewOk:
+  description: التقييم المحفوظ، ولا يُعدَّل لاحقاً (TC51).
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Review'
+
+ReviewPage:
+  description: التقييمات الظاهرة مع العدد والمتوسط المشتقين منها.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/Review'
+          meta:
+            allOf:
+              - $ref: 'schemas.yaml#/PageMeta'
+              - type: object
+                required: [rating]
+                properties:
+                  rating:
+                    $ref: 'schemas.yaml#/RatingSummary'
+
+# ---------- البلاغات والإشعارات ----------
+
+ReportReceiptOk:
+  description: مرجع البلاغ الخاص.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/ReportReceipt'
+
+MyReportOk:
+  description: حالة البلاغ ونتيجته المختصرة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/MyReport'
+
+MyReportPage:
+  description: بلاغات العضو.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/MyReport'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+NotificationPage:
+  description: إشعارات المستلم خلال 90 يوماً (RET07).
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/Notification'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+UnreadCountOk:
+  description: عدد الإشعارات غير المقروءة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/UnreadCount'
+
+# ---------- شارة الطالب ----------
+
+MyStudentVerificationOk:
+  description: آخر طلب توثيق وحالة الشارة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/MyStudentVerification'
+
+AdminStudentVerificationOk:
+  description: طلب التوثيق كما يراه المشرف.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/AdminStudentVerification'
+
+AdminStudentVerificationPage:
+  description: طابور طلبات التوثيق.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/AdminStudentVerification'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+# ---------- الإدارة ----------
+
+AdminReportOk:
+  description: القضية مع أدلتها المحدودة. الوصول يُسجَّل في التدقيق.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/AdminReportDetail'
+
+AdminReportPage:
+  description: طابور البلاغات.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/AdminReportSummary'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+AdminAccountOk:
+  description: الحساب بعد الإجراء.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/AdminAccount'
+
+AdminAccountPage:
+  description: نتائج البحث الإداري، بلا تصدير جماعي.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/AdminAccount'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+AdminListingPage:
+  description: الإعلانات وحالة الإخفاء، بلا وصول للرسائل.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data, meta]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/AdminListing'
+          meta:
+            $ref: 'schemas.yaml#/PageMeta'
+
+ModerationOk:
+  description: سُجّل الإجراء الإداري مع سببه وتدقيقه.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/ModerationResult'
+
+CatalogEntryOk:
+  description: عنصر مرجعي.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/CatalogEntry'
+
+CatalogEntryList:
+  description: كل عناصر النوع، النشطة وغير النشطة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/CatalogEntry'
+
+RoleGrantOk:
+  description: منح الدور.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/RoleGrant'
+
+RoleGrantList:
+  description: منح الأدوار الحالية وسجلها.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            type: array
+            items:
+              $ref: 'schemas.yaml#/RoleGrant'
+
+MetricsOk:
+  description: مؤشرات مجمّعة.
+  content:
+    application/json:
+      schema:
+        type: object
+        required: [data]
+        properties:
+          data:
+            $ref: 'schemas.yaml#/Metrics'
+
+# ---------- التشغيل ----------
+
+HealthOk:
+  description: العملية حية.
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Health'
+
+ReadyOk:
+  description: الاعتماديات المطلوبة جاهزة.
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Readiness'
+
+NotReady:
+  description: اعتمادية مطلوبة غير جاهزة.
+  content:
+    application/json:
+      schema:
+        $ref: 'schemas.yaml#/Readiness'

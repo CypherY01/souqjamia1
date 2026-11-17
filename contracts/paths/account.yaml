@@ -1,0 +1,330 @@
+# الحساب والملف الشخصي والسياسات.
+
+me:
+  get:
+    operationId: api015GetMe
+    tags: [account]
+    summary: بيانات الحساب الخاصة
+    description: >-
+      متاح لأي جلسة صالحة حتى يعرض الحساب غير المؤكد أو المقيّد حالته.
+      الصلاحيات الفعلية في capabilities (السؤال 23).
+    x-spec-ids: [API015, FR49, FR04]
+    x-access: session
+    x-open-question: [23]
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MeOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+
+profileMe:
+  patch:
+    operationId: api016UpdateProfile
+    tags: [account]
+    summary: تعديل الملف الشخصي
+    description: >-
+      الحقول المسموحة فقط، وأي حقل للدور أو الشارة أو التقييم يُرفض (TC21، TC65).
+      الصورة الشخصية يجب أن تكون بغرض avatar وجاهزة ويملكها العضو (TC75).
+    x-spec-ids: [API016, FR49, FR61, DEC30, TC21, TC65, TC75]
+    x-access: member
+    x-open-question: [16]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ProfilePatch'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MeOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+profilePublic:
+  get:
+    operationId: api017GetPublicProfile
+    tags: [account]
+    summary: الملف العام
+    description: شهر الانضمام والشارة وإحصاءات التقييم الظاهرة، بلا بريد (FR14).
+    x-spec-ids: [API017, FR14, TC05, TC80]
+    x-access: public
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/PublicProfileOk'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+profileListings:
+  get:
+    operationId: api018ListProfileListings
+    tags: [account]
+    summary: إعلانات العضو العامة
+    x-spec-ids: [API018, FR14, TC80]
+    x-access: public
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [active, sold]
+          default: active
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ListingCardPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+profileReviews:
+  get:
+    operationId: api019ListProfileReviews
+    tags: [account, reviews]
+    summary: التقييمات الظاهرة للعضو
+    description: العدد والمتوسط مشتقان من التقييمات الظاهرة فقط (FR14، TC80).
+    x-spec-ids: [API019, FR14, FR47, TC80]
+    x-access: public
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ReviewPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+emailChange:
+  post:
+    operationId: api020RequestEmailChange
+    tags: [account]
+    summary: طلب تغيير بريد الدخول
+    description: >-
+      يرسل رابطاً لكل من العنوانين، صالحاً ساعة (DEC37). البريد القديم يبقى حتى يتأكد الاثنان (BR23).
+    x-spec-ids: [API020, FR59, BR23, DEC37, DEC38, TC74]
+    x-access: member_reauth
+    x-rate-limit: [RL03]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/EmailChangeInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/Accepted'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+emailChangeConfirm:
+  post:
+    operationId: api021ConfirmEmailChange
+    tags: [account]
+    summary: تأكيد أحد رابطي تغيير البريد
+    description: >-
+      كل رابط يسجل تأكيد عنوانه فقط. الاستبدال وإلغاء الجلسات وإشعار الأمان بعد التأكيدين (TC74).
+    x-spec-ids: [API021, FR59, BR23, DEC37, TC74]
+    x-access: guest
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/TokenInput'
+    responses:
+      '303':
+        $ref: '../components/responses.yaml#/LinkRedirect'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+passwordChange:
+  post:
+    operationId: api022ChangePassword
+    tags: [account]
+    summary: تغيير كلمة المرور
+    description: يتحقق من الكلمة الحالية ثم يلغي الجلسات الأخرى ويرسل بريد الأمان (TC27).
+    x-spec-ids: [API022, FR59, DEC32, DEC38, TC27]
+    x-access: member_reauth
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/PasswordChangeInput'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+deletion:
+  post:
+    operationId: api026RequestDeletion
+    tags: [account]
+    summary: طلب حذف الحساب مع مهلة استرجاع 30 يوماً
+    description: يلغي الجلسات ويخفي محتوى العضو من الصفحات العامة (FR72).
+    x-spec-ids: [API026, FR72, BR40, DEC38, TC59]
+    x-access: member_reauth
+    x-open-question: [4, 6]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/DeletionInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/Accepted'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+deletionRecoveryRequest:
+  post:
+    operationId: api027RequestDeletionRecovery
+    tags: [account]
+    summary: طلب رابط استرجاع حساب بانتظار الحذف
+    description: رد عام بلا كشف للحساب. آلية الاسترجاع بانتظار السؤال 6.
+    x-spec-ids: [API027, FR72, DEC37, TC59]
+    x-access: guest
+    x-rate-limit: [RL03, supabase_auth, turnstile]
+    x-open-question: [6]
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/EmailCaptchaInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/Accepted'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+deletionRecoveryConfirm:
+  post:
+    operationId: api028ConfirmDeletionRecovery
+    tags: [account]
+    summary: استرجاع الحساب خلال المهلة
+    description: يبقى الإيقاف أو الحظر الإداري كما هو بعد الاسترجاع (FR72، TC59).
+    x-spec-ids: [API028, FR72, TC59]
+    x-access: guest
+    x-open-question: [6]
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/TokenInput'
+    responses:
+      '303':
+        $ref: '../components/responses.yaml#/LinkRedirect'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+preferences:
+  patch:
+    operationId: api029UpdatePreferences
+    tags: [account, notifications]
+    summary: تفضيلات البريد الاختيارية
+    description: >-
+      اللغة ليست هنا، فمصدرها Profile.locale (القسم 6.3). بريد الأمان والإدارة لا يُعطَّل (BR38).
+    x-spec-ids: [API029, FR68, BR38, TC55]
+    x-access: member
+    x-open-question: [14]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/PreferencesPatch'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/PreferencesOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+
+policies:
+  get:
+    operationId: api114GetCurrentPolicies
+    tags: [account]
+    summary: النسخ الحالية من الشروط والخصوصية
+    x-spec-ids: [API114, FR46, DEC36]
+    x-access: public
+    security: []
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/PolicyVersionsOk'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'

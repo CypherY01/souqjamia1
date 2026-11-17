@@ -1,0 +1,169 @@
+# شارة الطالب الموثّق بالطلب (DEC27، القسم 4.1 من الملحق).
+
+myVerification:
+  post:
+    operationId: api107SubmitStudentVerification
+    tags: [student-verification]
+    summary: تقديم طلب شارة طالب بصورة أو صورتين للبطاقة
+    description: >-
+      طلب معلّق واحد لكل عضو، و3 طلبات كحد أقصى خلال 30 يوماً، وبعد الرفض بـ 24 ساعة.
+      محاولة العضو تعيين الشارة بنفسه مرفوضة (TC87).
+    x-spec-ids: [API107, DEC27, TC85, TC87]
+    x-access: member
+    x-open-question: [10]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/StudentVerificationInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/MyStudentVerificationOk'
+      '200':
+        $ref: '../components/responses.yaml#/MyStudentVerificationOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+  get:
+    operationId: api108GetMyStudentVerification
+    tags: [student-verification]
+    summary: حالة آخر طلب وتاريخ انتهاء الشارة
+    x-spec-ids: [API108, DEC27, TC85]
+    x-access: member
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MyStudentVerificationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+  delete:
+    operationId: api109WithdrawStudentVerification
+    tags: [student-verification]
+    summary: سحب طلب معلّق
+    description: تُحذف صور البطاقة خلال 24 ساعة كما بعد القرار.
+    x-spec-ids: [API109, DEC27]
+    x-access: member
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+adminVerifications:
+  get:
+    operationId: api110ListStudentVerifications
+    tags: [student-verification, admin]
+    summary: طابور طلبات التوثيق
+    x-spec-ids: [API110, DEC27]
+    x-access: staff
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/StudentVerificationStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminStudentVerificationPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+verificationDecision:
+  post:
+    operationId: api111DecideStudentVerification
+    tags: [student-verification, admin]
+    summary: قبول طلب التوثيق أو رفضه بسبب
+    description: >-
+      القبول يمنح الشارة 12 شهراً ويُشعر العضو. الرفض بسبب من القائمة ويُشعر العضو بالسبب.
+      صور البطاقة تُحذف خلال 24 ساعة من القرار (TC85).
+    x-spec-ids: [API111, DEC27, TC85]
+    x-access: staff
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/VerificationDecisionInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminStudentVerificationOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+verificationRevoke:
+  post:
+    operationId: api112RevokeStudentBadge
+    tags: [student-verification, admin]
+    summary: سحب شارة الطالب بسبب مسجّل
+    x-spec-ids: [API112, DEC27]
+    x-access: staff
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/VerificationRevokeInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminStudentVerificationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'

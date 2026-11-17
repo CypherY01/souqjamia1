@@ -1,0 +1,85 @@
+# البلاغات من جهة العضو.
+
+reports:
+  post:
+    operationId: api073CreateReport
+    tags: [reports]
+    summary: تقديم بلاغ
+    description: >-
+      المبلّغ يجب أن يصل للهدف فعلاً، ولا يبلّغ عن نفسه. بلاغ مطابق خلال 24 ساعة يرجع نفس المرجع.
+      لا عقوبة ولا إشعار للمبلّغ عنه بمجرد التقديم (BR17). حجم الأدلة بانتظار السؤال 8.
+    x-spec-ids: [API073, FR43, FR45, BR17, SEC09, TC18, TC48]
+    x-access: member
+    x-rate-limit: [RL10]
+    x-open-question: [8]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ReportInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/ReportReceiptOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+myReports:
+  get:
+    operationId: api074ListMyReports
+    tags: [reports]
+    summary: بلاغاتي
+    description: الحالة كما في القسم 6.3، بلا أدلة الأطراف الأخرى وبلا هوية المراجع.
+    x-spec-ids: [API074, FR45, FR67, TC76]
+    x-access: member
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/ReporterStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MyReportPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+myReport:
+  get:
+    operationId: api075GetMyReport
+    tags: [reports]
+    summary: حالة بلاغ واحد ونتيجته المختصرة
+    x-spec-ids: [API075, FR45, TC76]
+    x-access: resource_owner
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MyReportOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'

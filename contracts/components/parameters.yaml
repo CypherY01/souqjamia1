@@ -1,0 +1,76 @@
+# معاملات مشتركة لعقد المرحلة الأولى.
+
+Cursor:
+  name: cursor
+  in: query
+  required: false
+  description: مؤشر صفحة موقّع ومربوط بالفلاتر والترتيب. التلاعب به أو تغيير الفلاتر يرجع 400 INVALID_CURSOR (NFR14، TC29).
+  schema:
+    type: string
+    maxLength: 512
+
+Limit:
+  name: limit
+  in: query
+  required: false
+  description: الافتراضي 20 والأقصى 50 (الفصل 09).
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 50
+    default: 20
+
+Query:
+  name: q
+  in: query
+  required: false
+  description: عبارة بحث حتى 100 محرف بعد التطبيع (FR07).
+  schema:
+    type: string
+    maxLength: 100
+
+Id:
+  name: id
+  in: path
+  required: true
+  schema:
+    $ref: 'schemas.yaml#/Uuid'
+
+ListingId:
+  name: listing_id
+  in: path
+  required: true
+  schema:
+    $ref: 'schemas.yaml#/Uuid'
+
+UserId:
+  name: user_id
+  in: path
+  required: true
+  schema:
+    $ref: 'schemas.yaml#/Uuid'
+
+RolePath:
+  name: role
+  in: path
+  required: true
+  schema:
+    $ref: 'schemas.yaml#/Role'
+
+CatalogKindPath:
+  name: kind
+  in: path
+  required: true
+  schema:
+    $ref: 'schemas.yaml#/CatalogKind'
+
+IdempotencyKey:
+  name: Idempotency-Key
+  in: header
+  required: true
+  description: >-
+    مفتاح منع التكرار، يُحفظ 24 ساعة ومربوط بالمستخدم والمسار والحمولة المطبّعة (BR32، NFR09).
+    نفس الحمولة ترجع النتيجة المحفوظة، والحمولة المختلفة ترجع 409 IDEMPOTENCY_CONFLICT.
+  schema:
+    type: string
+    format: uuid

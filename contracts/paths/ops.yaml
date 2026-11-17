@@ -1,0 +1,34 @@
+# فحوص التشغيل.
+
+healthz:
+  get:
+    operationId: api105Health
+    tags: [ops]
+    summary: العملية حية
+    description: بلا أسرار ولا تفاصيل اعتماديات.
+    x-spec-ids: [API105, FR76]
+    x-access: public
+    security: []
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/HealthOk'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+readyz:
+  get:
+    operationId: api106Readiness
+    tags: [ops]
+    summary: جاهزية الاعتماديات المطلوبة
+    description: فحص داخلي بلا بيانات أعضاء.
+    x-spec-ids: [API106, FR76]
+    x-access: internal
+    security:
+      - probeToken: []
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ReadyOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '503':
+        $ref: '../components/responses.yaml#/NotReady'

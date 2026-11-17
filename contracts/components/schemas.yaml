@@ -1,0 +1,2274 @@
+# مخططات عقد المرحلة الأولى — سوق الجامعة
+# المصدر: docs/spec-v3-en.md (الفصلان 08 و09) بعد تعديلات docs/addendum-v3.1.md حتى DEC38.
+# كل مخطط مفتاح في أعلى الملف، ويُشار إليه بـ schemas.yaml#/<الاسم>.
+# الحقول التي يحددها الخادم (seller_id وbuyer_id والدور والحالة والشارة والتقييم) لا تُقبل من العميل (TC65).
+
+# ---------- أنواع أساسية ----------
+
+Uuid:
+  type: string
+  format: uuid
+
+Timestamp:
+  type: string
+  format: date-time
+  description: صيغة RFC3339 مع الإزاحة. الخادم يخزن ويعيد UTC.
+
+Halalas:
+  type: integer
+  minimum: 0
+  maximum: 5000000
+  description: مبلغ بالهللات كعدد صحيح (BR07). الصفر يعني مجاناً (BR08).
+
+OfferHalalas:
+  type: integer
+  minimum: 100
+  maximum: 5000000
+  description: مبلغ عرض السعر بالهللات (BR09، TC73).
+
+ExpectedVersion:
+  type: integer
+  minimum: 1
+  description: رقم النسخة الحالية للسجل. عدم التطابق يرجع 409 STATE_CONFLICT.
+
+Seq:
+  type: integer
+  format: int64
+  minimum: 0
+  description: رقم تسلسل الرسالة داخل المحادثة (DEC13، BR31).
+
+LocalPath:
+  type: string
+  pattern: '^/(?![/\\])'
+  description: مسار محلي داخل الموقع فقط (BR21، TC02).
+
+Email:
+  type: string
+  format: email
+
+Password:
+  type: string
+  minLength: 8
+  maxLength: 64
+  writeOnly: true
+  description: >-
+    DEC32. من 8 إلى 64 محرفاً وبحد 72 بايت UTF-8. لا تُقص المسافات ولا تُطبَّع،
+    ولا تُشترط أنواع محارف. الحد بالبايت يُفحص في الخادم.
+
+CaptchaToken:
+  type: string
+  minLength: 1
+  description: رمز Cloudflare Turnstile (DEC36).
+
+TokenHash:
+  type: string
+  minLength: 1
+  description: قيمة token_hash من رابط البريد (القسم 5). صالحة ساعة وتُستهلك مرة واحدة (DEC37).
+
+# ---------- نصوص بحدودها ----------
+# كل الحدود بعدد المحارف (code points) بعد تطبيع NFC وقص الأطراف.
+
+DisplayName:
+  type: string
+  minLength: 2
+  maxLength: 50
+
+ListingTitle:
+  type: string
+  minLength: 5
+  maxLength: 100
+
+ListingDescription:
+  type: string
+  minLength: 10
+  maxLength: 2000
+
+WantedDescription:
+  type: string
+  minLength: 10
+  maxLength: 1000
+
+MessageBody:
+  type: string
+  minLength: 1
+  maxLength: 2000
+
+ReviewComment:
+  type: string
+  maxLength: 500
+
+MeetupNote:
+  type: string
+  maxLength: 500
+
+PlaceText:
+  type: string
+  minLength: 1
+  maxLength: 120
+  description: مكان لقاء بنص حر (DEC28). لا يُكتب عنوان سكن أو غرفة (BR10).
+
+ReportDetails:
+  type: string
+  maxLength: 2000
+
+AdminReason:
+  type: string
+  minLength: 1
+  maxLength: 2000
+  description: سبب إداري مسجّل في سجل التدقيق (BR11، BR36). الحد اختيار في العقد.
+
+DecisionNote:
+  type: string
+  maxLength: 500
+
+# ---------- القوائم الثابتة (الفصل 08 والقسم 6.2 من الملحق) ----------
+
+CategoryKey:
+  type: string
+  enum: [books_study, electronics, room_furniture, university_supplies, clothing_personal, vehicles, other]
+
+Condition:
+  type: string
+  enum: [new_boxed, like_new, good, fair, used]
+
+ListingStatus:
+  type: string
+  enum: [active, sold, archived]
+
+ArchiveReason:
+  type: string
+  enum: [owner, sold_auto, account_deletion]
+
+WantedStatus:
+  type: string
+  enum: [active, found, closed]
+
+WantedClosedReason:
+  type: string
+  enum: [owner, expired]
+
+OfferStatus:
+  type: string
+  enum: [pending, accepted, rejected, withdrawn, expired, cancelled]
+
+OfferCancelReason:
+  type: string
+  enum: [context_closed, price_changed, made_free_or_fixed, blocked]
+
+MeetupStatus:
+  type: string
+  enum: [proposed, accepted, rejected, cancelled, expired]
+
+DealStatus:
+  type: string
+  enum: [pending, completed, cancelled]
+  description: حالات المرحلة الأولى فقط (DEC33).
+
+DealCancelReason:
+  type: string
+  enum: [by_seller, by_buyer, timeout, blocked, account_restricted]
+
+ReportReason:
+  type: string
+  enum: [inappropriate_content, fraud, illegal_goods, harassment, spam, misleading_price, other]
+
+ReportTargetType:
+  type: string
+  enum: [listing, wanted, conversation, message, review, user]
+
+ReportStatus:
+  type: string
+  enum: [received, in_review, actioned, dismissed]
+
+ReporterStatus:
+  type: string
+  enum: [received, in_review, closed]
+  description: حالة البلاغ كما يراها المبلّغ (القسم 6.3).
+
+ReporterOutcome:
+  type: string
+  enum: [action_taken, no_violation]
+
+ReportDecision:
+  type: string
+  enum: [dismiss, warn, hide_content, suspend_7d, suspend_30d, ban]
+  description: القيمة ban للمالك فقط (القسم 6.2).
+
+ModerationAction:
+  type: string
+  enum: [warning, hide_content, unhide_content, suspend, unsuspend, ban, unban, revoke_badge, reset_display_name, remove_avatar]
+
+Role:
+  type: string
+  enum: [owner, moderator]
+
+MediaPurpose:
+  type: string
+  enum: [listing, chat, avatar, student_card]
+
+MediaStatus:
+  type: string
+  enum: [pending, uploaded, processing, ready, rejected, deleted]
+
+MediaRejectionReason:
+  type: string
+  enum: [unsupported_type, too_large, too_many_pixels, animated, corrupt, processing_failed]
+
+ImageMime:
+  type: string
+  enum: [image/jpeg, image/png, image/webp]
+
+MeetingPointKind:
+  type: string
+  enum: [campus, city]
+
+MessageType:
+  type: string
+  enum: [text, image, offer, meetup, system]
+
+AccountStatus:
+  type: string
+  enum: [active, suspended, banned]
+
+StudentVerificationStatus:
+  type: string
+  enum: [pending, approved, rejected, expired, revoked]
+  x-open-question: [10]
+
+StudentVerificationReason:
+  type: string
+  enum: [unclear_image, expired_card, not_student_card, name_mismatch, other]
+
+Locale:
+  type: string
+  enum: [ar]
+  description: العربية فقط في المرحلة الأولى (DEC30).
+  x-open-question: [16]
+
+ConversationRole:
+  type: string
+  enum: [buyer, seller]
+
+ContextType:
+  type: string
+  enum: [listing, wanted]
+
+CatalogKind:
+  type: string
+  enum: [category, college, meeting_point]
+
+ListingSort:
+  type: string
+  enum: [newest, price_asc, price_desc]
+  description: الترتيب الثانوي ثابت بالمعرّف عند تساوي القيم (FR11).
+
+DisabledReason:
+  type: string
+  enum: [sign_in_required, own_content, context_closed, blocked, account_restricted, free_item, not_negotiable, no_budget, pending_offer_exists, not_buyer, not_seller, deal_exists, meetup_limit_reached]
+  description: سبب تعطيل إجراء يُعرض للمستخدم (الفصل 02).
+
+NotificationContextType:
+  type: string
+  enum: [conversation, offer, meetup, deal, review, report, listing, wanted, account, student_verification]
+
+# ---------- الأخطاء والصفحات ----------
+
+ErrorCode:
+  type: string
+  enum:
+    - BAD_REQUEST
+    - INVALID_CURSOR
+    - PAYLOAD_TOO_LARGE
+    - UNAUTHENTICATED
+    - CSRF_FAILED
+    - ORIGIN_REJECTED
+    - CAPTCHA_FAILED
+    - FORBIDDEN
+    - EMAIL_NOT_CONFIRMED
+    - TERMS_NOT_ACKNOWLEDGED
+    - ACCOUNT_RESTRICTED
+    - DELETION_PENDING
+    - MFA_REQUIRED
+    - REAUTH_REQUIRED
+    - RECOVERY_SESSION_ONLY
+    - NOT_FOUND
+    - STATE_CONFLICT
+    - IDEMPOTENCY_CONFLICT
+    - VALIDATION_FAILED
+    - CONTEXT_CLOSED
+    - BLOCKED
+    - SELF_ACTION
+    - NOT_ALLOWED_FOR_CONTEXT
+    - LIMIT_REACHED
+    - DEADLINE_PASSED
+    - MEDIA_NOT_READY
+    - MEDIA_INVALID
+    - LINK_INVALID_OR_EXPIRED
+    - RATE_LIMITED
+    - SERVICE_UNAVAILABLE
+
+FieldError:
+  type: object
+  required: [field, code]
+  properties:
+    field:
+      type: string
+      description: اسم الحقل كما في الطلب. المعالج يرجع للخطوة التي فيها الحقل (القسم 6.3).
+    code:
+      type: string
+    message:
+      type: string
+
+Error:
+  type: object
+  required: [code, message, trace_id]
+  description: >-
+    غلاف الخطأ الموحد (الفصل 09). بلا SQL ولا تتبع مكدس ولا كشف لوجود مورد خاص.
+  properties:
+    code:
+      $ref: '#/ErrorCode'
+    message:
+      type: string
+      description: رسالة عربية آمنة للعرض.
+    field_errors:
+      type: array
+      items:
+        $ref: '#/FieldError'
+    trace_id:
+      type: string
+
+PageMeta:
+  type: object
+  required: [next_cursor]
+  properties:
+    next_cursor:
+      type: [string, 'null']
+
+# ---------- مراجع مشتركة ----------
+
+ImageSet:
+  type: object
+  required: [w150, w600, w1200]
+  description: مقاسات الصورة العامة (DEC08). لا تحمل صور المحادثة أو البطاقة أبداً.
+  properties:
+    w150:
+      type: string
+      format: uri
+    w600:
+      type: string
+      format: uri
+    w1200:
+      type: string
+      format: uri
+
+CatalogRef:
+  type: object
+  required: [id, key, label_ar]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    key:
+      type: string
+    label_ar:
+      type: string
+    label_en:
+      type: [string, 'null']
+
+MeetingPointRef:
+  allOf:
+    - $ref: '#/CatalogRef'
+    - type: object
+      required: [kind]
+      properties:
+        kind:
+          $ref: '#/MeetingPointKind'
+
+RatingSummary:
+  type: object
+  required: [count, average]
+  description: من التقييمات الظاهرة فقط. العدد صفر يعني «بائع جديد» (الفصل 02).
+  properties:
+    count:
+      type: integer
+      minimum: 0
+    average:
+      type: [number, 'null']
+      description: منزلة عشرية واحدة.
+
+PublicProfileSummary:
+  type: object
+  required: [id, display_name, joined_month, student_badge]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    display_name:
+      type: string
+    avatar:
+      anyOf:
+        - $ref: '#/ImageSet'
+        - type: 'null'
+    college:
+      anyOf:
+        - $ref: '#/CatalogRef'
+        - type: 'null'
+    joined_month:
+      type: string
+      pattern: '^\d{4}-\d{2}$'
+    student_badge:
+      type: boolean
+      description: شارة «طالب موثّق» صالحة (DEC27). لا تمنح أي صلاحية.
+
+PublicProfile:
+  allOf:
+    - $ref: '#/PublicProfileSummary'
+    - type: object
+      required: [rating]
+      properties:
+        rating:
+          $ref: '#/RatingSummary'
+
+# ---------- الهوية والحساب ----------
+
+SignupInput:
+  type: object
+  additionalProperties: false
+  required: [name, email, password, terms_version, privacy_version, accept_terms, acknowledge_privacy, captcha_token]
+  properties:
+    name:
+      $ref: '#/DisplayName'
+    email:
+      $ref: '#/Email'
+    password:
+      $ref: '#/Password'
+    college_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    terms_version:
+      type: string
+      description: يجب أن تطابق النسخة الحالية من API114.
+    privacy_version:
+      type: string
+    accept_terms:
+      const: true
+    acknowledge_privacy:
+      const: true
+    captcha_token:
+      $ref: '#/CaptchaToken'
+
+LoginInput:
+  type: object
+  additionalProperties: false
+  required: [email, password, captcha_token]
+  properties:
+    email:
+      $ref: '#/Email'
+    password:
+      type: string
+      writeOnly: true
+    next:
+      $ref: '#/LocalPath'
+    captcha_token:
+      $ref: '#/CaptchaToken'
+
+LoginResult:
+  type: object
+  required: [state, next]
+  properties:
+    state:
+      type: string
+      enum: [signed_in, mfa_required, restricted, deletion_pending]
+      description: الحساب المقيّد أو بانتظار الحذف يُوجَّه لتدفقه المحدود فقط (FR78).
+    next:
+      $ref: '#/LocalPath'
+
+TokenInput:
+  type: object
+  additionalProperties: false
+  required: [token_hash]
+  properties:
+    token_hash:
+      $ref: '#/TokenHash'
+
+ResendInput:
+  type: object
+  additionalProperties: false
+  required: [email, purpose, captcha_token]
+  properties:
+    email:
+      $ref: '#/Email'
+    purpose:
+      type: string
+      enum: [signup, email_change]
+    captcha_token:
+      $ref: '#/CaptchaToken'
+
+EmailCaptchaInput:
+  type: object
+  additionalProperties: false
+  required: [email, captcha_token]
+  properties:
+    email:
+      $ref: '#/Email'
+    captcha_token:
+      $ref: '#/CaptchaToken'
+
+ResetInput:
+  type: object
+  additionalProperties: false
+  required: [new_password]
+  properties:
+    new_password:
+      $ref: '#/Password'
+
+ReauthInput:
+  type: object
+  additionalProperties: false
+  required: [current_password]
+  properties:
+    current_password:
+      type: string
+      writeOnly: true
+    mfa_code:
+      type: string
+      pattern: '^\d{6}$'
+      description: مطلوب لأصحاب الأدوار الإدارية.
+
+ReauthResult:
+  type: object
+  required: [reauthenticated_until]
+  properties:
+    reauthenticated_until:
+      $ref: '#/Timestamp'
+
+MfaEnrollInput:
+  type: object
+  additionalProperties: false
+  required: [factor_type]
+  properties:
+    factor_type:
+      const: totp
+
+MfaEnrollResult:
+  type: object
+  required: [factor_id, qr_code_svg, secret]
+  description: يُعرض لصاحب الحساب فقط ولا يُسجَّل.
+  properties:
+    factor_id:
+      type: string
+    qr_code_svg:
+      type: string
+    secret:
+      type: string
+
+MfaVerifyInput:
+  type: object
+  additionalProperties: false
+  required: [factor_id, code]
+  properties:
+    factor_id:
+      type: string
+    code:
+      type: string
+      pattern: '^\d{6}$'
+
+MfaVerifyResult:
+  type: object
+  required: [aal]
+  properties:
+    aal:
+      const: aal2
+
+CsrfToken:
+  type: object
+  required: [token]
+  properties:
+    token:
+      type: string
+
+EmailChangeInput:
+  type: object
+  additionalProperties: false
+  required: [new_email]
+  properties:
+    new_email:
+      $ref: '#/Email'
+
+PasswordChangeInput:
+  type: object
+  additionalProperties: false
+  required: [current_password, new_password]
+  properties:
+    current_password:
+      type: string
+      writeOnly: true
+    new_password:
+      $ref: '#/Password'
+
+DeletionInput:
+  type: object
+  additionalProperties: false
+  required: [acknowledge]
+  properties:
+    acknowledge:
+      const: true
+
+EmailGroups:
+  type: object
+  additionalProperties: false
+  description: مجموعات البريد الاختيارية (SEC11). بريد الأمان والإدارة لا يُعطَّل.
+  properties:
+    offers:
+      type: boolean
+    meetups:
+      type: boolean
+    deals:
+      type: boolean
+    reports:
+      type: boolean
+
+Preferences:
+  type: object
+  required: [email_groups, version]
+  properties:
+    email_groups:
+      $ref: '#/EmailGroups'
+    version:
+      type: integer
+
+PreferencesPatch:
+  type: object
+  additionalProperties: false
+  required: [email_groups, expected_version]
+  properties:
+    email_groups:
+      $ref: '#/EmailGroups'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+StudentBadgeState:
+  type: object
+  required: [status, badge_expires_at]
+  properties:
+    status:
+      anyOf:
+        - $ref: '#/StudentVerificationStatus'
+        - type: 'null'
+    badge_expires_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+
+Me:
+  type: object
+  description: >-
+    بيانات الحساب الخاصة. الحساب غير المؤكد أو المقيّد يحصل على الحقول نفسها ليعرض حالته،
+    لكن capabilities تكون كلها false.
+  required: [id, email, email_confirmed, display_name, locale, account_status, roles, mfa_enrolled, terms_acknowledged, student_badge, preferences, capabilities, version]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    email:
+      $ref: '#/Email'
+    email_confirmed:
+      type: boolean
+    pending_email:
+      anyOf:
+        - $ref: '#/Email'
+        - type: 'null'
+    display_name:
+      type: string
+    college:
+      anyOf:
+        - $ref: '#/CatalogRef'
+        - type: 'null'
+    avatar:
+      anyOf:
+        - $ref: '#/ImageSet'
+        - type: 'null'
+    locale:
+      $ref: '#/Locale'
+    account_status:
+      $ref: '#/AccountStatus'
+    suspended_until:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    deletion_requested_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    roles:
+      type: array
+      items:
+        $ref: '#/Role'
+    mfa_enrolled:
+      type: boolean
+    terms_acknowledged:
+      type: boolean
+      description: إقرار بالنسخة الحالية من الشروط والخصوصية. بدونه لا كتابة في السوق (DEC36).
+    student_badge:
+      $ref: '#/StudentBadgeState'
+    preferences:
+      $ref: '#/Preferences'
+    capabilities:
+      type: object
+      required: [market_write, admin]
+      properties:
+        market_write:
+          type: boolean
+        admin:
+          type: boolean
+    version:
+      type: integer
+
+ProfilePatch:
+  type: object
+  additionalProperties: false
+  required: [expected_version]
+  description: أي حقل غير مذكور هنا (الدور والشارة والتقييم) يُرفض (TC21، TC65).
+  properties:
+    display_name:
+      $ref: '#/DisplayName'
+    college_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    avatar_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+      description: صورة بغرض avatar جاهزة يملكها العضو (TC75).
+    locale:
+      $ref: '#/Locale'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+PolicyVersion:
+  type: object
+  required: [version, effective_at, path]
+  properties:
+    version:
+      type: string
+    effective_at:
+      $ref: '#/Timestamp'
+    path:
+      $ref: '#/LocalPath'
+
+PolicyVersions:
+  type: object
+  required: [terms, privacy]
+  properties:
+    terms:
+      $ref: '#/PolicyVersion'
+    privacy:
+      $ref: '#/PolicyVersion'
+
+# ---------- المراجع ----------
+
+Catalog:
+  type: object
+  required: [categories, colleges, meeting_points]
+  properties:
+    categories:
+      type: array
+      items:
+        $ref: '#/CatalogRef'
+    colleges:
+      type: array
+      items:
+        $ref: '#/CatalogRef'
+    meeting_points:
+      type: array
+      items:
+        $ref: '#/MeetingPointRef'
+
+# ---------- الإعلانات ----------
+
+ListingCard:
+  type: object
+  required: [id, title, price_minor, is_negotiable, condition, category, location, primary_image, status, seller_student_badge, created_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    title:
+      type: string
+    price_minor:
+      $ref: '#/Halalas'
+    is_negotiable:
+      type: boolean
+    condition:
+      $ref: '#/Condition'
+    category:
+      $ref: '#/CatalogRef'
+    location:
+      anyOf:
+        - $ref: '#/MeetingPointRef'
+        - type: 'null'
+      description: القيمة null تُعرض «حسب الاتفاق» (DEC28).
+    primary_image:
+      anyOf:
+        - $ref: '#/ImageSet'
+        - type: 'null'
+    status:
+      $ref: '#/ListingStatus'
+    seller_student_badge:
+      type: boolean
+    is_favorite:
+      type: boolean
+      description: يظهر للعضو المسجّل فقط.
+    created_at:
+      $ref: '#/Timestamp'
+
+ListingCapabilities:
+  type: object
+  required: [can_contact, can_offer, disabled_reason]
+  properties:
+    can_contact:
+      type: boolean
+    can_offer:
+      type: boolean
+    disabled_reason:
+      anyOf:
+        - $ref: '#/DisabledReason'
+        - type: 'null'
+
+ListingDetail:
+  allOf:
+    - $ref: '#/ListingCard'
+    - type: object
+      required: [description, images, seller, capabilities]
+      properties:
+        description:
+          type: string
+          description: نص عادي بأسطره. الروابط http وhttps فقط تُحوَّل في الواجهة (BR05).
+        images:
+          type: array
+          items:
+            $ref: '#/ImageSet'
+        seller:
+          $ref: '#/PublicProfile'
+        sold_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        capabilities:
+          $ref: '#/ListingCapabilities'
+
+OwnerImage:
+  type: object
+  required: [media_id, position]
+  properties:
+    media_id:
+      $ref: '#/Uuid'
+    position:
+      type: integer
+      minimum: 1
+      maximum: 10
+    image:
+      anyOf:
+        - $ref: '#/ImageSet'
+        - type: 'null'
+
+OwnerListing:
+  allOf:
+    - $ref: '#/ListingCard'
+    - type: object
+      required: [description, images, moderation_hidden, version, updated_at]
+      properties:
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            $ref: '#/OwnerImage'
+        previous_status:
+          anyOf:
+            - $ref: '#/ListingStatus'
+            - type: 'null'
+        archive_reason:
+          anyOf:
+            - $ref: '#/ArchiveReason'
+            - type: 'null'
+        archived_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        sold_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        restorable_until:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+          description: نهاية مهلة الاسترجاع 90 يوماً للأرشفة من حالة نشطة فقط (BR27).
+        moderation_hidden:
+          type: boolean
+        version:
+          type: integer
+        updated_at:
+          $ref: '#/Timestamp'
+
+ListingInput:
+  type: object
+  additionalProperties: false
+  required: [title, description, category_id, condition, price_minor, is_negotiable, media_ids]
+  properties:
+    title:
+      $ref: '#/ListingTitle'
+    description:
+      $ref: '#/ListingDescription'
+    category_id:
+      $ref: '#/Uuid'
+    condition:
+      $ref: '#/Condition'
+    location_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+      description: اختياري (DEC28). null يعني «حسب الاتفاق».
+    price_minor:
+      $ref: '#/Halalas'
+    is_negotiable:
+      type: boolean
+      description: يُرفض true إذا كان السعر صفراً (BR08).
+    media_ids:
+      type: array
+      minItems: 1
+      maxItems: 10
+      uniqueItems: true
+      description: صور جاهزة بغرض listing يملكها البائع وغير مرتبطة بإعلان آخر. الترتيب هو ترتيب العرض.
+      items:
+        $ref: '#/Uuid'
+
+ListingPatch:
+  type: object
+  additionalProperties: false
+  required: [expected_version]
+  description: تعديل السعر يلغي العروض المعلّقة بالسبب price_changed (BR41).
+  properties:
+    title:
+      $ref: '#/ListingTitle'
+    description:
+      $ref: '#/ListingDescription'
+    category_id:
+      $ref: '#/Uuid'
+    condition:
+      $ref: '#/Condition'
+    location_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    price_minor:
+      $ref: '#/Halalas'
+    is_negotiable:
+      type: boolean
+    media_ids:
+      type: array
+      minItems: 1
+      maxItems: 10
+      uniqueItems: true
+      items:
+        $ref: '#/Uuid'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+ListingTransition:
+  type: object
+  additionalProperties: false
+  required: [action, expected_version]
+  properties:
+    action:
+      type: string
+      enum: [mark_sold, archive, restore]
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+FavoriteItem:
+  type: object
+  required: [listing_id, available, listing, saved_at]
+  description: الإعلان المخفي يظهر غير متاح بلا تفاصيله (UC05).
+  properties:
+    listing_id:
+      $ref: '#/Uuid'
+    available:
+      type: boolean
+    listing:
+      anyOf:
+        - $ref: '#/ListingCard'
+        - type: 'null'
+    saved_at:
+      $ref: '#/Timestamp'
+
+# ---------- طلبات الشراء ----------
+
+WantedCard:
+  type: object
+  required: [id, title, description, category, location, budget_minor, urgent, status, requester_student_badge, created_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    title:
+      type: string
+    description:
+      type: string
+    category:
+      $ref: '#/CatalogRef'
+    location:
+      anyOf:
+        - $ref: '#/MeetingPointRef'
+        - type: 'null'
+    budget_minor:
+      anyOf:
+        - $ref: '#/Halalas'
+        - type: 'null'
+      description: null تعني بلا ميزانية محددة، والصفر يعني طلب غرض مجاني (DEC18).
+    urgent:
+      type: boolean
+    status:
+      $ref: '#/WantedStatus'
+    requester_student_badge:
+      type: boolean
+    created_at:
+      $ref: '#/Timestamp'
+
+WantedDetail:
+  allOf:
+    - $ref: '#/WantedCard'
+    - type: object
+      required: [requester, capabilities]
+      properties:
+        requester:
+          $ref: '#/PublicProfile'
+        capabilities:
+          $ref: '#/ListingCapabilities'
+
+OwnerWanted:
+  allOf:
+    - $ref: '#/WantedCard'
+    - type: object
+      required: [reopen_count, expires_at, moderation_hidden, version, updated_at]
+      properties:
+        closed_reason:
+          anyOf:
+            - $ref: '#/WantedClosedReason'
+            - type: 'null'
+        first_closed_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        closed_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        reopen_count:
+          type: integer
+          minimum: 0
+          maximum: 1
+        expires_at:
+          $ref: '#/Timestamp'
+        reopen_available_until:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+          description: null إذا لم تعد إعادة الفتح ممكنة (DEC19).
+        moderation_hidden:
+          type: boolean
+        version:
+          type: integer
+        updated_at:
+          $ref: '#/Timestamp'
+
+WantedInput:
+  type: object
+  additionalProperties: false
+  required: [title, description, category_id, budget_minor, urgent]
+  properties:
+    title:
+      $ref: '#/ListingTitle'
+    description:
+      $ref: '#/WantedDescription'
+    category_id:
+      $ref: '#/Uuid'
+    location_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    budget_minor:
+      anyOf:
+        - $ref: '#/Halalas'
+        - type: 'null'
+    urgent:
+      type: boolean
+
+WantedPatch:
+  type: object
+  additionalProperties: false
+  required: [expected_version]
+  properties:
+    title:
+      $ref: '#/ListingTitle'
+    description:
+      $ref: '#/WantedDescription'
+    category_id:
+      $ref: '#/Uuid'
+    location_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    budget_minor:
+      anyOf:
+        - $ref: '#/Halalas'
+        - type: 'null'
+    urgent:
+      type: boolean
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+WantedTransition:
+  type: object
+  additionalProperties: false
+  required: [action, expected_version]
+  properties:
+    action:
+      type: string
+      enum: [found, close, reopen]
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+# ---------- الصور ----------
+
+UploadAuthorizeInput:
+  type: object
+  additionalProperties: false
+  required: [purpose, bytes, mime, width, height]
+  description: >-
+    ادعاءات العميل لا تجعل الصورة جاهزة. العامل يفحص البايتات الفعلية (SEC08).
+    الحد 5 MiB و24 ميغابكسل (DEC08).
+  properties:
+    purpose:
+      $ref: '#/MediaPurpose'
+    bytes:
+      type: integer
+      minimum: 1
+      maximum: 5242880
+    mime:
+      $ref: '#/ImageMime'
+    width:
+      type: integer
+      minimum: 1
+    height:
+      type: integer
+      minimum: 1
+    context_id:
+      $ref: '#/Uuid'
+      description: معرّف المحادثة، مطلوب لغرض chat فقط.
+
+UploadAuthorization:
+  type: object
+  required: [upload_id, signed_url, token, expires_at]
+  description: إذن رفع إلى الحجر صالح خمس دقائق، للإنشاء فقط وبلا استبدال (SEC08).
+  properties:
+    upload_id:
+      $ref: '#/Uuid'
+    signed_url:
+      type: string
+      format: uri
+    token:
+      type: string
+    expires_at:
+      $ref: '#/Timestamp'
+
+UploadCompleteInput:
+  type: object
+  additionalProperties: false
+  required: [checksum_sha256, expected_size]
+  properties:
+    checksum_sha256:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+    expected_size:
+      type: integer
+      minimum: 1
+      maximum: 5242880
+
+MediaAccess:
+  type: object
+  required: [url, expires_at]
+  description: رابط خاص صالح 60 ثانية كحد أقصى (BR26، FR69).
+  properties:
+    url:
+      type: string
+      format: uri
+    expires_at:
+      $ref: '#/Timestamp'
+
+Upload:
+  type: object
+  required: [id, purpose, status, rejection_reason, created_at, expires_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    purpose:
+      $ref: '#/MediaPurpose'
+    status:
+      $ref: '#/MediaStatus'
+    rejection_reason:
+      anyOf:
+        - $ref: '#/MediaRejectionReason'
+        - type: 'null'
+    preview:
+      anyOf:
+        - $ref: '#/MediaAccess'
+        - type: 'null'
+      description: معاينة خاصة قصيرة العمر لصاحب الصورة بعد جاهزيتها.
+    created_at:
+      $ref: '#/Timestamp'
+    expires_at:
+      $ref: '#/Timestamp'
+      description: الصورة غير المرتبطة تُحذف بعد 24 ساعة (RET01).
+
+MediaAccessInput:
+  type: object
+  additionalProperties: false
+  description: >-
+    واحد بالضبط. verification_request_id توسعة في العقد لصور البطاقة الجامعية
+    (السؤال 20 في plan/phase-1.md).
+  oneOf:
+    - required: [conversation_id]
+    - required: [verification_request_id]
+  properties:
+    conversation_id:
+      $ref: '#/Uuid'
+    verification_request_id:
+      $ref: '#/Uuid'
+
+# ---------- المحادثات ----------
+
+ConversationCreateInput:
+  type: object
+  additionalProperties: false
+  description: سياق واحد بالضبط (BR29). الطرف الآخر والأدوار يحددها الخادم.
+  oneOf:
+    - required: [listing_id]
+    - required: [wanted_id]
+  properties:
+    listing_id:
+      $ref: '#/Uuid'
+    wanted_id:
+      $ref: '#/Uuid'
+
+ConversationContext:
+  type: object
+  required: [type, id, title, status, available]
+  description: لقطة السياق مع حالته الحالية (DEC11).
+  properties:
+    type:
+      $ref: '#/ContextType'
+    id:
+      $ref: '#/Uuid'
+    title:
+      type: string
+    status:
+      type: string
+      description: حالة الإعلان أو الطلب الحالية.
+    price_minor:
+      anyOf:
+        - $ref: '#/Halalas'
+        - type: 'null'
+    is_negotiable:
+      type: [boolean, 'null']
+    budget_minor:
+      anyOf:
+        - $ref: '#/Halalas'
+        - type: 'null'
+    thumbnail:
+      anyOf:
+        - $ref: '#/ImageSet'
+        - type: 'null'
+    available:
+      type: boolean
+      description: false إذا أُخفي السياق أو حُذف.
+
+ConversationCapabilities:
+  type: object
+  required: [can_message, can_offer, can_propose_meetup, can_create_deal, disabled_reasons]
+  properties:
+    can_message:
+      type: boolean
+    can_offer:
+      type: boolean
+    can_propose_meetup:
+      type: boolean
+    can_create_deal:
+      type: boolean
+    disabled_reasons:
+      type: object
+      properties:
+        message:
+          $ref: '#/DisabledReason'
+        offer:
+          $ref: '#/DisabledReason'
+        meetup:
+          $ref: '#/DisabledReason'
+        deal:
+          $ref: '#/DisabledReason'
+
+ConversationSummary:
+  type: object
+  required: [id, role, context, other_party, last_seq, unread_count, last_activity_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    role:
+      $ref: '#/ConversationRole'
+    context:
+      $ref: '#/ConversationContext'
+    other_party:
+      $ref: '#/PublicProfileSummary'
+    last_message_preview:
+      type: [string, 'null']
+    last_seq:
+      $ref: '#/Seq'
+    unread_count:
+      type: integer
+      minimum: 0
+      description: الرسائل الواردة غير المقروءة فقط، بلا رسائلي ورسائل النظام (BR31).
+    last_activity_at:
+      $ref: '#/Timestamp'
+
+ConversationDetail:
+  type: object
+  required: [id, role, context, other_party, last_seq, my_last_read_seq, capabilities]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    role:
+      $ref: '#/ConversationRole'
+    context:
+      $ref: '#/ConversationContext'
+    other_party:
+      $ref: '#/PublicProfileSummary'
+    last_seq:
+      $ref: '#/Seq'
+    my_last_read_seq:
+      $ref: '#/Seq'
+    capabilities:
+      $ref: '#/ConversationCapabilities'
+
+Attachment:
+  type: object
+  required: [media_id, position]
+  description: الوصول للصورة عبر API041 فقط.
+  properties:
+    media_id:
+      $ref: '#/Uuid'
+    position:
+      type: integer
+      minimum: 1
+      maximum: 3
+
+Offer:
+  type: object
+  required: [id, conversation_id, message_id, buyer_id, seller_id, amount_minor, reference_minor, reference_kind, status, cancel_reason, expires_at, responded_at, created_at, version]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    conversation_id:
+      $ref: '#/Uuid'
+    message_id:
+      $ref: '#/Uuid'
+    buyer_id:
+      $ref: '#/Uuid'
+    seller_id:
+      $ref: '#/Uuid'
+    amount_minor:
+      $ref: '#/OfferHalalas'
+    reference_minor:
+      $ref: '#/Halalas'
+    reference_kind:
+      type: string
+      enum: [listing_price, wanted_budget]
+    status:
+      $ref: '#/OfferStatus'
+    cancel_reason:
+      anyOf:
+        - $ref: '#/OfferCancelReason'
+        - type: 'null'
+    expires_at:
+      $ref: '#/Timestamp'
+    responded_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    created_at:
+      $ref: '#/Timestamp'
+    version:
+      type: integer
+
+OfferListItem:
+  allOf:
+    - $ref: '#/Offer'
+    - type: object
+      required: [context, other_party]
+      properties:
+        context:
+          $ref: '#/ConversationContext'
+        other_party:
+          $ref: '#/PublicProfileSummary'
+
+Meetup:
+  type: object
+  required: [id, conversation_id, message_id, proposer_id, recipient_id, location, place_text, scheduled_at, timezone, note, status, replaces_id, cancelled_at, late_cancel, version]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    conversation_id:
+      $ref: '#/Uuid'
+    message_id:
+      $ref: '#/Uuid'
+    proposer_id:
+      $ref: '#/Uuid'
+    recipient_id:
+      $ref: '#/Uuid'
+    location:
+      anyOf:
+        - $ref: '#/MeetingPointRef'
+        - type: 'null'
+    place_text:
+      type: [string, 'null']
+    scheduled_at:
+      $ref: '#/Timestamp'
+    timezone:
+      const: Asia/Riyadh
+    note:
+      type: [string, 'null']
+    status:
+      $ref: '#/MeetupStatus'
+    replaces_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    cancelled_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    late_cancel:
+      type: boolean
+    version:
+      type: integer
+
+Message:
+  type: object
+  required: [id, message_seq, sender_id, type, body, attachments, offer, meetup, created_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    message_seq:
+      $ref: '#/Seq'
+    sender_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+      description: null لرسائل النظام.
+    type:
+      $ref: '#/MessageType'
+    body:
+      type: [string, 'null']
+    attachments:
+      type: array
+      maxItems: 3
+      items:
+        $ref: '#/Attachment'
+    offer:
+      anyOf:
+        - $ref: '#/Offer'
+        - type: 'null'
+    meetup:
+      anyOf:
+        - $ref: '#/Meetup'
+        - type: 'null'
+    client_message_id:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+      description: يظهر لرسائل المستخدم نفسه فقط.
+    created_at:
+      $ref: '#/Timestamp'
+
+MessageInput:
+  type: object
+  additionalProperties: false
+  required: [client_message_id]
+  description: نص أو صورة واحدة على الأقل (FR31). صور بغرض chat مربوطة بهذه المحادثة (DEC21).
+  anyOf:
+    - required: [body]
+    - required: [media_ids]
+      properties:
+        media_ids:
+          minItems: 1
+  properties:
+    client_message_id:
+      $ref: '#/Uuid'
+    body:
+      $ref: '#/MessageBody'
+    media_ids:
+      type: array
+      maxItems: 3
+      uniqueItems: true
+      items:
+        $ref: '#/Uuid'
+
+MessageSaved:
+  type: object
+  required: [id, message_seq, status]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    message_seq:
+      $ref: '#/Seq'
+    status:
+      const: saved
+
+ReadInput:
+  type: object
+  additionalProperties: false
+  description: through_seq مطلوب إلا إذا كان mark_all صحيحاً (FR64).
+  properties:
+    through_seq:
+      $ref: '#/Seq'
+    mark_all:
+      type: boolean
+      default: false
+  anyOf:
+    - required: [through_seq]
+    - required: [mark_all]
+      properties:
+        mark_all:
+          const: true
+
+ReadResult:
+  type: object
+  required: [last_read_seq]
+  properties:
+    last_read_seq:
+      $ref: '#/Seq'
+
+OfferInput:
+  type: object
+  additionalProperties: false
+  required: [amount_minor, client_message_id]
+  properties:
+    amount_minor:
+      $ref: '#/OfferHalalas'
+    client_message_id:
+      $ref: '#/Uuid'
+
+OfferAction:
+  type: object
+  additionalProperties: false
+  required: [action, expected_version]
+  description: البائع المستلم يقبل أو يرفض، والمرسل يسحب (FR35، BR13).
+  properties:
+    action:
+      type: string
+      enum: [accept, reject, withdraw]
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+MeetupInput:
+  type: object
+  additionalProperties: false
+  required: [scheduled_at, timezone]
+  description: >-
+    نقطة لقاء مقترحة أو نص حر، واحد منهما بالضبط حسب اقتراح السؤال 9.
+    الموعد بعد 30 دقيقة على الأقل و30 يوماً على الأكثر بتوقيت الخادم (BR14).
+  oneOf:
+    - required: [location_id]
+    - required: [place_text]
+  properties:
+    location_id:
+      $ref: '#/Uuid'
+    place_text:
+      $ref: '#/PlaceText'
+    scheduled_at:
+      $ref: '#/Timestamp'
+    timezone:
+      const: Asia/Riyadh
+    note:
+      $ref: '#/MeetupNote'
+    replaces_id:
+      $ref: '#/Uuid'
+      description: اقتراح سابق من نفس المحادثة لإعادة الجدولة (BR34).
+
+MeetupAction:
+  type: object
+  additionalProperties: false
+  required: [action, expected_version]
+  properties:
+    action:
+      type: string
+      enum: [accept, reject, cancel]
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+BlockedUser:
+  type: object
+  required: [user, created_at]
+  properties:
+    user:
+      $ref: '#/PublicProfileSummary'
+    created_at:
+      $ref: '#/Timestamp'
+
+# ---------- الصفقات والتقييمات ----------
+
+DealCreateInput:
+  type: object
+  additionalProperties: false
+  required: [conversation_id]
+  description: الخادم يستنتج الإعلان أو الطلب من المحادثة (DEC33).
+  properties:
+    conversation_id:
+      $ref: '#/Uuid'
+
+VersionInput:
+  type: object
+  additionalProperties: false
+  required: [expected_version]
+  properties:
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+Review:
+  type: object
+  required: [id, deal_id, author, rating, comment, created_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    deal_id:
+      $ref: '#/Uuid'
+    author:
+      $ref: '#/PublicProfileSummary'
+    rating:
+      type: integer
+      minimum: 1
+      maximum: 5
+    comment:
+      type: [string, 'null']
+    created_at:
+      $ref: '#/Timestamp'
+
+ReviewInput:
+  type: object
+  additionalProperties: false
+  required: [rating]
+  properties:
+    rating:
+      type: integer
+      minimum: 1
+      maximum: 5
+    comment:
+      $ref: '#/ReviewComment'
+
+Deal:
+  type: object
+  required: [id, conversation_id, context, role, seller_id, buyer_id, other_party, status, seller_confirmed_at, buyer_confirmed_at, completed_at, expires_at, cancelled_at, cancel_reason, created_at, version, capabilities, my_review]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    conversation_id:
+      $ref: '#/Uuid'
+    context:
+      $ref: '#/ConversationContext'
+    role:
+      $ref: '#/ConversationRole'
+    seller_id:
+      $ref: '#/Uuid'
+    buyer_id:
+      $ref: '#/Uuid'
+    other_party:
+      $ref: '#/PublicProfileSummary'
+    status:
+      $ref: '#/DealStatus'
+    seller_confirmed_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    buyer_confirmed_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    completed_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    expires_at:
+      $ref: '#/Timestamp'
+      description: سبعة أيام من الإنشاء للتأكيدين (DEC16).
+    cancelled_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    cancel_reason:
+      anyOf:
+        - $ref: '#/DealCancelReason'
+        - type: 'null'
+    created_at:
+      $ref: '#/Timestamp'
+    version:
+      type: integer
+    capabilities:
+      type: object
+      required: [can_confirm, can_cancel, can_review, review_deadline]
+      properties:
+        can_confirm:
+          type: boolean
+        can_cancel:
+          type: boolean
+        can_review:
+          type: boolean
+        review_deadline:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+          description: ثلاثون يوماً من الاكتمال (BR18).
+    my_review:
+      anyOf:
+        - $ref: '#/Review'
+        - type: 'null'
+
+# ---------- البلاغات ----------
+
+ReportInput:
+  type: object
+  additionalProperties: false
+  required: [target_type, target_id, reason]
+  description: سبب other يتطلب تفصيلاً من 10 إلى 2000 محرف (UC15).
+  properties:
+    target_type:
+      $ref: '#/ReportTargetType'
+    target_id:
+      $ref: '#/Uuid'
+    reason:
+      $ref: '#/ReportReason'
+    details:
+      $ref: '#/ReportDetails'
+  if:
+    properties:
+      reason:
+        const: other
+  then:
+    required: [details]
+    properties:
+      details:
+        minLength: 10
+
+ReportReceipt:
+  type: object
+  required: [id, status]
+  properties:
+    id:
+      $ref: '#/Uuid'
+      description: مرجع خاص للمتابعة. بلاغ مطابق خلال 24 ساعة يرجع نفس المرجع.
+    status:
+      $ref: '#/ReporterStatus'
+
+MyReport:
+  type: object
+  required: [id, target_type, reason, status, outcome, created_at, closed_at]
+  description: بلا أدلة الأطراف الأخرى وبلا هوية المراجع (API074).
+  properties:
+    id:
+      $ref: '#/Uuid'
+    target_type:
+      $ref: '#/ReportTargetType'
+    reason:
+      $ref: '#/ReportReason'
+    status:
+      $ref: '#/ReporterStatus'
+    outcome:
+      anyOf:
+        - $ref: '#/ReporterOutcome'
+        - type: 'null'
+    created_at:
+      $ref: '#/Timestamp'
+    closed_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+
+# ---------- الإشعارات ----------
+
+Notification:
+  type: object
+  required: [id, event_type, context_type, context_id, destination, read_at, created_at]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    event_type:
+      type: string
+    context_type:
+      $ref: '#/NotificationContextType'
+    context_id:
+      $ref: '#/Uuid'
+    destination:
+      $ref: '#/LocalPath'
+      description: يحدده الخادم، ويُعاد التحقق من الصلاحية عند فتحه (FR48).
+    read_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    created_at:
+      $ref: '#/Timestamp'
+
+NotificationsReadInput:
+  type: object
+  additionalProperties: false
+  required: [ids, read]
+  properties:
+    ids:
+      type: array
+      minItems: 1
+      maxItems: 100
+      uniqueItems: true
+      items:
+        $ref: '#/Uuid'
+    read:
+      const: true
+
+UnreadCount:
+  type: object
+  required: [count]
+  properties:
+    count:
+      type: integer
+      minimum: 0
+
+# ---------- شارة الطالب (DEC27) ----------
+
+StudentVerificationInput:
+  type: object
+  additionalProperties: false
+  required: [media_ids]
+  properties:
+    media_ids:
+      type: array
+      minItems: 1
+      maxItems: 2
+      uniqueItems: true
+      description: صور بغرض student_card يملكها العضو.
+      items:
+        $ref: '#/Uuid'
+
+StudentVerificationRequest:
+  type: object
+  required: [id, status, submitted_at, decided_at, decision_reason, decision_note]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    status:
+      $ref: '#/StudentVerificationStatus'
+    submitted_at:
+      $ref: '#/Timestamp'
+    decided_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    decision_reason:
+      anyOf:
+        - $ref: '#/StudentVerificationReason'
+        - type: 'null'
+    decision_note:
+      type: [string, 'null']
+
+MyStudentVerification:
+  type: object
+  required: [latest_request, badge_expires_at, can_submit, next_submission_at]
+  properties:
+    latest_request:
+      anyOf:
+        - $ref: '#/StudentVerificationRequest'
+        - type: 'null'
+    badge_expires_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    can_submit:
+      type: boolean
+    next_submission_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+      description: بعد الرفض بـ 24 ساعة، أو عند فتح النافذة بعد 3 طلبات خلال 30 يوماً.
+
+AdminStudentVerification:
+  allOf:
+    - $ref: '#/StudentVerificationRequest'
+    - type: object
+      required: [user, reviewer_id, badge_expires_at, image_media_ids, images_deleted_at, version]
+      properties:
+        user:
+          $ref: '#/PublicProfileSummary'
+        reviewer_id:
+          anyOf:
+            - $ref: '#/Uuid'
+            - type: 'null'
+        badge_expires_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        image_media_ids:
+          type: array
+          maxItems: 2
+          description: فارغة بعد حذف الصور. فتح الصورة عبر API041 ويُسجَّل في التدقيق (TC86).
+          items:
+            $ref: '#/Uuid'
+        images_deleted_at:
+          anyOf:
+            - $ref: '#/Timestamp'
+            - type: 'null'
+        version:
+          type: integer
+
+VerificationDecisionInput:
+  type: object
+  additionalProperties: false
+  required: [decision, expected_version]
+  properties:
+    decision:
+      type: string
+      enum: [approve, reject]
+    reason:
+      $ref: '#/StudentVerificationReason'
+    note:
+      $ref: '#/DecisionNote'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+  if:
+    properties:
+      decision:
+        const: reject
+  then:
+    required: [reason]
+    properties:
+      reason:
+        $ref: '#/StudentVerificationReason'
+
+VerificationRevokeInput:
+  type: object
+  additionalProperties: false
+  required: [reason, expected_version]
+  properties:
+    reason:
+      $ref: '#/AdminReason'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+# ---------- الإدارة ----------
+
+AdminReportSummary:
+  type: object
+  required: [id, target_type, target_id, reason, status, assigned_to, created_at, version]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    target_type:
+      $ref: '#/ReportTargetType'
+    target_id:
+      $ref: '#/Uuid'
+    reason:
+      $ref: '#/ReportReason'
+    status:
+      $ref: '#/ReportStatus'
+    assigned_to:
+      anyOf:
+        - $ref: '#/Uuid'
+        - type: 'null'
+    created_at:
+      $ref: '#/Timestamp'
+    version:
+      type: integer
+
+EvidenceItem:
+  type: object
+  required: [id, captured_at, content]
+  description: لقطة محدودة بالقضية فقط، والوصول لها يُسجَّل (SEC09).
+  properties:
+    id:
+      $ref: '#/Uuid'
+    captured_at:
+      $ref: '#/Timestamp'
+    content:
+      type: string
+
+AdminReportDetail:
+  allOf:
+    - $ref: '#/AdminReportSummary'
+    - type: object
+      required: [reporter_id, details, evidence]
+      properties:
+        reporter_id:
+          $ref: '#/Uuid'
+          description: للمراجع فقط، ولا يُكشف للطرف المبلّغ عنه.
+        details:
+          type: [string, 'null']
+        evidence:
+          type: array
+          items:
+            $ref: '#/EvidenceItem'
+
+AssignInput:
+  type: object
+  additionalProperties: false
+  required: [reviewer_id, expected_version]
+  properties:
+    reviewer_id:
+      $ref: '#/Uuid'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+ReportDecisionInput:
+  type: object
+  additionalProperties: false
+  required: [decision, reason, expected_version]
+  properties:
+    decision:
+      $ref: '#/ReportDecision'
+    reason:
+      $ref: '#/AdminReason'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+AdminAccount:
+  type: object
+  required: [id, display_name, email, account_status, suspended_until, deletion_requested_at, roles, joined_at, version]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    display_name:
+      type: string
+    email:
+      $ref: '#/Email'
+    account_status:
+      $ref: '#/AccountStatus'
+    suspended_until:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    deletion_requested_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    roles:
+      type: array
+      items:
+        $ref: '#/Role'
+    joined_at:
+      $ref: '#/Timestamp'
+    version:
+      type: integer
+
+AccountActionInput:
+  type: object
+  additionalProperties: false
+  required: [action, reason, expected_version]
+  description: >-
+    ban وunban للمالك فقط (BR36). suspend_days بدل الحقل until في v3، لأن المشرف
+    يوقف 7 أو 30 يوماً فقط (السؤال 22).
+  properties:
+    action:
+      type: string
+      enum: [warning, suspend, unsuspend, ban, unban]
+    suspend_days:
+      type: integer
+      enum: [7, 30]
+    reason:
+      $ref: '#/AdminReason'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+  if:
+    properties:
+      action:
+        const: suspend
+  then:
+    required: [suspend_days]
+    properties:
+      suspend_days:
+        type: integer
+        enum: [7, 30]
+
+AdminListing:
+  allOf:
+    - $ref: '#/OwnerListing'
+    - type: object
+      required: [seller]
+      properties:
+        seller:
+          $ref: '#/PublicProfileSummary'
+
+ContentModerationInput:
+  type: object
+  additionalProperties: false
+  required: [action, reason, expected_version]
+  properties:
+    action:
+      type: string
+      enum: [hide, unhide]
+    reason:
+      $ref: '#/AdminReason'
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+ProfileModerationInput:
+  type: object
+  additionalProperties: false
+  required: [action, reason]
+  properties:
+    action:
+      type: string
+      enum: [reset_display_name, remove_avatar]
+    reason:
+      $ref: '#/AdminReason'
+
+ModerationResult:
+  type: object
+  required: [moderation_action_id, version]
+  properties:
+    moderation_action_id:
+      $ref: '#/Uuid'
+    version:
+      type: [integer, 'null']
+
+CatalogEntry:
+  type: object
+  required: [id, key, label_ar, label_en, display_order, is_active, source_ref, version]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    key:
+      type: string
+    label_ar:
+      type: string
+    label_en:
+      type: [string, 'null']
+    kind:
+      $ref: '#/MeetingPointKind'
+      description: لنقاط اللقاء فقط.
+    display_order:
+      type: integer
+    is_active:
+      type: boolean
+    source_ref:
+      type: [string, 'null']
+    version:
+      type: integer
+
+CatalogEntryInput:
+  type: object
+  additionalProperties: false
+  required: [key, label_ar, display_order]
+  description: لا أسماء مرافق مخترعة (FR55). kind مطلوب لنقاط اللقاء.
+  properties:
+    key:
+      type: string
+      pattern: '^[a-z0-9_]{2,64}$'
+    label_ar:
+      type: string
+      minLength: 1
+      maxLength: 120
+    label_en:
+      type: string
+      minLength: 1
+      maxLength: 120
+    kind:
+      $ref: '#/MeetingPointKind'
+    display_order:
+      type: integer
+    source_ref:
+      type: string
+
+CatalogEntryPatch:
+  type: object
+  additionalProperties: false
+  required: [expected_version]
+  properties:
+    label_ar:
+      type: string
+      minLength: 1
+      maxLength: 120
+    label_en:
+      type: [string, 'null']
+      maxLength: 120
+    is_active:
+      type: boolean
+    display_order:
+      type: integer
+    expected_version:
+      $ref: '#/ExpectedVersion'
+
+RoleGrant:
+  type: object
+  required: [id, user_id, role, granted_by, granted_at, revoked_at, reason]
+  properties:
+    id:
+      $ref: '#/Uuid'
+    user_id:
+      $ref: '#/Uuid'
+    role:
+      $ref: '#/Role'
+    granted_by:
+      $ref: '#/Uuid'
+    granted_at:
+      $ref: '#/Timestamp'
+    revoked_at:
+      anyOf:
+        - $ref: '#/Timestamp'
+        - type: 'null'
+    reason:
+      type: string
+
+RoleChangeInput:
+  type: object
+  additionalProperties: false
+  required: [reason]
+  properties:
+    reason:
+      $ref: '#/AdminReason'
+
+Metrics:
+  type: object
+  required: [from, to, counts]
+  description: أرقام مجمّعة فقط، بلا بريد أو نص محادثة (API103).
+  properties:
+    from:
+      $ref: '#/Timestamp'
+    to:
+      $ref: '#/Timestamp'
+    counts:
+      type: object
+      additionalProperties:
+        type: integer
+        minimum: 0
+
+# ---------- التشغيل ----------
+
+Health:
+  type: object
+  required: [status]
+  properties:
+    status:
+      const: ok
+
+Readiness:
+  type: object
+  required: [status, checks]
+  properties:
+    status:
+      type: string
+      enum: [ready, not_ready]
+    checks:
+      type: object
+      additionalProperties:
+        type: boolean

@@ -1,0 +1,195 @@
+# الصفقات والتقييمات بصيغتها المبسطة (DEC33).
+
+deals:
+  post:
+    operationId: api066CreateDeal
+    tags: [deals]
+    summary: البائع ينشئ صفقة من محادثة ويسجل تأكيده
+    description: >-
+      المدخل conversation_id فقط، والخادم يستنتج الإعلان أو الطلب منها (DEC33). صفقة واحدة غير ملغاة
+      لكل إعلان ولكل طلب كقيد في القاعدة. صفقة الطلب لا تحتاج إعلاناً (TC78 المعدّل).
+      المهلة سبعة أيام للتأكيدين (DEC16).
+    x-spec-ids: [API066, FR66, FR36, BR35, DEC16, DEC33, TC36, TC78]
+    x-access: participant
+    x-open-question: [4, 5]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/DealCreateInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/DealOk'
+      '200':
+        $ref: '../components/responses.yaml#/DealOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+myDeals:
+  get:
+    operationId: api067ListMyDeals
+    tags: [deals]
+    summary: صفقاتي
+    x-spec-ids: [API067, FR66, FR47]
+    x-access: member
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/DealStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/DealPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+deal:
+  get:
+    operationId: api068GetDeal
+    tags: [deals]
+    summary: تفاصيل صفقة لطرفيها فقط
+    x-spec-ids: [API068, FR66]
+    x-access: participant
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/DealOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+dealConfirm:
+  post:
+    operationId: api069ConfirmDeal
+    tags: [deals]
+    summary: تأكيد الطرف لصفقته
+    description: >-
+      يسجل تأكيد المتصل فقط، ويفحص المهلة حتى لو تأخر العامل. عند اكتمال التأكيدين يصير الإعلان
+      مباعاً والطلب موجوداً إذا كانا نشطين (القسم 4.3، TC36).
+    x-spec-ids: [API069, FR66, DEC16, DEC33, TC36]
+    x-access: participant
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/VersionInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/DealOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+dealCancel:
+  post:
+    operationId: api070CancelDeal
+    tags: [deals]
+    summary: إلغاء صفقة معلّقة
+    description: >-
+      للصفقة المعلّقة فقط، ولا يعيد الإعلان المباع نشطاً. سبب الإلغاء by_seller أو by_buyer يحدده
+      الخادم من المتصل (القسم 6.2، السؤال 21).
+    x-spec-ids: [API070, FR66, DEC33]
+    x-access: participant
+    x-open-question: [21]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/VersionInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/DealOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+dealReviews:
+  post:
+    operationId: api071CreateReview
+    tags: [reviews]
+    summary: تقييم الطرف الآخر بعد اكتمال الصفقة
+    description: >-
+      تقييم واحد غير قابل للتعديل لكل طرف، نجوم صحيحة من 1 إلى 5، خلال 30 يوماً من الاكتمال
+      (BR18، TC19، TC50، TC51).
+    x-spec-ids: [API071, FR47, BR18, DEC16, TC19, TC50, TC51]
+    x-access: participant
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ReviewInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/ReviewOk'
+      '200':
+        $ref: '../components/responses.yaml#/ReviewOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'

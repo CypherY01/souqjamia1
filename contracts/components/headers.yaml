@@ -1,0 +1,12 @@
+# ترويسات الردود المشتركة.
+
+RetryAfter:
+  description: عدد الثواني المتبقية حتى نهاية نافذة الحد أو حتى إعادة المحاولة (SEC07).
+  schema:
+    type: integer
+    minimum: 0
+
+Location:
+  description: مسار محلي يُوجَّه إليه المتصفح بعد استهلاك الرابط.
+  schema:
+    $ref: 'schemas.yaml#/LocalPath'

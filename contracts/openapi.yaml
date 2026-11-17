@@ -1,0 +1,268 @@
+openapi: 3.1.0
+
+info:
+  title: سوق الجامعة — واجهة المرحلة الأولى
+  version: 0.1.0-phase1
+  summary: عقد REST للمرحلة الأولى حسب docs/addendum-v3.1.md وdocs/spec-v3-en.md.
+  description: >-
+    مسودة بانتظار اعتماد المالك. تغطي 98 عملية للمرحلة الأولى. العمليات المستبعدة وأسبابها،
+    والاتفاقات المشتركة، ومستويات الوصول، ورموز الأخطاء، كلها في contracts/README.md.
+    عقد التحديث الفوري في contracts/realtime.md.
+    الامتدادات x-spec-ids وx-access وx-rate-limit وx-open-question موثقة في README.
+
+servers:
+  - url: https://souqjamia1.com
+    description: الإنتاج (DEC25). بيئتا التطوير والتجربة على نفس المسارات.
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: auth
+    description: الهوية والجلسات وMFA
+  - name: account
+    description: الحساب والملف الشخصي والسياسات
+  - name: catalog
+    description: الفئات والكليات ونقاط اللقاء
+  - name: listings
+    description: الإعلانات
+  - name: favorites
+    description: المفضلة
+  - name: media
+    description: رفع الصور ومعالجتها والوصول الخاص
+  - name: wanted
+    description: طلبات الشراء
+  - name: conversations
+    description: المحادثات والرسائل
+  - name: offers
+    description: عروض السعر
+  - name: meetups
+    description: اقتراحات اللقاء
+  - name: blocks
+    description: الحظر بين الأعضاء
+  - name: deals
+    description: الصفقات المبسطة
+  - name: reviews
+    description: التقييمات
+  - name: reports
+    description: البلاغات من جهة العضو
+  - name: notifications
+    description: الإشعارات داخل الموقع
+  - name: student-verification
+    description: شارة الطالب الموثّق
+  - name: admin
+    description: لوحة الإدارة
+  - name: ops
+    description: فحوص التشغيل
+
+paths:
+  # الهوية والجلسات
+  /api/auth/signup:
+    $ref: paths/auth.yaml#/signup
+  /api/auth/login:
+    $ref: paths/auth.yaml#/login
+  /api/auth/logout:
+    $ref: paths/auth.yaml#/logout
+  /api/auth/confirm:
+    $ref: paths/auth.yaml#/confirm
+  /api/auth/resend:
+    $ref: paths/auth.yaml#/resend
+  /api/auth/recovery:
+    $ref: paths/auth.yaml#/recovery
+  /api/auth/recovery/verify:
+    $ref: paths/auth.yaml#/recoveryVerify
+  /api/auth/reset:
+    $ref: paths/auth.yaml#/reset
+  /api/auth/reauth:
+    $ref: paths/auth.yaml#/reauth
+  /api/auth/mfa/enroll:
+    $ref: paths/auth.yaml#/mfaEnroll
+  /api/auth/mfa/verify:
+    $ref: paths/auth.yaml#/mfaVerify
+  /api/csrf:
+    $ref: paths/auth.yaml#/csrf
+
+  # الحساب والسياسات
+  /api/me:
+    $ref: paths/account.yaml#/me
+  /api/me/preferences:
+    $ref: paths/account.yaml#/preferences
+  /api/profile/me:
+    $ref: paths/account.yaml#/profileMe
+  /api/profile/{id}:
+    $ref: paths/account.yaml#/profilePublic
+  /api/profile/{id}/listings:
+    $ref: paths/account.yaml#/profileListings
+  /api/profile/{id}/reviews:
+    $ref: paths/account.yaml#/profileReviews
+  /api/profile/email-change:
+    $ref: paths/account.yaml#/emailChange
+  /api/profile/email-change/confirm:
+    $ref: paths/account.yaml#/emailChangeConfirm
+  /api/profile/password-change:
+    $ref: paths/account.yaml#/passwordChange
+  /api/profile/deletion:
+    $ref: paths/account.yaml#/deletion
+  /api/profile/deletion-recovery/request:
+    $ref: paths/account.yaml#/deletionRecoveryRequest
+  /api/profile/deletion-recovery/confirm:
+    $ref: paths/account.yaml#/deletionRecoveryConfirm
+  /api/policies/current:
+    $ref: paths/account.yaml#/policies
+
+  # المراجع والإعلانات والمفضلة
+  /api/catalog:
+    $ref: paths/market.yaml#/catalog
+  /api/listings:
+    $ref: paths/market.yaml#/listings
+  /api/listings/{id}:
+    $ref: paths/market.yaml#/listing
+  /api/listings/{id}/transition:
+    $ref: paths/market.yaml#/listingTransition
+  /api/me/listings:
+    $ref: paths/market.yaml#/myListings
+  /api/me/favorites:
+    $ref: paths/market.yaml#/myFavorites
+  /api/favorites/{listing_id}:
+    $ref: paths/market.yaml#/favorite
+
+  # الصور
+  /api/uploads/authorize:
+    $ref: paths/media.yaml#/uploadsAuthorize
+  /api/uploads/{id}:
+    $ref: paths/media.yaml#/upload
+  /api/uploads/{id}/complete:
+    $ref: paths/media.yaml#/uploadComplete
+  /api/media/{id}/access:
+    $ref: paths/media.yaml#/mediaAccess
+
+  # طلبات الشراء
+  /api/wanted:
+    $ref: paths/wanted.yaml#/wanted
+  /api/wanted/{id}:
+    $ref: paths/wanted.yaml#/wantedItem
+  /api/wanted/{id}/transition:
+    $ref: paths/wanted.yaml#/wantedTransition
+  /api/me/wanted:
+    $ref: paths/wanted.yaml#/myWanted
+
+  # المحادثات والعروض واللقاءات والحظر
+  /api/conversations:
+    $ref: paths/conversations.yaml#/conversations
+  /api/conversations/{id}:
+    $ref: paths/conversations.yaml#/conversation
+  /api/conversations/{id}/messages:
+    $ref: paths/conversations.yaml#/messages
+  /api/conversations/{id}/read:
+    $ref: paths/conversations.yaml#/read
+  /api/conversations/{id}/offers:
+    $ref: paths/conversations.yaml#/offersCreate
+  /api/conversations/{id}/meetups:
+    $ref: paths/conversations.yaml#/meetupsCreate
+  /api/offers/{id}:
+    $ref: paths/conversations.yaml#/offer
+  /api/me/offers:
+    $ref: paths/conversations.yaml#/myOffers
+  /api/meetups/{id}:
+    $ref: paths/conversations.yaml#/meetup
+  /api/blocks/{user_id}:
+    $ref: paths/conversations.yaml#/block
+  /api/me/blocks:
+    $ref: paths/conversations.yaml#/myBlocks
+
+  # الصفقات والتقييمات
+  /api/deals:
+    $ref: paths/deals.yaml#/deals
+  /api/deals/{id}:
+    $ref: paths/deals.yaml#/deal
+  /api/deals/{id}/confirm:
+    $ref: paths/deals.yaml#/dealConfirm
+  /api/deals/{id}/cancel:
+    $ref: paths/deals.yaml#/dealCancel
+  /api/deals/{id}/reviews:
+    $ref: paths/deals.yaml#/dealReviews
+  /api/me/deals:
+    $ref: paths/deals.yaml#/myDeals
+
+  # البلاغات والإشعارات
+  /api/reports:
+    $ref: paths/safety.yaml#/reports
+  /api/me/reports:
+    $ref: paths/safety.yaml#/myReports
+  /api/me/reports/{id}:
+    $ref: paths/safety.yaml#/myReport
+  /api/notifications:
+    $ref: paths/notifications.yaml#/notifications
+  /api/notifications/unread-count:
+    $ref: paths/notifications.yaml#/unreadCount
+
+  # شارة الطالب
+  /api/me/student-verification:
+    $ref: paths/verification.yaml#/myVerification
+  /api/admin/student-verifications:
+    $ref: paths/verification.yaml#/adminVerifications
+  /api/admin/student-verifications/{id}/decision:
+    $ref: paths/verification.yaml#/verificationDecision
+  /api/admin/student-verifications/{id}/revoke:
+    $ref: paths/verification.yaml#/verificationRevoke
+
+  # الإدارة
+  /api/admin/reports:
+    $ref: paths/admin.yaml#/adminReports
+  /api/admin/reports/{id}:
+    $ref: paths/admin.yaml#/adminReport
+  /api/admin/reports/{id}/assign:
+    $ref: paths/admin.yaml#/reportAssign
+  /api/admin/reports/{id}/decision:
+    $ref: paths/admin.yaml#/reportDecision
+  /api/admin/accounts:
+    $ref: paths/admin.yaml#/accounts
+  /api/admin/accounts/{id}/action:
+    $ref: paths/admin.yaml#/accountAction
+  /api/admin/listings:
+    $ref: paths/admin.yaml#/adminListings
+  /api/admin/listings/{id}/moderation:
+    $ref: paths/admin.yaml#/listingModeration
+  /api/admin/wanted/{id}/moderation:
+    $ref: paths/admin.yaml#/wantedModeration
+  /api/admin/reviews/{id}/moderation:
+    $ref: paths/admin.yaml#/reviewModeration
+  /api/admin/profiles/{id}/moderation:
+    $ref: paths/admin.yaml#/profileModeration
+  /api/admin/catalog/{kind}:
+    $ref: paths/admin.yaml#/catalogKind
+  /api/admin/catalog/{kind}/{id}:
+    $ref: paths/admin.yaml#/catalogEntry
+  /api/admin/roles:
+    $ref: paths/admin.yaml#/roles
+  /api/admin/roles/{user_id}/{role}:
+    $ref: paths/admin.yaml#/roleGrant
+  /api/admin/metrics:
+    $ref: paths/admin.yaml#/metrics
+
+  # التشغيل
+  /healthz:
+    $ref: paths/ops.yaml#/healthz
+  /readyz:
+    $ref: paths/ops.yaml#/readyz
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: sb-auth-token
+      description: >-
+        كوكيز جلسة Supabase تديرها مكتبة @supabase/ssr من الخادم. الاسم الفعلي
+        sb-<project-ref>-auth-token وقد يُقسَّم لعدة كوكيز. رمز الوصول صالح عشر دقائق (DEC38).
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: >-
+        مطلوب لكل طلب يغيّر الحالة، مع فحص Origin وFetch Metadata (SEC05). يُطلب من API013.
+    probeToken:
+      type: apiKey
+      in: header
+      name: X-Probe-Token
+      description: سر فحص الجاهزية الداخلي، من إعدادات بيئة التشغيل.

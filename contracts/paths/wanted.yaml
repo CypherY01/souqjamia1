@@ -1,0 +1,188 @@
+# طلبات الشراء.
+
+wanted:
+  get:
+    operationId: api042SearchWanted
+    tags: [wanted]
+    summary: البحث في طلبات الشراء النشطة
+    description: يفرّق بين ميزانية غير محددة (null) وطلب غرض مجاني (صفر).
+    x-spec-ids: [API042, FR25, TC11, TC37]
+    x-access: public
+    x-rate-limit: [RL04]
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Query'
+      - name: category
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/CategoryKey'
+      - name: location
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/Uuid'
+      - name: urgent
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/WantedCardPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+  post:
+    operationId: api045CreateWanted
+    tags: [wanted]
+    summary: نشر طلب شراء
+    description: انتهاء أولي بعد 60 يوماً (DEC18). الحد 20 طلباً نشطاً للعضو (RL05).
+    x-spec-ids: [API045, FR26, BR37, DEC18, TC11, TC37]
+    x-access: member
+    x-rate-limit: [RL05]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/WantedInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/OwnerWantedOk'
+      '200':
+        $ref: '../components/responses.yaml#/OwnerWantedOk'
+      '202':
+        $ref: '../components/responses.yaml#/Processing'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+wantedItem:
+  get:
+    operationId: api043GetWanted
+    tags: [wanted]
+    summary: تفاصيل طلب شراء
+    x-spec-ids: [API043, FR25]
+    x-access: public
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/WantedDetailOk'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  patch:
+    operationId: api046UpdateWanted
+    tags: [wanted]
+    summary: تعديل طلب نشط
+    description: >-
+      لا يغيّر وقت الإنشاء. حذف الميزانية أو تصفيرها يلغي العروض المعلّقة (الفصل 06)،
+      وسبب الإلغاء وحكم تغيير الميزانية لقيمة أخرى بانتظار السؤال 11.
+    x-spec-ids: [API046, FR27, TC10]
+    x-access: resource_owner
+    x-open-question: [11]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/WantedPatch'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OwnerWantedOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+myWanted:
+  get:
+    operationId: api044ListMyWanted
+    tags: [wanted]
+    summary: طلباتي حسب الحالة
+    x-spec-ids: [API044, FR27]
+    x-access: member
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/WantedStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OwnerWantedPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+wantedTransition:
+  post:
+    operationId: api047TransitionWanted
+    tags: [wanted]
+    summary: تحديد كموجود أو إغلاق أو إعادة فتح
+    description: >-
+      إعادة فتح واحدة خلال 30 يوماً من أول إغلاق ولا تتجاوز اليوم 90 من الإنشاء. الانتهاء الجديد
+      هو الأقرب من وقت إعادة الفتح زائد 30 يوماً ووقت الإنشاء زائد 90 يوماً (DEC19، TC38).
+    x-spec-ids: [API047, FR27, BR37, DEC19, TC38]
+    x-access: resource_owner
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/WantedTransition'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OwnerWantedOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'

@@ -1,0 +1,278 @@
+# المراجع والإعلانات والمفضلة.
+
+catalog:
+  get:
+    operationId: api030GetCatalog
+    tags: [catalog]
+    summary: الفئات والكليات ونقاط اللقاء النشطة
+    description: نقاط اللقاء اقتراحات لأماكن عامة داخل الجامعة وفي المدينة (DEC28).
+    x-spec-ids: [API030, FR08, FR20, FR55, BR03, DEC28]
+    x-access: public
+    security: []
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/CatalogOk'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+listings:
+  get:
+    operationId: api031SearchListings
+    tags: [listings]
+    summary: البحث في الإعلانات العامة
+    description: >-
+      الفلاتر تتقاطع (FR09). تُستبعد الإعلانات المخفية والمؤرشفة وإعلانات الحسابات المقيّدة أو
+      بانتظار الحذف. البحث على search_text المطبّع (القسم 6.3).
+    x-spec-ids: [API031, FR06, FR07, FR08, FR09, FR10, FR11, FR12, NFR14, TC04, TC29, TC81]
+    x-access: public
+    x-rate-limit: [RL04]
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Query'
+      - name: category
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/CategoryKey'
+      - name: condition
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/Condition'
+      - name: location
+        in: query
+        required: false
+        description: معرّف نقطة لقاء نشطة. يرجع الإعلانات المرتبطة بها فقط (FR10، DEC28).
+        schema:
+          $ref: '../components/schemas.yaml#/Uuid'
+      - name: sort
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/ListingSort'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ListingCardPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+  post:
+    operationId: api034PublishListing
+    tags: [listings]
+    summary: نشر إعلان من المعالج
+    description: >-
+      الخادم يعيد التحقق من كل الحقول وملكية الصور وجاهزيتها. المحاولة المنطقية المكررة
+      ترجع نفس الإعلان (FR22). أخطاء الحقول ترجع في field_errors ليعود المعالج لخطوتها (القسم 6.3).
+      الحد 200 إعلان نشط للعضو (RL05).
+    x-spec-ids: [API034, FR16, FR17, FR18, FR19, FR20, FR21, FR22, BR05, BR06, BR07, BR08, DEC28, TC07, TC08, TC09, TC25, TC64, TC65]
+    x-access: member
+    x-rate-limit: [RL05]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ListingInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/OwnerListingOk'
+      '200':
+        $ref: '../components/responses.yaml#/OwnerListingOk'
+      '202':
+        $ref: '../components/responses.yaml#/Processing'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+listing:
+  get:
+    operationId: api032GetListing
+    tags: [listings]
+    summary: تفاصيل إعلان
+    description: الإعلان المخفي أو المحذوف يرجع 404 عاماً. المباع يظهر بحالته مع تعطيل التفاوض (UC04).
+    x-spec-ids: [API032, FR13, TC05, TC31]
+    x-access: public
+    security: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ListingDetailOk'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  patch:
+    operationId: api035UpdateListing
+    tags: [listings]
+    summary: تعديل إعلان نشط ظاهر
+    description: >-
+      لصاحب الإعلان فقط. تغيير السعر يلغي العروض المعلّقة بالسبب price_changed، وجعله مجانياً
+      أو غير قابل للتفاوض يلغيها بالسبب made_free_or_fixed (BR41، الفصل 06).
+    x-spec-ids: [API035, FR23, BR27, BR41, TC10, TC35]
+    x-access: resource_owner
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ListingPatch'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OwnerListingOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+myListings:
+  get:
+    operationId: api033ListMyListings
+    tags: [listings]
+    summary: إعلاناتي حسب الحالة
+    x-spec-ids: [API033, FR23, FR24]
+    x-access: member
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/ListingStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OwnerListingPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+listingTransition:
+  post:
+    operationId: api036TransitionListing
+    tags: [listings]
+    summary: تحديد كمباع أو أرشفة أو استرجاع
+    description: >-
+      المباع لا يرجع نشطاً أبداً، والاسترجاع خلال 90 يوماً للأرشفة من حالة نشطة فقط،
+      والمالك لا يرفع الإخفاء الإداري (BR27، TC34، TC35). الأرشفة والبيع يلغيان العروض المعلّقة.
+    x-spec-ids: [API036, FR24, BR27, BR28, DEC09, TC34, TC35]
+    x-access: resource_owner
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ListingTransition'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OwnerListingOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+myFavorites:
+  get:
+    operationId: api048ListMyFavorites
+    tags: [favorites]
+    summary: المفضلة
+    x-spec-ids: [API048, FR15, TC06]
+    x-access: member
+    parameters:
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/FavoritePage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+favorite:
+  put:
+    operationId: api049SaveFavorite
+    tags: [favorites]
+    summary: حفظ إعلان في المفضلة
+    description: الحفظ المكرر لا يضيف سجلاً ثانياً (TC06).
+    x-spec-ids: [API049, FR15, TC06]
+    x-access: member
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/ListingId'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  delete:
+    operationId: api050RemoveFavorite
+    tags: [favorites]
+    summary: إزالة إعلان من المفضلة
+    description: الإزالة المكررة تنجح أيضاً (TC06).
+    x-spec-ids: [API050, FR15, TC06]
+    x-access: member
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/ListingId'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'

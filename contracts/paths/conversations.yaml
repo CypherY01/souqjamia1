@@ -1,0 +1,442 @@
+# المحادثات والرسائل والعروض واللقاءات والحظر.
+# الكتابة تتبع ترتيب الأقفال في الفصل 07، والأحداث الفورية تُنشر بعد نجاح المعاملة فقط (contracts/realtime.md).
+
+conversations:
+  get:
+    operationId: api052ListConversations
+    tags: [conversations]
+    summary: صندوق المحادثات
+    description: عدد المحادثات منفصل عن عدد الرسائل الواردة غير المقروءة (FR30).
+    x-spec-ids: [API052, FR30, BR31, TC39]
+    x-access: member
+    parameters:
+      - $ref: '../components/parameters.yaml#/Query'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ConversationPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+  post:
+    operationId: api051StartConversation
+    tags: [conversations]
+    summary: بدء محادثة على إعلان أو طلب، أو استرجاع الموجودة
+    description: >-
+      محادثة واحدة لكل سياق وزوج مشترٍ وبائع، ولو تكررت المحاولة (FR29، BR29). الأدوار يحددها الخادم.
+      في الإعلان المشتري هو المتصل، وفي الطلب المشتري هو صاحب الطلب. لا يراسل العضو نفسه.
+      استرجاع محادثة موجودة لا يُحسب في RL06.
+    x-spec-ids: [API051, FR29, FR62, BR29, BR30, DEC10, TC12]
+    x-access: member
+    x-rate-limit: [RL06]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ConversationCreateInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/ConversationOk'
+      '200':
+        $ref: '../components/responses.yaml#/ConversationOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+conversation:
+  get:
+    operationId: api053GetConversation
+    tags: [conversations]
+    summary: المحادثة وسياقها وإمكانيات الواجهة
+    description: السياق لا يتغير بعد الإنشاء، وتُعرض حالته الحالية (FR28، DEC11).
+    x-spec-ids: [API053, FR28, FR32, FR42, TC12]
+    x-access: participant
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ConversationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+messages:
+  get:
+    operationId: api054ListMessages
+    tags: [conversations]
+    summary: الرسائل مرتبة بالتسلسل
+    description: >-
+      after_seq أو before_seq وليس الاثنان. هذا أيضاً مسار استرجاع الفجوات بعد انقطاع Realtime (FR40).
+    x-spec-ids: [API054, FR31, FR40, FR64, TC12, TC39, TC42]
+    x-access: participant
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - name: after_seq
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/Seq'
+      - name: before_seq
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/Seq'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MessagePage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  post:
+    operationId: api055SendMessage
+    tags: [conversations]
+    summary: إرسال رسالة نصية أو بصور
+    description: >-
+      تُحفظ الرسالة والتسلسل والحدث في معاملة واحدة. نفس client_message_id يرجع نفس الرسالة
+      بلا تكرار (TC13، TC40). الحظر في أي اتجاه يمنع الرسائل الجديدة (BR30).
+    x-spec-ids: [API055, FR31, FR41, FR69, BR30, DEC14, DEC21, TC12, TC13, TC40]
+    x-access: participant
+    x-rate-limit: [RL07]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/MessageInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/MessageSavedOk'
+      '200':
+        $ref: '../components/responses.yaml#/MessageSavedOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+read:
+  post:
+    operationId: api056MarkRead
+    tags: [conversations]
+    summary: تحديث مؤشر القراءة
+    description: >-
+      يُحفظ الأكبر بين المؤشر السابق والجديد، ولا يتجاوز آخر رسالة ملتزمة (FR64، BR31).
+    x-spec-ids: [API056, FR64, BR31, DEC13, TC39]
+    x-access: participant
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ReadInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ReadOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+offersCreate:
+  post:
+    operationId: api057SendOffer
+    tags: [offers]
+    summary: إرسال عرض سعر
+    description: >-
+      للمشتري في سياق نشط بسعر موجب قابل للتفاوض أو ميزانية طلب موجبة (FR33). عرض معلّق واحد
+      لكل محادثة كقيد في القاعدة (BR33)، وينتهي بعد 72 ساعة.
+    x-spec-ids: [API057, FR33, FR34, FR42, BR09, BR30, BR33, DEC15, TC14, TC43, TC73]
+    x-access: participant
+    x-rate-limit: [RL08]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/OfferInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/OfferOk'
+      '200':
+        $ref: '../components/responses.yaml#/OfferOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+offer:
+  patch:
+    operationId: api058DecideOffer
+    tags: [offers]
+    summary: قبول عرض أو رفضه أو سحبه
+    description: >-
+      البائع المستلم وحده يقبل أو يرفض، والمرسل يسحب قبل القرار. القبول اتفاق مبدئي ولا يحجز الغرض
+      (FR36). التعارض أو الانتهاء يرجع 409 (TC15، TC44).
+    x-spec-ids: [API058, FR35, FR36, FR65, BR12, BR13, TC15, TC44, TC45]
+    x-access: participant
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/OfferAction'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OfferOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+myOffers:
+  get:
+    operationId: api113ListMyOffers
+    tags: [offers]
+    summary: عروضي المرسلة أو المستلمة
+    x-spec-ids: [API113, FR34, FR35]
+    x-access: member
+    parameters:
+      - name: role
+        in: query
+        required: true
+        schema:
+          type: string
+          enum: [sent, received]
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/OfferStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/OfferPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+meetupsCreate:
+  post:
+    operationId: api059ProposeMeetup
+    tags: [meetups]
+    summary: اقتراح لقاء
+    description: >-
+      نقطة لقاء مقترحة أو نص حر قصير (DEC28). الموعد بعد 30 دقيقة إلى 30 يوماً، يُخزَّن UTC
+      ويُعرض بتوقيت الرياض (BR14). إعادة الجدولة اقتراح جديد مرتبط بالسابق (BR34).
+      أربعة لقاءات مستقبلية غير ملغاة كحد أقصى لكل محادثة (RL08).
+    x-spec-ids: [API059, FR37, FR38, FR42, BR10, BR14, BR34, DEC15, DEC28, TC16, TC46]
+    x-access: participant
+    x-rate-limit: [RL08]
+    x-open-question: [9]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/MeetupInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/MeetupOk'
+      '200':
+        $ref: '../components/responses.yaml#/MeetupOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+meetup:
+  patch:
+    operationId: api060RespondToMeetup
+    tags: [meetups]
+    summary: قبول اقتراح لقاء أو رفضه أو إلغاؤه
+    description: >-
+      المستلم يقبل أو يرفض قبل الموعد. أي طرف يلغي المقترح أو المقبول، والإلغاء في الساعة الأخيرة
+      أو بعدها يُعلَّم متأخراً (BR34، TC47). الإلغاء مسموح حتى مع الحظر.
+    x-spec-ids: [API060, FR39, FR65, BR34, TC16, TC47]
+    x-access: participant
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/MeetupAction'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MeetupOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+block:
+  put:
+    operationId: api062BlockUser
+    tags: [blocks]
+    summary: حظر عضو تعرفه من سياق مسموح
+    description: >-
+      يمنع التواصل الجديد في الاتجاهين، ويلغي العروض المعلّقة واللقاءات المستقبلية بسبب مسجّل،
+      تحت أقفال الزوج المرتبة (BR30، FR79). لا يُشعَر المحظور. أثره على الصفقات بانتظار السؤال 4.
+    x-spec-ids: [API062, FR44, FR79, BR16, BR30, DEC12, TC17, TC45, TC49]
+    x-access: member
+    x-open-question: [4]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/UserId'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+  delete:
+    operationId: api063UnblockUser
+    tags: [blocks]
+    summary: رفع حظري فقط
+    description: لا يرفع حظر الطرف الآخر ولا يعيد ما أُلغي ولا يرفع قيداً إدارياً (FR63، TC49).
+    x-spec-ids: [API063, FR63, BR16, TC49]
+    x-access: member
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/UserId'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+myBlocks:
+  get:
+    operationId: api064ListMyBlocks
+    tags: [blocks]
+    summary: قائمة حظري الخاصة
+    x-spec-ids: [API064, FR63]
+    x-access: member
+    parameters:
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/BlockPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'

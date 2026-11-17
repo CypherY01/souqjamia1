@@ -1,0 +1,329 @@
+# الهوية والجلسات. كل التدفقات تمر عبر خادم Next.js الذي يستدعي Supabase Auth من الخادم (DEC35، DEC36).
+# عداداتنا RL01 وRL03 وRL14 طبقة إضافية على هذا المسار. الاستدعاء المباشر لـ Supabase Auth يحميه Turnstile وحدوده المدمجة.
+
+signup:
+  post:
+    operationId: api001Signup
+    tags: [auth]
+    summary: إنشاء حساب غير مؤكد وإرسال رابط التأكيد
+    description: >-
+      يسجل الإقرار بنسختي الشروط والخصوصية الحاليتين (API114). الرابط صالح ساعة (DEC37).
+      الرد 202 نفسه حتى لو كان البريد مستخدماً، بلا كشف للحساب (TC01).
+    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, BR24, TC01, TC26]
+    x-access: guest
+    x-rate-limit: [supabase_auth, turnstile]
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/SignupInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/Accepted'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+login:
+  post:
+    operationId: api002Login
+    tags: [auth]
+    summary: الدخول بالبريد وكلمة المرور
+    description: >-
+      ينشئ جلسة في كوكيز يديرها الخادم ويرجع مساراً محلياً مسموحاً فقط (TC02).
+      الفشل برسالة عامة. الحساب المقيّد أو بانتظار الحذف يُوجَّه لتدفقه المحدود (FR78).
+      أصحاب الأدوار الإدارية يكملون بـ API011.
+    x-spec-ids: [API002, FR02, FR78, BR21, DEC38, TC02, TC28]
+    x-access: guest
+    x-rate-limit: [RL01, supabase_auth, turnstile]
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/LoginInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/LoginOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+logout:
+  post:
+    operationId: api003Logout
+    tags: [auth]
+    summary: الخروج
+    description: يلغي الجلسة ويمسح كوكيزها، والعميل يغلق قنوات Realtime الخاصة (FR49، TC56).
+    x-spec-ids: [API003, FR49, TC56]
+    x-access: session
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+confirm:
+  post:
+    operationId: api004ConfirmSignup
+    tags: [auth]
+    summary: تأكيد البريد من صفحة الرابط
+    description: >-
+      صفحة الرابط بطلب GET تعرض زراً فقط، وهذا الطلب POST هو الذي يستهلك الرابط مرة واحدة،
+      حماية من ماسحات البريد (القسم 5). لا تُنشأ جلسة سوق، والتوجيه لصفحة الدخول.
+    x-spec-ids: [API004, FR57, BR21, DEC37, TC26]
+    x-access: guest
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/TokenInput'
+    responses:
+      '303':
+        $ref: '../components/responses.yaml#/LinkRedirect'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+resend:
+  post:
+    operationId: api005ResendLink
+    tags: [auth]
+    summary: إعادة إرسال رابط التأكيد
+    description: رد عام بلا كشف للحساب. مهلة 60 ثانية بين الإرسالين (RL03، DEC37).
+    x-spec-ids: [API005, FR57, DEC37, TC26]
+    x-access: guest
+    x-rate-limit: [RL03, supabase_auth, turnstile]
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ResendInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/Accepted'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+recovery:
+  post:
+    operationId: api006RequestRecovery
+    tags: [auth]
+    summary: طلب رابط استعادة كلمة المرور
+    description: رد عام بلا كشف للحساب. الرابط صالح ساعة ويُستهلك مرة (DEC37).
+    x-spec-ids: [API006, FR03, BR21, DEC37, TC03]
+    x-access: guest
+    x-rate-limit: [RL03, supabase_auth, turnstile]
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/EmailCaptchaInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/Accepted'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+recoveryVerify:
+  post:
+    operationId: api007VerifyRecovery
+    tags: [auth]
+    summary: استهلاك رابط الاستعادة
+    description: >-
+      ينشئ جلسة استعادة صالحة خمس دقائق لتغيير كلمة المرور فقط، بلا وصول للسوق أو المحادثات.
+      الخادم يفرض ذلك من مطالبة amr وتوقيتها (DEC38).
+    x-spec-ids: [API007, FR03, FR59, DEC37, DEC38, TC03]
+    x-access: guest
+    security:
+      - csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/TokenInput'
+    responses:
+      '303':
+        $ref: '../components/responses.yaml#/LinkRedirect'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+reset:
+  post:
+    operationId: api008ResetPassword
+    tags: [auth]
+    summary: تعيين كلمة مرور جديدة من جلسة الاستعادة
+    description: يغيّر كلمة المرور ويلغي كل الجلسات الأخرى (FR03، TC27).
+    x-spec-ids: [API008, FR03, FR59, DEC32, DEC38, TC03, TC27]
+    x-access: recovery
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ResetInput'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+reauth:
+  post:
+    operationId: api009Reauthenticate
+    tags: [auth]
+    summary: إعادة التحقق للعمليات الحساسة
+    description: >-
+      يفتح نافذة خمس دقائق تُقرأ من توقيت amr (DEC38). أصحاب الأدوار الإدارية
+      يرسلون رمز MFA أيضاً.
+    x-spec-ids: [API009, FR59, FR77, DEC38, TC27, TC28]
+    x-access: member
+    x-rate-limit: [RL01]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ReauthInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ReauthOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+mfaEnroll:
+  post:
+    operationId: api010EnrollMfa
+    tags: [auth]
+    summary: تسجيل عامل TOTP لصاحب دور إداري
+    description: >-
+      يستخدم MFA المدمج في Supabase (القسم 5) عبر خادمنا. العامل لا يُفعَّل قبل التحقق بـ API011.
+      MFA إلزامي للمالك والمشرف (DEC29).
+    x-spec-ids: [API010, FR77, DEC29, DEC35]
+    x-access: role_holder_reauth
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/MfaEnrollInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/MfaEnrollOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+
+mfaVerify:
+  post:
+    operationId: api011VerifyMfa
+    tags: [auth]
+    summary: التحقق برمز TOTP ورفع الجلسة إلى aal2
+    description: يعيد فحص حالة الحساب قبل أي وصول إداري (FR77).
+    x-spec-ids: [API011, FR77, DEC29, DEC38, TC28]
+    x-access: role_holder
+    x-rate-limit: [RL14, supabase_auth]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/MfaVerifyInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MfaVerifyOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+csrf:
+  get:
+    operationId: api013GetCsrfToken
+    tags: [auth]
+    summary: رمز CSRF للجلسة أو للزائر
+    description: الرد بلا تخزين مؤقت (no-store) ومرتبط بالجلسة أو بكوكي الزائر (SEC05).
+    x-spec-ids: [API013, SEC05, TC64]
+    x-access: public
+    security: []
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/CsrfOk'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'

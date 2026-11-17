@@ -1,0 +1,569 @@
+# لوحة الإدارة. دوران فقط هما المالك والمشرف، وMFA إلزامي لهما (DEC29).
+# كل تعديل إداري يحمل سبباً مسجّلاً ويُكتب معه سجل تدقيق في نفس المعاملة (BR11، BR36).
+# x-access: staff = مالك أو مشرف بجلسة aal2. platform_owner = دور المالك فقط. _reauth = مع إعادة تحقق خلال 5 دقائق.
+
+adminReports:
+  get:
+    operationId: api083ListReportCases
+    tags: [admin]
+    summary: طابور البلاغات
+    description: لا يوجد متصفح عام لمحادثات الأعضاء (الفصل 02).
+    x-spec-ids: [API083, FR54, FR67]
+    x-access: staff
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/ReportStatus'
+      - name: assigned
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [me, unassigned, any]
+          default: any
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminReportPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+adminReport:
+  get:
+    operationId: api084GetReportCase
+    tags: [admin]
+    summary: قضية بلاغ مع أدلتها المحدودة
+    description: الوصول للأدلة يُسجَّل في التدقيق، ولا يفتح سجل المحادثة كاملاً (SEC09، TC76).
+    x-spec-ids: [API084, FR54, FR67, TC57, TC76]
+    x-access: staff
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminReportOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+reportAssign:
+  post:
+    operationId: api085AssignReportCase
+    tags: [admin]
+    summary: إسناد قضية لمراجع بلا تعارض مصالح
+    x-spec-ids: [API085, FR67]
+    x-access: platform_owner
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/AssignInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminReportOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+reportDecision:
+  post:
+    operationId: api086DecideReportCase
+    tags: [admin]
+    summary: قرار في قضية بلاغ
+    description: >-
+      القرار والإجراء والتدقيق والإشعار في معاملة واحدة. الحظر النهائي للمالك فقط (TC57).
+      إشعار المتأثر يذكر السبب وبريد التواصل للاعتراض اليدوي (القسم 3).
+    x-spec-ids: [API086, FR54, FR67, BR11, BR17, BR36, TC18, TC48, TC57]
+    x-access: staff_reauth
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ReportDecisionInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminReportOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+accounts:
+  get:
+    operationId: api087SearchAccounts
+    tags: [admin]
+    summary: بحث إداري في الحسابات
+    description: بلا تصدير جماعي للبريد أو المحادثات.
+    x-spec-ids: [API087, FR54, FR77]
+    x-access: platform_owner
+    parameters:
+      - $ref: '../components/parameters.yaml#/Query'
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/AccountStatus'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminAccountPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+accountAction:
+  post:
+    operationId: api088ActOnAccount
+    tags: [admin]
+    summary: تحذير أو إيقاف أو حظر حساب
+    description: >-
+      الإيقاف يمنع العمليات الخاصة فوراً ويخفي محتوى الحساب من الصفحات العامة (FR78).
+      الحظر ورفعه للمالك فقط. من يرفع الإيقاف بانتظار السؤال 18، وأثر التقييد على الصفقات بانتظار السؤال 4.
+    x-spec-ids: [API088, FR77, FR78, FR79, BR16, BR36, TC57, TC67]
+    x-access: staff_reauth
+    x-rate-limit: [RL12]
+    x-open-question: [4, 18, 22]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/AccountActionInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminAccountOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+adminListings:
+  get:
+    operationId: api089ListListingsForModeration
+    tags: [admin]
+    summary: الإعلانات وحالة الإخفاء
+    x-spec-ids: [API089, FR54]
+    x-access: staff
+    parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/ListingStatus'
+      - name: moderation
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [hidden, visible, any]
+          default: any
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/AdminListingPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+listingModeration:
+  post:
+    operationId: api090ModerateListing
+    tags: [admin]
+    summary: إخفاء إعلان أو إظهاره
+    description: >-
+      الإخفاء مستقل عن حالة الإعلان ويحفظها. يوقف العرض العام ويحذف النسخ العامة، والإظهار يعيد
+      توليدها من النسخة الخاصة (SEC08، TC35).
+    x-spec-ids: [API090, FR54, BR27, TC35]
+    x-access: staff_reauth
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ContentModerationInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ModerationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+wantedModeration:
+  post:
+    operationId: api116ModerateWanted
+    tags: [admin]
+    summary: إخفاء طلب شراء أو إظهاره
+    x-spec-ids: [API116]
+    x-access: staff
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ContentModerationInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ModerationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+reviewModeration:
+  post:
+    operationId: api117ModerateReview
+    tags: [admin]
+    summary: إخفاء تقييم أو إظهاره
+    description: يُعاد حساب المتوسط والعدد من التقييمات الظاهرة فقط (TC51، TC80).
+    x-spec-ids: [API117, TC51, TC80]
+    x-access: staff
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ContentModerationInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ModerationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+profileModeration:
+  post:
+    operationId: api118ModerateProfile
+    tags: [admin]
+    summary: إعادة تعيين اسم مسيء أو إزالة صورة شخصية
+    x-spec-ids: [API118]
+    x-access: staff
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/ProfileModerationInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/ModerationOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+
+catalogKind:
+  get:
+    operationId: api094ListCatalogEntries
+    tags: [admin, catalog]
+    summary: عناصر نوع مرجعي
+    description: صلاحيات مدير القوائم مدمجة في المالك (DEC29). النوع meeting_point بدل location (DEC28).
+    x-spec-ids: [API094, FR55, DEC28, DEC29]
+    x-access: platform_owner
+    parameters:
+      - $ref: '../components/parameters.yaml#/CatalogKindPath'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/CatalogEntryList'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+  post:
+    operationId: api095CreateCatalogEntry
+    tags: [admin, catalog]
+    summary: إضافة عنصر مرجعي
+    description: يرفض التسميات المكررة بعد التطبيع (UC24، TC61).
+    x-spec-ids: [API095, FR55, TC61]
+    x-access: platform_owner
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/CatalogKindPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/CatalogEntryInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/CatalogEntryOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+catalogEntry:
+  patch:
+    operationId: api096UpdateCatalogEntry
+    tags: [admin, catalog]
+    summary: تعديل عنصر مرجعي أو تعطيله
+    description: العنصر المستخدم يُعطَّل ولا يُحذف، والسجلات القديمة تبقى مفهومة (FR55، TC80).
+    x-spec-ids: [API096, FR55, TC61, TC80]
+    x-access: platform_owner
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/CatalogKindPath'
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/CatalogEntryPatch'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/CatalogEntryOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+roles:
+  get:
+    operationId: api100ListRoleGrants
+    tags: [admin]
+    summary: منح الأدوار الحالية وسجلها
+    x-spec-ids: [API100, FR77, DEC29]
+    x-access: platform_owner
+    parameters:
+      - name: user_id
+        in: query
+        required: false
+        schema:
+          $ref: '../components/schemas.yaml#/Uuid'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/RoleGrantList'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+roleGrant:
+  put:
+    operationId: api101GrantRole
+    tags: [admin]
+    summary: منح دور
+    description: المالك وحده يمنح الأدوار، ولا يمنح المشرف أدواراً (DEC29، SEC02، TC57).
+    x-spec-ids: [API101, FR77, DEC29, SEC02, TC57]
+    x-access: platform_owner_reauth
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/UserId'
+      - $ref: '../components/parameters.yaml#/RolePath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/RoleChangeInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/RoleGrantOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+  delete:
+    operationId: api102RevokeRole
+    tags: [admin]
+    summary: سحب دور
+    description: يحمي آخر مالك نشط، ويُبطل الجلسات الإدارية القديمة (SEC02، TC67).
+    x-spec-ids: [API102, FR77, SEC02, TC67]
+    x-access: platform_owner_reauth
+    x-rate-limit: [RL12]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/UserId'
+      - $ref: '../components/parameters.yaml#/RolePath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/RoleChangeInput'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+metrics:
+  get:
+    operationId: api103GetMetrics
+    tags: [admin]
+    summary: مؤشرات مجمّعة
+    x-spec-ids: [API103, FR54]
+    x-access: platform_owner
+    parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          $ref: '../components/schemas.yaml#/Timestamp'
+      - name: to
+        in: query
+        required: true
+        schema:
+          $ref: '../components/schemas.yaml#/Timestamp'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MetricsOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'

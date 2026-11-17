@@ -1,0 +1,144 @@
+# رفع الصور ومعالجتها والوصول الخاص (SEC08).
+
+uploadsAuthorize:
+  post:
+    operationId: api037AuthorizeUpload
+    tags: [media]
+    summary: إذن رفع صورة إلى الحجر
+    description: >-
+      يحجز الحصة قبل الإذن (RL09). الغرض chat يتطلب context_id لمحادثة يشارك فيها العضو.
+      الغرض student_card لا تُشتق منه مقاسات عامة (القسم 4.1).
+    x-spec-ids: [API037, FR17, FR61, FR69, DEC08, DEC27, SEC08, TC66, TC75]
+    x-access: member
+    x-rate-limit: [RL09]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/UploadAuthorizeInput'
+    responses:
+      '201':
+        $ref: '../components/responses.yaml#/UploadAuthorizationOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+uploadComplete:
+  post:
+    operationId: api038CompleteUpload
+    tags: [media]
+    summary: إعلان انتهاء الرفع وبدء الفحص
+    description: العامل يفحص البايتات الفعلية ويحذف البيانات الوصفية ويولد المقاسات (FR61، TC32).
+    x-spec-ids: [API038, FR61, SEC08, TC32]
+    x-access: resource_owner
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/UploadCompleteInput'
+    responses:
+      '202':
+        $ref: '../components/responses.yaml#/UploadOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+
+upload:
+  get:
+    operationId: api039GetUpload
+    tags: [media]
+    summary: حالة الرفع والمعالجة
+    description: سبب الرفض آمن للعرض، ويختلف عن النتائج الفارغة (FR80).
+    x-spec-ids: [API039, FR80]
+    x-access: resource_owner
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/UploadOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+  delete:
+    operationId: api040DeleteUpload
+    tags: [media]
+    summary: حذف صورة مؤقتة غير مرتبطة
+    description: لا يحذف مرفقاً تاريخياً أو صورة إعلان منشور.
+    x-spec-ids: [API040, FR61, FR73]
+    x-access: resource_owner
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'
+
+mediaAccess:
+  post:
+    operationId: api041GetPrivateMediaLink
+    tags: [media]
+    summary: رابط خاص قصير العمر لصورة محادثة أو بطاقة جامعية
+    description: >-
+      صور المحادثة لطرفيها فقط بعد إعادة التحقق من العضوية. صور البطاقة للمشرف والمالك فقط،
+      وكل وصول لها يُسجَّل في التدقيق (DEC27، TC86). الرابط صالح 60 ثانية كحد أقصى.
+      دعم صور البطاقة توسعة في العقد (السؤال 20).
+    x-spec-ids: [API041, FR69, BR26, DEC21, DEC27, TC41, TC86]
+    x-access: participant_or_staff
+    x-open-question: [20]
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Id'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/MediaAccessInput'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/MediaAccessOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'

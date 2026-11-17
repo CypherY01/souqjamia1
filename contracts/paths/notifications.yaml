@@ -1,0 +1,61 @@
+# الإشعارات داخل الموقع. البريد يرسله العامل حسب SEC11 والتفضيلات، ولا يحمل نص المحادثات.
+
+notifications:
+  get:
+    operationId: api078ListNotifications
+    tags: [notifications]
+    summary: إشعاراتي
+    x-spec-ids: [API078, FR48, BR38, TC20]
+    x-access: member
+    parameters:
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/Limit'
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/NotificationPage'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+  patch:
+    operationId: api079MarkNotificationsRead
+    tags: [notifications]
+    summary: تعليم إشعارات كمقروءة
+    description: يغيّر إشعارات المستلم فقط، والمعرّفات الأخرى تُتجاهل بلا كشف (TC20).
+    x-spec-ids: [API079, FR48, TC20]
+    x-access: member
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/NotificationsReadInput'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+
+unreadCount:
+  get:
+    operationId: api115GetUnreadNotificationCount
+    tags: [notifications]
+    summary: عدد الإشعارات غير المقروءة لشارة الشريط العلوي
+    x-spec-ids: [API115, FR48]
+    x-access: member
+    responses:
+      '200':
+        $ref: '../components/responses.yaml#/UnreadCountOk'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
