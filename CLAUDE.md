@@ -12,7 +12,7 @@ An Arabic-first, responsive web marketplace where university students **and othe
 
 ## Sources of truth (in order of precedence)
 
-1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC35, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
+1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC38, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
 2. **`docs/spec-v3-en.md`** (English): full specification v3.0. Canonical for identifiers, field names, limits, error codes and tests.
 3. The Arabic edition of v3 is **not** in this repo on purpose. It contains hidden U+200E marks and six known translation errors. Never copy values from it.
 
@@ -79,6 +79,10 @@ docs            specs (this folder is read-only reference)
 **Security**
 - Deny by default. RLS is enabled on **every** table.
 - `anon` and `authenticated` have **no direct INSERT/UPDATE/DELETE** on business tables. Business writes go through **Postgres functions** called from Next.js server code. Each function re-checks session, ownership, block state and account state.
+- Write functions live in the **non-exposed `app` schema**, with EXECUTE revoked from `PUBLIC`, `anon` and `authenticated`. Only Next.js calls them, over a direct Postgres connection with a dedicated role that has no BYPASSRLS, passing the verified identity with transaction-local `set_config`. Quotas, idempotency and state checks stay inside the functions. The browser uses Supabase only for RLS-protected reads and Realtime (DEC36).
+- No market writes until the member has acknowledged the current terms and privacy versions. Signup uses Turnstile CAPTCHA and Supabase Auth's built-in rate limits instead of RL02 (DEC36).
+- All auth email links are valid for **1 hour** and single-use (DEC37).
+- JWT lifetime is 10 minutes. Admin (8 h / 30 min idle), recovery (5 min) and reauthentication (5 min) limits are enforced in Next.js from the `aal` and `amr` claims and their timestamps (DEC38).
 - Never trust client-sent `seller_id`, `buyer_id`, `role`, `status`, badge or rating fields. Derive them on the server.
 - `service_role` key: worker and server-only code. **Never in the browser bundle.**
 - Every browser mutation carries CSRF protection and an Origin check (SEC05). No state change on GET.
