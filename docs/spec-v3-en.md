@@ -1,4 +1,4 @@
-> **Status:** Canonical technical reference (v3.0, English edition). It is **amended by [`addendum-v3.1.md`](addendum-v3.1.md)**, which takes precedence wherever the two differ. Converted from `SouqJamia_Developer_Specification_EN_v3.docx`; figures are in `spec-assets/media/`.
+> **Status:** Canonical technical reference (v3.0, English edition). It is **amended by [`addendum-v3.1.md`](addendum-v3.1.md)**, which takes precedence wherever the two differ. Converted from `SouqJamia_Developer_Specification_EN_v3.docx`; figures are the `imageN.png` files in this folder.
 
 A consolidated specification for a responsive Arabic and English campus marketplace. It defines first-release behavior, constraints, failure handling and operations and links them to implementable data, services and acceptance tests.
 
@@ -87,7 +87,7 @@ The inspection did not create a test account, message, listing, report or review
 | R3          | AI image-based description suggestions, an approved campus map, paid promotion or an advanced reputation model.    | Product, privacy and cost decisions before design; not automatically adopted from a reference proposal. |
 
 # 02 User experience, screens and design system
-![Figure 1 Public pages, member areas and administration. An asterisk indicates that an eligible session is required.](spec-assets/media/image1.png)
+![Figure 1 Public pages, member areas and administration. An asterisk indicates that an eligible session is required.](image1.png)
 
 Figure 1 Public pages, member areas and administration. An asterisk indicates that an eligible session is required.
 
@@ -150,15 +150,15 @@ Desktop Arabic places the conversation list beside the chat pane; mobile opens t
 
 A message shows Sending, Saved or Failed with a retry that uses the same identifier. The offer dialog shows reference and proposed amounts; the meeting dialog shows location, date, time and optional note. Dialogs restore focus to their trigger on close and explain invalid or disabled actions.
 
-![Supplied reference screenshots for image upload and item specifications. New-product validation is defined by the specification, not inferred solely from the image.](spec-assets/media/image2.png)
+![Supplied reference screenshots for image upload and item specifications. New-product validation is defined by the specification, not inferred solely from the image.](image2.png)
 
 Supplied reference screenshots for image upload and item specifications. New-product validation is defined by the specification, not inferred solely from the image.
 
-![Supplied reference screenshots for image upload and item specifications. New-product validation is defined by the specification, not inferred solely from the image.](spec-assets/media/image3.png)
+![Supplied reference screenshots for image upload and item specifications. New-product validation is defined by the specification, not inferred solely from the image.](image3.png)
 
 Supplied reference screenshots for image upload and item specifications. New-product validation is defined by the specification, not inferred solely from the image.
 
-![Supplied offer and meeting dialogs. Original Arabic UI screenshots are retained in both editions as reference evidence.](spec-assets/media/image4.png) ![Supplied offer and meeting dialogs. Original Arabic UI screenshots are retained in both editions as reference evidence.](spec-assets/media/image5.png)
+![Supplied offer and meeting dialogs. Original Arabic UI screenshots are retained in both editions as reference evidence.](image4.png) ![Supplied offer and meeting dialogs. Original Arabic UI screenshots are retained in both editions as reference evidence.](image5.png)
 
 Supplied offer and meeting dialogs. Original Arabic UI screenshots are retained in both editions as reference evidence.
 
@@ -428,15 +428,15 @@ FR01-FR80 identifiers remain stable for traceability. Evidence codes describe th
 # 05 Use cases and alternative flows
 An actor is a role in the situation, not a permanent account type; one member may buy in one conversation and sell in another. Authentication is a precondition of private behavior rather than a repeated include call from every case. Each case specifies actor, prerequisites, steps, alternatives and outcome. \[R01\]
 
-![Figure 2 Account, discovery, favorites and identity use cases.](spec-assets/media/image6.png)
+![Figure 2 Account, discovery, favorites and identity use cases.](image6.png)
 
 Figure 2 Account, discovery, favorites and identity use cases.
 
-![Figure 3 Publication, wanted, conversation, negotiation and exchange use cases.](spec-assets/media/image7.png)
+![Figure 3 Publication, wanted, conversation, negotiation and exchange use cases.](image7.png)
 
 Figure 3 Publication, wanted, conversation, negotiation and exchange use cases.
 
-![Figure 4 Safety, administration, notification and contribution use cases.](spec-assets/media/image8.png)
+![Figure 4 Safety, administration, notification and contribution use cases.](image8.png)
 
 Figure 4 Safety, administration, notification and contribution use cases.
 
@@ -897,23 +897,23 @@ Enforce these rules on the server and use database constraints where the invaria
 | BR40   | Account deletion has a 30 day recovery period. Retention is bounded; evidence holds need a documented reason and monthly review.                                                                                        |
 
 ## Publishing a listing
-![Figure 5 Publication activity from media processing to review and commit. Back navigation preserves eligible inputs and publication revalidates everything.](spec-assets/media/image9.png)
+![Figure 5 Publication activity from media processing to review and commit. Back navigation preserves eligible inputs and publication revalidates everything.](image9.png)
 
 Figure 5 Publication activity from media processing to review and commit. Back navigation preserves eligible inputs and publication revalidates everything.
 
 ## Listing and archive lifecycle
-![Figure 6 Active-origin and sold-origin archives are distinct. Restore neither lifts administrative hiding nor returns sold content to active.](spec-assets/media/image10.png)
+![Figure 6 Active-origin and sold-origin archives are distinct. Restore neither lifts administrative hiding nor returns sold content to active.](image10.png)
 
 Figure 6 Active-origin and sold-origin archives are distinct. Restore neither lifts administrative hiding nor returns sold content to active.
 
 Sold content remains visible for 180 days and then archives. Archived content is retained for 365 days before purge, subject to a scoped evidence hold. The 90 day restore window applies only to an owner archive of an active listing, not permanent deletion. If a retained conversation or Deal needs a reference, keep a minimal pseudonymous identifier and remove purged description and image snapshots.
 
 ## Offer and wanted request lifecycles
-![Figure 7 One pending offer per conversation with conditional version and expiry checks. Acceptance is a preliminary price agreement, not a reservation.](spec-assets/media/image11.png)
+![Figure 7 One pending offer per conversation with conditional version and expiry checks. Acceptance is a preliminary price agreement, not a reservation.](image11.png)
 
 Figure 7 One pending offer per conversation with conditional version and expiry checks. Acceptance is a preliminary price agreement, not a reservation.
 
-![Figure 8 Initial 60 day expiry and one reopening limited by both closure time and the absolute 90 day lifetime.](spec-assets/media/image12.png)
+![Figure 8 Initial 60 day expiry and one reopening limited by both closure time and the absolute 90 day lifetime.](image12.png)
 
 Figure 8 Initial 60 day expiry and one reopening limited by both closure time and the absolute 90 day lifetime.
 
@@ -922,7 +922,7 @@ On reopening, expiry is the earlier of reopen time plus 30 days and creation tim
 An offer preserves the reference price or budget at submission while the context card shows the current amount. Context closure cancels pending offers and unanswered meeting proposals but preserves accepted meetings and cancellation rights. Making a listing free or non-negotiable, or removing or zeroing a request budget, cancels pending offers with a reason. Blocking also cancels future accepted meetings.
 
 ## Meeting and attendance declarations
-![Figure 9 Decide a proposal before its time. Attendance is a separate per-party record and never completes an exchange.](spec-assets/media/image13.png)
+![Figure 9 Decide a proposal before its time. Attendance is a separate per-party record and never completes an exchange.](image13.png)
 
 Figure 9 Decide a proposal before its time. Attendance is a separate per-party record and never completes an exchange.
 
@@ -931,7 +931,7 @@ Rescheduling creates a new proposal linked to the original rather than silently 
 Cancellation is late during the hour before the scheduled time or later. Within 72 hours after an accepted or late-cancelled meeting, a participant may declare their own attendance once. They cannot declare for the other party or edit the declaration. A complaint is reviewed as a report, not automatic proof of misconduct.
 
 ## Account restrictions and deletion
-![Figure 10 Administrative restrictions and deletion are independent dimensions. Recovery does not lift a ban or confirm email.](spec-assets/media/image14.png)
+![Figure 10 Administrative restrictions and deletion are independent dimensions. Recovery does not lift a ban or confirm email.](image14.png)
 
 Figure 10 Administrative restrictions and deletion are independent dimensions. Recovery does not lift a ban or confirm email.
 
@@ -940,7 +940,7 @@ An unconfirmed account can browse public content and resend confirmation but can
 Public queries exclude content owned by a restricted or deletion-pending account as well as archived or hidden content. This does not change business state; lifting a restriction cannot restore separately moderated or purged content. An eligible active participant can still read history when the other party is restricted. Reading checks the reader and membership; new communication checks both parties.
 
 ## Exchange review and dispute lifecycle
-![Figure 11 The seller starts and confirms their handover; the buyer confirms independently. A dispute preserves history and does not prove an external payment refund.](spec-assets/media/image15.png)
+![Figure 11 The seller starts and confirms their handover; the buyer confirms independently. A dispute preserves history and does not prove an external payment refund.](image15.png)
 
 Figure 11 The seller starts and confirms their handover; the buyer confirms independently. A dispute preserves history and does not prove an external payment refund.
 
@@ -955,22 +955,22 @@ A member block does not prevent confirmation of a pre-existing Deal if both acco
 # 07 Architecture integration and concurrency
 R1 uses one modular application for the interface and its services, plus a separate worker for media, notifications, reconciliation and retention. The defined scope does not require separate microservices. Pin a supported Next.js release and compatible Node LTS runtime; Next.js 16 was supported when this choice was reviewed. \[R19\]
 
-![Figure 12 UI, BFF session boundary, domain modules, storage and worker responsibilities. Dashed arrows are component dependencies, not event order.](spec-assets/media/image16.png)
+![Figure 12 UI, BFF session boundary, domain modules, storage and worker responsibilities. Dashed arrows are component dependencies, not event order.](image16.png)
 
 Figure 12 UI, BFF session boundary, domain modules, storage and worker responsibilities. Dashed arrows are component dependencies, not event order.
 
 Railway hosts a persistent Node process and WebSocket connections with a separate worker. Supabase supplies authentication, Postgres and storage, Resend sends email, and a payment adapter creates hosted Moyasar invoices. The adapter keeps provider details out of listing and conversation logic; this is the new product architecture, not a change performed on the reference site. \[R20\]
 
-![Figure 13 Production nodes, execution environments, connections and secret boundaries. Actual domains and service accounts are launch prerequisites.](spec-assets/media/image17.png)
+![Figure 13 Production nodes, execution environments, connections and secret boundaries. Actual domains and service accounts are launch prerequisites.](image17.png)
 
 Figure 13 Production nodes, execution environments, connections and secret boundaries. Actual domains and service accounts are launch prerequisites.
 
 ## Data flow and system boundary
-![Figure 14 Member, administrator, payment and email data flows. Card details do not enter the application.](spec-assets/media/image18.png)
+![Figure 14 Member, administrator, payment and email data flows. Card details do not enter the application.](image18.png)
 
 Figure 14 Member, administrator, payment and email data flows. Card details do not enter the application.
 
-![Figure 15 Identity, market, communication, safety and contribution processes, their stores and external entities.](spec-assets/media/image19.png)
+![Figure 15 Identity, market, communication, safety and contribution processes, their stores and external entities.](image19.png)
 
 Figure 15 Identity, market, communication, safety and contribution processes, their stores and external entities.
 
@@ -981,7 +981,7 @@ Messaging, blocking, closure and account enforcement use one lock order: account
 
 Allocate message_seq while holding the conversation lock, and commit message, optional structured card and outbox event together. Offer acceptance fails if state, version or expiry no longer matches. Return 409 for state conflicts; retry transient transaction failures at most three times with short backoff and the same request key. Never blindly repeat an unknown financial side effect.
 
-![Figure 16 Offer and decision sequence after authorization, followed by notification from the committed event.](spec-assets/media/image20.png)
+![Figure 16 Offer and decision sequence after authorization, followed by notification from the committed event.](image20.png)
 
 Figure 16 Offer and decision sequence after authorization, followed by notification from the committed event.
 
@@ -1020,27 +1020,27 @@ docs API, decisions, acceptance records
 # 08 Data model and field dictionary
 Separate login identity from the profile that can be pseudonymized so deleting provider identity does not erase retained history or break Deal references. Diagrams show principal relationships; the dictionary and invariants complete the omitted fields. These are design definitions; production requires actual migrations and constraint tests.
 
-![Figure 17 Identity, sessions, roles and mailbox verification relationships.](spec-assets/media/image21.png)
+![Figure 17 Identity, sessions, roles and mailbox verification relationships.](image21.png)
 
 Figure 17 Identity, sessions, roles and mailbox verification relationships.
 
-![Figure 18 Market, wanted, media and favorites relationships.](spec-assets/media/image22.png)
+![Figure 18 Market, wanted, media and favorites relationships.](image22.png)
 
 Figure 18 Market, wanted, media and favorites relationships.
 
-![Figure 19 Conversation, message, offer, meeting and attendance relationships.](spec-assets/media/image23.png)
+![Figure 19 Conversation, message, offer, meeting and attendance relationships.](image23.png)
 
 Figure 19 Conversation, message, offer, meeting and attendance relationships.
 
-![Figure 20 Deal, review, report, action, appeal and block relationships.](spec-assets/media/image24.png)
+![Figure 20 Deal, review, report, action, appeal and block relationships.](image24.png)
 
 Figure 20 Deal, review, report, action, appeal and block relationships.
 
-![Figure 21 Contribution, provider event, notification and preference relationships.](spec-assets/media/image25.png)
+![Figure 21 Contribution, provider event, notification and preference relationships.](image25.png)
 
 Figure 21 Contribution, provider event, notification and preference relationships.
 
-![Figure 22 Operational records with functional dependencies; dashed arrows are not foreign keys.](spec-assets/media/image26.png)
+![Figure 22 Operational records with functional dependencies; dashed arrows are not foreign keys.](image26.png)
 
 Figure 22 Operational records with functional dependencies; dashed arrows are not foreign keys.
 
@@ -1988,7 +1988,7 @@ Return 429 with Retry-After and a clear message on quota exhaustion. If a sensit
 This version uses fixed UTC-aligned windows for each minute, hour, day or stated interval, with atomic increment and expiry. Retry-After is the remaining seconds to the window end; the 60 second email cooldown is independent. Test adjacent-window boundaries and review values after workload measurement. Changing the algorithm or period requires updating the policy and tests.
 
 ## SEC08 Images and chat attachments
-![Figure 23 Private quarantine processing, context binding and publication of authorized derivatives only.](spec-assets/media/image27.png)
+![Figure 23 Private quarantine processing, context binding and publication of authorized derivatives only.](image27.png)
 
 Figure 23 Private quarantine processing, context binding and publication of authorized derivatives only.
 
@@ -2015,7 +2015,7 @@ Targets may be listing, wanted, conversation, message, review or user, provided 
 Filing does not automatically punish or notify the accused. Notify an affected member after an actual action, with a concise reason and 14 day appeal. The original decision maker cannot review their own appeal; absent an independent reviewer, keep it pending with escalation. An overturn records the reversed action and reason without removing unrelated restrictions.
 
 ## SEC10 Contributions and financial verification
-![Figure 24 Create a server-controlled contribution and redirect to hosted checkout without card data entering the application.](spec-assets/media/image28.png)
+![Figure 24 Create a server-controlled contribution and redirect to hosted checkout without card data entering the application.](image28.png)
 
 Figure 24 Create a server-controlled contribution and redirect to hosted checkout without card data entering the application.
 
@@ -2023,7 +2023,7 @@ Create an SAR invoice for 1,000-50,000 halalas with expired_at set to a full UTC
 
 If creation times out with an unknown outcome, retain creating_unknown and stop blind retries. Reconcile the reference through provider facilities or manual review; do not assume the Payment API’s given_id supplies Invoice idempotency. A failed return or back action does not prove no collection occurred. \[R17\]
 
-![Figure 25 Durably receive an event, then independently retrieve payment and invoice state before committing its effect.](spec-assets/media/image29.png)
+![Figure 25 Durably receive an event, then independently retrieve payment and invoice state before committing its effect.](image29.png)
 
 Figure 25 Durably receive an event, then independently retrieve payment and invoice state before committing its effect.
 
@@ -2155,7 +2155,7 @@ Changes pass code review, type checks, unit/integration/authorization tests and 
 ## Risk assessment and review
 Score likelihood and impact from 1 to 3 and multiply them. Scores 1-2 are low, 3-4 medium and 6-9 high. These are initial project judgments, not statistics about the reference site. Each risk remains open until treatment has evidence; residual scores are targets, not verified results.
 
-![Figure 26 Initial risk matrix by likelihood and impact, with risk identifiers in the corresponding cells.](spec-assets/media/image30.png)
+![Figure 26 Initial risk matrix by likelihood and impact, with risk identifiers in the corresponding cells.](image30.png)
 
 Figure 26 Initial risk matrix by likelihood and impact, with risk identifiers in the corresponding cells.
 
