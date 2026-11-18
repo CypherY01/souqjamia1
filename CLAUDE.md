@@ -130,7 +130,13 @@ pnpm test                    # unit tests (Vitest)
 pnpm build                   # production build of the web app
 pnpm format:check            # Prettier check (pnpm format to fix)
 pnpm contract:lint           # Redocly lint of contracts/openapi.yaml
+pnpm check:contract-ids      # API001-API118: each in paths once, or in x-phase1-excluded
+pnpm check:bundle            # after build: no secrets in browser-facing output (SEC06)
+pnpm secrets:scan            # gitleaks over the whole git history, via Docker (SEC06)
 ```
+
+- CI (`.github/workflows/ci.yml`) runs all of the above on every push, plus actionlint on the workflow. Actions are pinned by commit SHA and Docker images by digest.
+- Never commit a secret-like string, not even in tests: build fake keys at run time (see `tests/unit/check-client-bundle.test.ts`). gitleaks runs over every commit, and GitHub push protection is on.
 
 - Versions live in the `catalog` in `pnpm-workspace.yaml`, pinned exactly. pnpm refuses any release younger than 14 days (`minimumReleaseAge`) and blocks dependency install scripts unless listed in `allowBuilds` (version policy in `plan/task-1.2.md`).
 - The worker and the workspace packages are TypeScript run directly by Node (type stripping), so they have no build step. Use only erasable TypeScript syntax (no `enum`, no `namespace`, no constructor parameter properties); `erasableSyntaxOnly` in `tsconfig.base.json` makes `pnpm typecheck` reject them in every package. Write relative imports with the `.ts` extension.
