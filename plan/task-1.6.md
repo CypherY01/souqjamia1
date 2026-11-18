@@ -293,4 +293,5 @@
      - خطوة تثبيت المتصفح أخذت 466 و505 ثانية في تشغيلين، و21 ثانية في تشغيل آخر.
      - صار المتصفح محفوظاً حسب إصدار Playwright، ومكتبات النظام في خطوة منفصلة فيظهر زمن كل جزء.
      - أول تشغيل بعده ([44393777077](https://github.com/CypherY01/souqjamia1/actions/runs/44393777077)) حفظ المتصفح، وأخذت مهمة E2E فيه 70 ثانية.
-- **CI أخضر** على الفرع في التشغيلين [44390009946](https://github.com/CypherY01/souqjamia1/actions/runs/44390009946) و[44393777077](https://github.com/CypherY01/souqjamia1/actions/runs/44393777077).
+     - **التشغيل الثاني كشف السبب الحقيقي** ([44394269871](https://github.com/CypherY01/souqjamia1/actions/runs/44394269871)): استرجع المتصفح من الحفظ في 4 ثوانٍ وتخطّى التنزيل، لكن خطوة مكتبات النظام (apt) أخذت 455 ثانية. فالبطء من apt لا من تنزيل المتصفح، والحفظ وحده لا يحله. الخيارات في «ملاحظات للجلسة القادمة» في `plan/phase-1.md`.
+- **CI أخضر** على الفرع في التشغيلات [44390009946](https://github.com/CypherY01/souqjamia1/actions/runs/44390009946) و[44393777077](https://github.com/CypherY01/souqjamia1/actions/runs/44393777077) و[44394269871](https://github.com/CypherY01/souqjamia1/actions/runs/44394269871).
