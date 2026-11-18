@@ -1,5 +1,23 @@
 {
   "name": "@souq/db",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "emails:build": "node scripts/build-email-templates.ts",
+    "emails:check": "node scripts/build-email-templates.ts --check",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@souq/i18n": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "supabase": "catalog:",
+    "typescript": "catalog:"
+  }
 }

@@ -1,8 +1,10 @@
 // DEC30: Arabic only in Phase 1. Every UI string goes through a key here, so English can be
 // added later without rewriting screens. Task 1.5 extends this with formatting helpers.
 import common from "./ar/common.json" with { type: "json" };
+// Supabase Auth email templates are generated from these keys (packages/db, task 1.4).
+import email from "./ar/email.json" with { type: "json" };
 
-const messages = { common } as const;
+const messages = { common, email } as const;
 
 type Leaves<T, Prefix extends string = ""> = {
   [K in keyof T & string]: T[K] extends string ? `${Prefix}${K}` : Leaves<T[K], `${Prefix}${K}.`>;

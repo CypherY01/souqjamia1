@@ -67,6 +67,11 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          # The build requires the public Supabase values (OPS05, apps/web/next.config.ts).
+          # CI only checks that the bundle builds, so these are public placeholders, not keys.
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
 
       - name: No secrets in browser-facing build output (SEC06)
         run: pnpm check:bundle

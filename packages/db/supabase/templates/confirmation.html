@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>أكّد بريدك في سوق الجامعة</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #FAF9F5">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAF9F5">
+      <tr>
+        <td align="center" style="padding: 24px 16px">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: #FFFFFF; border: 1px solid #E5E1D6; border-radius: 12px">
+            <tr>
+              <td dir="rtl" style="padding: 32px 24px; font-family: Tahoma, 'Segoe UI', Arial, sans-serif; color: #06241B; text-align: right; line-height: 1.7">
+                <p style="margin: 0 0 8px; font-size: 14px; font-weight: bold; color: #0B3B2D">سوق الجامعة</p>
+                <h1 style="margin: 0 0 16px; font-size: 22px">أكّد بريدك</h1>
+                <p style="margin: 0 0 24px; font-size: 16px">اضغط الزر لتأكيد بريدك في سوق الجامعة.</p>
+                <p style="margin: 0 0 24px">
+                  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}" style="display: inline-block; padding: 12px 24px; border-radius: 8px; background-color: #0B3B2D; color: #FFFFFF; font-size: 16px; font-weight: bold; text-decoration: none">تأكيد البريد</a>
+                </p>
+                <p style="margin: 0 0 8px; font-size: 14px">الرابط صالح ساعة واحدة، ويُستخدم مرة واحدة فقط.</p>
+                <p style="margin: 0 0 8px; font-size: 13px; color: #4B5563">إذا لم يعمل الزر، انسخ هذا الرابط إلى المتصفح:</p>
+                <p dir="ltr" style="margin: 0 0 24px; font-size: 13px; text-align: left; word-break: break-all"><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}" style="color: #0B3B2D">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}</a></p>
+                <p style="margin: 0; font-size: 13px; color: #4B5563">إذا لم تنشئ حساباً في سوق الجامعة، فتجاهل هذه الرسالة.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

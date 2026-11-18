@@ -20,6 +20,8 @@ if (import.meta.main) {
     "--config",
     "/repo/.gitleaks.toml",
     "--redact",
+    // With --redact, --verbose prints the file, line, commit and rule of each finding, not the value.
+    "--verbose",
     "--no-banner",
     "--exit-code",
     "1",

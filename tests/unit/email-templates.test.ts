@@ -1,0 +1,40 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { t } from "@souq/i18n";
+import {
+  EMAIL_TEMPLATES,
+  renderEmailTemplate,
+  TEMPLATES_DIR,
+  type EmailTemplateName,
+} from "../../packages/db/scripts/build-email-templates.ts";
+
+const names = Object.keys(EMAIL_TEMPLATES) as EmailTemplateName[];
+
+describe("Supabase Auth email templates (DEC30, DEC37, SEC03)", () => {
+  it.each(names)("%s.html is up to date with packages/i18n", (name) => {
+    const committed = readFileSync(join(TEMPLATES_DIR, `${name}.html`), "utf8");
+    expect(committed).toBe(renderEmailTemplate(name));
+  });
+
+  it.each(names)("%s is Arabic RTL and links to its page with token_hash", (name) => {
+    const html = renderEmailTemplate(name);
+    expect(html).toContain('<html lang="ar" dir="rtl">');
+    expect(html).toContain(
+      `href="{{ .SiteURL }}${EMAIL_TEMPLATES[name]}?token_hash={{ .TokenHash }}"`,
+    );
+    expect(html).toContain(t(`email.${name}.heading`));
+    expect(html).toContain(t("email.common.validity"));
+  });
+
+  it.each(names)("%s loads no external resources and sets no-referrer", (name) => {
+    const html = renderEmailTemplate(name);
+    expect(html).not.toMatch(/<(img|script|link|iframe)\b/i);
+    expect(html).not.toMatch(/https?:\/\//);
+    expect(html).toContain('<meta name="referrer" content="no-referrer" />');
+  });
+
+  it("keeps the confirmation template for when DEC63 is reversed", () => {
+    expect(names).toContain("confirmation");
+  });
+});

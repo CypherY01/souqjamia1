@@ -6,3 +6,4 @@ contracts/
 **/.next/
 **/coverage/
 **/next-env.d.ts
+packages/db/supabase/templates/

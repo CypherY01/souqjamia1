@@ -1,0 +1,1 @@
+-- Local seed data (task 2.3). Clearly fake fixtures only, never real people or campus names.
