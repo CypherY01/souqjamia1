@@ -27,6 +27,21 @@ describe("Supabase Auth email templates (DEC30, DEC37, SEC03)", () => {
     expect(html).toContain(t("email.common.validity"));
   });
 
+  it.each(names)("DEC65: %s carries the line for people who did not sign up", (name) => {
+    const html = renderEmailTemplate(name);
+    expect(t("email.common.notRegistered")).toBe("إذا لم تسجّل في سوق الجامعة، تجاهل هذه الرسالة.");
+    expect(html).toContain(t("email.common.notRegistered"));
+  });
+
+  it("SEC03: recovery and email change keep their own notice above the DEC65 line", () => {
+    for (const name of ["recovery", "email_change"] as const) {
+      const html = renderEmailTemplate(name);
+      const own = html.indexOf(t(`email.${name}.notRequested`));
+      expect(own).toBeGreaterThan(-1);
+      expect(own).toBeLessThan(html.indexOf(t("email.common.notRegistered")));
+    }
+  });
+
   it.each(names)("%s loads no external resources and sets no-referrer", (name) => {
     const html = renderEmailTemplate(name);
     expect(html).not.toMatch(/<(img|script|link|iframe)\b/i);

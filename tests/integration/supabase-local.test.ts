@@ -114,5 +114,21 @@ describe("local Supabase Auth (task 1.4)", () => {
     };
     expect(full.HTML).toContain('dir="rtl"');
     expect(full.HTML).toMatch(/http:\/\/localhost:3000\/auth\/recover\?token_hash=[0-9a-f]+/);
+    expect(full.HTML).toContain(t("email.common.notRegistered"));
+  });
+
+  it("DEC64: a second signup with a used email is refused, with no session", async () => {
+    const address = email();
+    const body = {
+      email: address,
+      password: PASSWORD,
+      gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
+    };
+    expect((await auth("/signup", body)).status).toBe(200);
+    const again = await auth("/signup", body);
+    expect(again.status).toBe(422);
+    const result = (await again.json()) as { error_code?: string; access_token?: string };
+    expect(result.error_code).toBe("user_already_exists");
+    expect(result.access_token).toBeUndefined();
   });
 });

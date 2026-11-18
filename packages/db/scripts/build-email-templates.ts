@@ -1,4 +1,4 @@
-// Supabase Auth email templates (task 1.4: DEC30, DEC37, DEC63, SEC03).
+// Supabase Auth email templates (task 1.4: DEC30, DEC37, DEC63, DEC65, SEC03).
 // The Arabic text comes from packages/i18n (no hard-coded UI strings), so the HTML files in
 // supabase/templates are generated, never edited by hand.
 //   node scripts/build-email-templates.ts           write the files
@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { t } from "@souq/i18n";
+import { t, type MessageKey } from "@souq/i18n";
 
 /** Supabase template name -> the app page that consumes the link (plan/screens.md). */
 export const EMAIL_TEMPLATES = {
@@ -18,6 +18,16 @@ export const EMAIL_TEMPLATES = {
 } as const;
 
 export type EmailTemplateName = keyof typeof EMAIL_TEMPLATES;
+
+/**
+ * A notice specific to the template, shown above the DEC65 line. The confirmation template has
+ * none: its notice was "ignore this if you did not sign up", which the DEC65 line already says.
+ */
+const OWN_NOTICE: Record<EmailTemplateName, MessageKey | null> = {
+  confirmation: null,
+  recovery: "email.recovery.notRequested",
+  email_change: "email.email_change.notRequested",
+};
 
 export const TEMPLATES_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -50,11 +60,18 @@ export function renderEmailTemplate(name: EmailTemplateName): string {
     heading: escapeHtml(t(`email.${name}.heading`)),
     body: escapeHtml(t(`email.${name}.body`)),
     button: escapeHtml(t(`email.${name}.button`)),
-    notRequested: escapeHtml(t(`email.${name}.notRequested`)),
     validity: escapeHtml(t("email.common.validity")),
     linkHint: escapeHtml(t("email.common.linkHint")),
     appName: escapeHtml(t("common.app.name")),
   };
+  // DEC65: every email ends with the line for people who did not sign up.
+  const ownNotice = OWN_NOTICE[name];
+  const notices = [...(ownNotice ? [t(ownNotice)] : []), t("email.common.notRegistered")]
+    .map(
+      (notice) =>
+        `                <p style="margin: 0 0 8px; font-size: 13px; color: ${color.muted}">${escapeHtml(notice)}</p>`,
+    )
+    .join("\n");
   // Go template placeholders filled in by Supabase Auth. The page shows a button and only its
   // POST consumes the link, so mail scanners cannot use it (section 5 of the addendum).
   const link = `{{ .SiteURL }}${EMAIL_TEMPLATES[name]}?token_hash={{ .TokenHash }}`;
@@ -83,7 +100,7 @@ export function renderEmailTemplate(name: EmailTemplateName): string {
                 <p style="margin: 0 0 8px; font-size: 14px">${text.validity}</p>
                 <p style="margin: 0 0 8px; font-size: 13px; color: ${color.muted}">${text.linkHint}</p>
                 <p dir="ltr" style="margin: 0 0 24px; font-size: 13px; text-align: left; word-break: break-all"><a href="${link}" style="color: ${color.primary}">${link}</a></p>
-                <p style="margin: 0; font-size: 13px; color: ${color.muted}">${text.notRequested}</p>
+${notices}
               </td>
             </tr>
           </table>
