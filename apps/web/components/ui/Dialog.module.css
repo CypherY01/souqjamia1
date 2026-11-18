@@ -1,0 +1,29 @@
+.dialog {
+  inline-size: min(32rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: var(--space-5);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-container);
+  background-color: var(--color-card);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background-color: rgb(6 36 27 / 60%);
+}
+
+.title {
+  font-size: var(--text-xl);
+}
+
+.body {
+  margin-block-end: var(--space-5);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-start;
+}

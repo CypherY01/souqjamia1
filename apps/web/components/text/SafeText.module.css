@@ -1,0 +1,9 @@
+/* Member text keeps its line breaks, and long URLs wrap instead of widening the page (NFR01). */
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  overflow-wrap: anywhere;
+}

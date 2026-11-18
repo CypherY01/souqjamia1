@@ -1,0 +1,126 @@
+.header {
+  border-block-end: 1px solid var(--color-divider);
+  background-color: var(--color-card);
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+}
+
+.logo {
+  order: 1;
+  color: var(--color-primary);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.search {
+  order: 3;
+  display: flex;
+  flex-basis: 100%;
+  gap: var(--space-2);
+}
+
+.searchInput {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: var(--target-size);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-card);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target-size);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1.5rem;
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-danger);
+  color: var(--color-on-danger);
+  font-size: var(--text-sm);
+}
+
+.memberName {
+  margin: 0;
+  font-weight: 700;
+}
+
+.memberCollege {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.menuList {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.menuList a {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--target-size);
+}
+
+@media (min-width: 64rem) {
+  .inner {
+    flex-wrap: nowrap;
+  }
+
+  .search {
+    order: 2;
+    flex: 1 1 18rem;
+  }
+
+  .links {
+    flex-direction: row;
+    gap: var(--space-4);
+  }
+
+  .actions {
+    flex-wrap: nowrap;
+    padding-block: 0;
+  }
+}

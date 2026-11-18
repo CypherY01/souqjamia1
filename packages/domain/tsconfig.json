@@ -1,4 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Domain code runs on the server and in the browser; DOM types give the shared web globals
+    // (URL). It must not touch document or window: everything here is pure functions.
+    "lib": ["ES2024", "DOM"]
+  },
   "include": ["src"]
 }

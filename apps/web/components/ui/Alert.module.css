@@ -1,0 +1,66 @@
+.alert {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  margin-block-end: var(--space-4);
+  border: 1px solid var(--color-divider);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-card);
+  color: var(--color-text);
+}
+
+.icon {
+  flex: none;
+  padding-block-start: 0.15rem;
+}
+
+.title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.body > :last-child {
+  margin-block-end: 0;
+}
+
+.info {
+  background-color: var(--color-subtle-gold);
+  border-inline-start-color: var(--color-primary);
+}
+
+.info .icon {
+  color: var(--color-primary);
+}
+
+.success {
+  background-color: var(--color-subtle-green);
+  border-inline-start-color: var(--color-primary);
+}
+
+.success .icon,
+.success .title {
+  color: var(--color-primary);
+}
+
+.warning,
+.safety {
+  background-color: var(--color-warning-bg);
+  border-inline-start-color: var(--color-warning-text);
+}
+
+.warning .icon,
+.warning .title,
+.safety .icon,
+.safety .title {
+  color: var(--color-warning-text);
+}
+
+.danger {
+  background-color: var(--color-card);
+  border-inline-start-color: var(--color-danger);
+}
+
+.danger .icon,
+.danger .title {
+  color: var(--color-danger);
+}

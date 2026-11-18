@@ -1,0 +1,70 @@
+/*
+ * Design tokens (v3 chapter 02, DEC59, task 1.5). The only place colors, radii and the type
+ * scale are defined; components use these variables, never raw values.
+ * tests/unit/design-tokens.test.ts checks the contrast of every text/background pair in use.
+ */
+:root {
+  /* Brand */
+  --color-primary: #0b3b2d;
+  --color-on-primary: #ffffff;
+  --color-surface-dark: #06241b;
+  --color-on-surface-dark: #ffffff;
+  /* Gold: a background with dark text only. As text on white it is 2.6:1 (task 1.5). */
+  --color-accent: #c59b27;
+  --color-on-accent: #06241b;
+
+  /* Surfaces */
+  --color-page: #faf9f5;
+  --color-card: #ffffff;
+  --color-subtle-green: #eaf2ee;
+  --color-subtle-gold: #f5efe0;
+
+  /* Status */
+  --color-warning-bg: #fef9e7;
+  --color-warning-text: #8a4b08;
+  --color-danger: #dc2626;
+  --color-on-danger: #ffffff;
+
+  /* Text */
+  --color-text: #111827;
+  --color-text-muted: #4b5563;
+
+  /* Lines. Owner decision on task 1.5, item 4: controls and every interactive boundary use
+     --color-control-border (4.8:1); --color-divider is for decorative separators only. */
+  --color-control-border: #6b7280;
+  --color-divider: #e5e7eb;
+
+  /* Focus: a 3px ring in the primary color, white on dark surfaces. */
+  --color-focus: var(--color-primary);
+  --focus-ring-width: 3px;
+
+  /* Radii: controls, cards, containers, pills. */
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-container: 24px;
+  --radius-pill: 9999px;
+
+  /* Spacing (4px steps). */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* Type scale: support, body, headings. */
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --leading-body: 1.7;
+  --leading-heading: 1.35;
+
+  /* Primary actions: at least 44px (chapter 02). */
+  --target-size: 44px;
+  --content-max: 1200px;
+}

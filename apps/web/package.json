@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@souq/domain": "workspace:*",
     "@souq/i18n": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",

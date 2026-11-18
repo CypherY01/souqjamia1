@@ -1,0 +1,72 @@
+.root {
+  position: relative;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target-size);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-card);
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panel {
+  display: none;
+}
+
+.root[data-open="true"] > .panel {
+  display: block;
+}
+
+/* Account menu: a dropdown under its button. */
+.account > .panel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 20;
+  min-inline-size: 15rem;
+  padding: var(--space-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+/*
+ * Main menu (site header only). Its button and panel join the header's flex row, so on small
+ * screens the button sits beside the logo and the panel opens as a full-width row below the
+ * search. On wide screens the panel is always visible and the button is hidden.
+ */
+.menu {
+  display: contents;
+}
+
+.menu > .toggle {
+  order: 2;
+  margin-inline-start: auto;
+}
+
+.menu > .panel {
+  order: 4;
+  flex-basis: 100%;
+}
+
+@media (min-width: 64rem) {
+  .menu > .toggle {
+    display: none;
+  }
+
+  .menu > .panel,
+  .menu[data-open="true"] > .panel {
+    display: flex;
+    order: 3;
+    flex-basis: auto;
+    align-items: center;
+    gap: var(--space-4);
+  }
+}

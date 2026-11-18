@@ -1,0 +1,51 @@
+.footer {
+  margin-block-start: auto;
+  background-color: var(--color-surface-dark);
+  color: var(--color-on-surface-dark);
+  /* On the dark surface the focus ring is white (16.5:1). */
+  --color-focus: var(--color-on-surface-dark);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-5);
+  max-inline-size: var(--content-max);
+  margin-inline: auto;
+  padding-block: var(--space-6);
+  padding-inline: var(--space-4);
+}
+
+.heading {
+  margin-block-end: var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.about p {
+  margin: 0;
+  max-inline-size: 36rem;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-5);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list a {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--target-size);
+  color: var(--color-on-surface-dark);
+}
+
+@media (min-width: 48rem) {
+  .inner {
+    grid-template-columns: 2fr 3fr;
+  }
+}
