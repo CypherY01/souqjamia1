@@ -1,0 +1,5 @@
+# gitleaks configuration (SEC06, task 1.3): the default rules, with no exceptions.
+# Any allowlist entry added here needs a written reason and the owner's approval.
+
+[extend]
+useDefault = true

@@ -16,7 +16,10 @@
     "build": "pnpm --filter @souq/web build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "contract:lint": "redocly lint contracts/openapi.yaml --config contracts/redocly.yaml"
+    "contract:lint": "redocly lint contracts/openapi.yaml --config contracts/redocly.yaml",
+    "check:contract-ids": "redocly bundle contracts/openapi.yaml --ext json | node scripts/check-contract-ids.ts",
+    "check:bundle": "node scripts/check-client-bundle.ts",
+    "secrets:scan": "node scripts/secrets-scan.ts"
   },
   "devDependencies": {
     "@eslint/js": "catalog:",

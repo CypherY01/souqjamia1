@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - scripts
   - tests
 
 # Version policy (plan/task-1.2.md): exact versions only, newest stable release
