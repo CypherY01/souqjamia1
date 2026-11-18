@@ -145,7 +145,8 @@ WantedStatus:
 
 WantedClosedReason:
   type: string
-  enum: [owner, expired]
+  enum: [owner, expired, account_deletion]
+  description: account_deletion عند التنظيف النهائي لحساب محذوف (DEC61).
 
 OfferStatus:
   type: string
@@ -174,7 +175,8 @@ DealStatus:
 
 DealCancelReason:
   type: string
-  enum: [by_seller, by_buyer, timeout, blocked, account_restricted]
+  enum: [by_seller, by_buyer, timeout, account_restricted]
+  description: بلا blocked، لأن الحظر بين الأعضاء لا يلغي الصفقة (DEC39).
 
 ReportReason:
   type: string
@@ -2016,7 +2018,8 @@ EvidenceItem:
   required: [id, captured_at, content, message_seq, is_reported, media_ids]
   description: >-
     لقطة محدودة بالقضية فقط، والوصول لها يُسجَّل (SEC09). في البلاغ على رسالة: الرسالة
-    المبلّغ عنها مع صورها، وآخر 10 رسائل قبلها نصاً فقط (DEC43). الصور تُفتح عبر API041 بحقل report_id.
+    المبلّغ عنها مع صورها، وآخر 10 رسائل قبلها نصاً فقط (DEC43). في البلاغ على محادثة: آخر 10
+    رسائل مع صورها (DEC60). الصور تُفتح عبر API041 بحقل report_id.
   properties:
     id:
       $ref: '#/Uuid'
@@ -2031,10 +2034,14 @@ EvidenceItem:
       description: تسلسل الرسالة في المحادثة، وnull لغير الرسائل.
     is_reported:
       type: boolean
-      description: true للعنصر المبلّغ عنه نفسه، وfalse لرسائل السياق قبله.
+      description: >-
+        true للرسالة المبلّغ عنها في البلاغ على رسالة، وfalse لرسائل السياق قبلها.
+        في البلاغ على محادثة كلها false.
     media_ids:
       type: array
-      description: صور العنصر المبلّغ عنه فقط. فارغة لرسائل السياق.
+      description: >-
+        في البلاغ على رسالة: صور الرسالة المبلّغ عنها فقط، وفارغة لرسائل السياق.
+        في البلاغ على محادثة: صور كل رسالة.
       items:
         $ref: '#/Uuid'
 

@@ -1,8 +1,8 @@
 # عقد واجهة المرحلة الأولى
 
-الحالة: **معتمد من المالك** في 18 نوفمبر 2026 (المهمة 1.1 في `plan/phase-1.md`)، بشرط نجاح الفحص أدناه. القرارات DEC39 إلى DEC59 مطبقة فيه.
+الحالة: **معتمد من المالك** في 18 نوفمبر 2026 (المهمة 1.1 في `plan/phase-1.md`)، بشرط نجاح الفحص أدناه. القرارات DEC39 إلى DEC61 مطبقة فيه.
 
-المصادر بالترتيب: `docs/addendum-v3.1.md` حتى DEC59، ثم `docs/spec-v3-en.md`.
+المصادر بالترتيب: `docs/addendum-v3.1.md` حتى DEC61، ثم `docs/spec-v3-en.md`.
 
 ## الملفات
 
@@ -129,7 +129,9 @@ npx --yes @redocly/cli@2.72.1 lint contracts/openapi.yaml --config contracts/red
 13. **قائمة رموز الأخطاء جديدة**. v3 يذكر `STATE_CONFLICT` كمثال فقط.
 14. **قيم مختارة:** ترتيب السوق `newest` و`price_asc` و`price_desc`، وفلتر الإسناد في API083 `me` و`unassigned` و`any`، وأسماء أحداث Realtime، وترويسة `X-Probe-Token` لفحص الجاهزية.
 
-## إضافات بعد القرارات DEC39–DEC59 تحتاج اعتماد المالك
+## إضافات بعد القرارات DEC39–DEC59
+
+اعتمدها المالك في 18 نوفمبر 2026 مع DEC60 وDEC61.
 
 15. **صور أدلة البلاغ عبر API041** بحقل `report_id`، بنفس قيود صور البطاقة: للمالك والمشرف فقط، برابط 60 ثانية، ووصول مسجّل. وأُضيفت إلى `EvidenceItem` الحقول `message_seq` و`is_reported` و`media_ids` (DEC43).
 16. **قيم `MeetupCancelReason`:** `by_proposer` و`by_recipient` و`blocked` و`account_restricted`، مع حقل `Meetup.cancel_reason`. v3 لا يحدد سبباً لإلغاء اللقاء، فاشتُقت القيم من UC14 وUC16 وDEC39.
