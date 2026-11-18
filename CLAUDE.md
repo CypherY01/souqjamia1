@@ -93,7 +93,7 @@ docs            specs (read-only, except recording owner decisions, DEC48)
 - Never trust client-sent `seller_id`, `buyer_id`, `role`, `status`, badge or rating fields. Derive them on the server.
 - `service_role` key: worker and server-only code. **Never in the browser bundle.**
 - Every browser mutation carries CSRF protection and an Origin check (SEC05). No state change on GET.
-- Member text is rendered as escaped plain text. Only http/https URLs are linkified, with `rel="noopener noreferrer"`.
+- Member text is rendered as escaped plain text, always through `SafeText` (`apps/web/components/text/SafeText.tsx`). Only http/https URLs are linkified, with `rel="noopener noreferrer nofollow ugc"`, and bidi control characters are dropped for display (TC31).
 - Raw uploads are private and quarantined. The worker verifies real bytes, strips EXIF and generates 150/600/1200 px variants. Chat images and student-card photos are **never public**, and access to them goes through ≤ 60-second signed URLs after an authorization check.
 - Never log passwords, tokens, auth links, chat text or card images.
 
@@ -104,6 +104,11 @@ docs            specs (read-only, except recording owner decisions, DEC48)
 - **No hard-coded UI strings.** Every string goes through `packages/i18n` keys (Arabic only for now).
 - Target WCAG 2.2 AA: labels, visible focus, keyboard access, contrast, and never color alone.
 - Design tokens are in v3 chapter 02 (dark green `#0B3B2D`, gold accent `#C59B27`, cream surfaces). There is no designer and no mockups: build screens from the tokens and the shared components, following `plan/screens.md` (DEC59).
+- Colors, radii, spacing and type sizes come only from `apps/web/app/tokens.css`, as CSS variables in CSS Modules. Controls and every interactive boundary use `--color-control-border` (`#6B7280`); `#E5E7EB` is for decorative dividers only; gold is a background with dark text, never a text color. `tests/unit/design-tokens.test.ts` checks the contrast of every pair in use: add new pairs there.
+- Shared components live in `apps/web/components/ui` (buttons, fields, dialog, alerts, badges, states, `Num`/`Money`/`Price`/`DateText`). Add each new one to the `/dev/ui` gallery with all its states; the gallery returns 404 when `APP_ENV=production`.
+- Display numbers, money and dates only through the `@souq/i18n` format helpers or the `Display` components: `350 ريال`, `350.50 ريال` when there are halalas, a zero price is `مجاني`, Gregorian dates with Arabic month names, 12-hour time, `Asia/Riyadh`. Parse typed amounts with `parseAmount` from `@souq/domain` (no rounding).
+- Strings with placeholders use `t(key, { name: value })`. Format numbers before passing them.
+- Never put invisible or bidi control characters in source files; write them as escape sequences. `tests/unit/source-hygiene.test.ts` fails otherwise.
 - Every screen has distinct loading, empty, error and retry states.
 
 ## How to work in this repo
@@ -128,10 +133,12 @@ Requires Node 26.13.1 (`.nvmrc`) and pnpm 12.17.0. Run from the repository root.
 pnpm install                 # install from pnpm-lock.yaml (CI: --frozen-lockfile)
 pnpm dev                     # web app on http://localhost:3000
 pnpm dev:worker              # worker, restarts on change
-pnpm lint                    # ESLint, zero warnings allowed
+pnpm lint                    # ESLint, zero warnings allowed (also bans JSX text and left/right styles)
+pnpm check:css               # CSS files use logical properties only (RTL)
 pnpm typecheck               # tsc --noEmit in every package
 pnpm test                    # unit tests (Vitest)
 pnpm build                   # production build of the web app
+pnpm test:e2e                # after build: Playwright + axe at 360, 768 and 1440 px
 pnpm format:check            # Prettier check (pnpm format to fix)
 pnpm contract:lint           # Redocly lint of contracts/openapi.yaml
 pnpm check:contract-ids      # API001-API118: each in paths once, or in x-phase1-excluded
@@ -147,6 +154,7 @@ pnpm emails:check            # Auth email templates match packages/i18n
 - Supabase Auth settings live in `packages/db/supabase/config.toml`; `tests/unit/supabase-config.test.ts` pins the decision values. Email templates are generated from `packages/i18n/src/ar/email.json` with `pnpm --filter @souq/db emails:build`; never edit the HTML by hand.
 - Every build goes through `pnpm build`: it checks the `NEXT_PUBLIC_*` values, and the server checks the rest at start-up (OPS05).
 - CI (`.github/workflows/ci.yml`) runs all of the above except the `db:*`, `env:local` and integration commands on every push, plus actionlint on the workflow. Actions are pinned by commit SHA and Docker images by digest.
+- E2E runs `next start` on port 3100 against the last `pnpm build`. Install the browser once with `pnpm --filter @souq/tests exec playwright install --only-shell chromium`. axe-core skips longer Arabic text in its contrast rule (an icon-ligature heuristic), so contrast is guaranteed by the token test, not by axe.
 - Never commit a secret-like string, not even in tests: build fake keys at run time (see `tests/unit/check-client-bundle.test.ts`). gitleaks runs over every commit, and GitHub push protection is on.
 
 - Versions live in the `catalog` in `pnpm-workspace.yaml`, pinned exactly. pnpm refuses any release younger than 14 days (`minimumReleaseAge`) and blocks dependency install scripts unless listed in `allowBuilds` (version policy in `plan/task-1.2.md`).
