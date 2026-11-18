@@ -81,7 +81,9 @@ describe("SEC05 CSRF token bound to the session", () => {
     expect(verifyCsrfToken(SECRET, guest.binding, token)).toBe(true);
     expect(verifyCsrfToken(SECRET, issueGuestBinding().binding, token)).toBe(false);
     expect(verifyCsrfToken(OTHER_SECRET, guest.binding, token)).toBe(false);
-    expect(verifyCsrfToken(SECRET, guest.binding, `${token.slice(0, -1)}A`)).toBe(false);
+    // A different last character: plain "A" equalled the real one in 1 run out of 16.
+    const tampered = `${token.slice(0, -1)}${token.endsWith("A") ? "E" : "A"}`;
+    expect(verifyCsrfToken(SECRET, guest.binding, tampered)).toBe(false);
     expect(verifyCsrfToken(SECRET, guest.binding, null)).toBe(false);
     expect(verifyCsrfToken(SECRET, null, token)).toBe(false);
   });
