@@ -108,9 +108,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
 
-      # Installing the browser took up to 8.5 minutes in some runs. The browser is cached between
-      # runs, keyed by the Playwright version, so a version bump downloads it once again. The
-      # system libraries (apt) are installed in their own step, so each part's time shows.
+      # The browser is cached between runs, keyed by the Playwright version, so a version bump
+      # downloads it once again. There is no `playwright install-deps` (apt) step: it took up to
+      # 455 s in some runs, and the ubuntu-24.04 image already has Google Chrome's system
+      # libraries. If Chromium ever fails to start for a missing library, add that step back.
       - name: Playwright version (browser cache key)
         id: playwright
         run: echo "version=$(pnpm --filter @souq/tests exec playwright --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
@@ -125,9 +126,6 @@ jobs:
       - name: Download Chromium (cache miss only)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @souq/tests exec playwright install --only-shell chromium
-
-      - name: Install Chromium system libraries
-        run: pnpm --filter @souq/tests exec playwright install-deps chromium
 
       - name: E2E tests
         run: pnpm test:e2e
