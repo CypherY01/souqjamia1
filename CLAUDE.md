@@ -133,7 +133,7 @@ pnpm contract:lint           # Redocly lint of contracts/openapi.yaml
 ```
 
 - Versions live in the `catalog` in `pnpm-workspace.yaml`, pinned exactly. pnpm refuses any release younger than 14 days (`minimumReleaseAge`) and blocks dependency install scripts unless listed in `allowBuilds` (version policy in `plan/task-1.2.md`).
-- The worker and the workspace packages are TypeScript run directly by Node (type stripping), so they have no build step. Use only erasable TypeScript syntax (no `enum`, no `namespace`), and write relative imports with the `.ts` extension.
+- The worker and the workspace packages are TypeScript run directly by Node (type stripping), so they have no build step. Use only erasable TypeScript syntax (no `enum`, no `namespace`, no constructor parameter properties); `erasableSyntaxOnly` in `tsconfig.base.json` makes `pnpm typecheck` reject them in every package. Write relative imports with the `.ts` extension.
 - Database commands (migrate, reset, seed) arrive with task 1.4.
 
 ## Open items (ask the owner, don't assume)
