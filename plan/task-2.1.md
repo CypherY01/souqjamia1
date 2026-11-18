@@ -415,3 +415,7 @@ plan/phase-1.md                    حالة المهمة، ونقل الدوال
    - **القوائم:** القاعدة = `packages/domain` = العقد.
 4. **الفحوص الأخرى محلياً:** `format:check` و`lint` و`check:css` و`typecheck` و`test` (432) و`contract:lint` و`check:contract-ids` و`emails:check` و`check:migrations` و`check:supabase-images` و`build` و`check:bundle` و`test:e2e` (58) و`secrets:scan` (بلا تسريب).
 5. **الصور:** `images.lock.json` فيه بصمات الصور التسع العاملة محلياً، والفحص يطابقها.
+6. **CI أخضر** على الفرع في التشغيل [44411799154](https://github.com/CypherY01/souqjamia1/actions/runs/44411799154):
+   - **مهمة `integration` الجديدة: 97 ثانية،** منها 55 لتشغيل Supabase، و3 للاختبارات. تعمل بالتوازي، فلم يطل زمن CI الكلي.
+   - **بصمات الصور في CI طابقت `images.lock.json`** المولّد على جهازك، فالبصمة نفسها في المكانين.
+   - فحص الهجرات والفحوص السابقة كلها نجحت، وE2E في 46 ثانية.
