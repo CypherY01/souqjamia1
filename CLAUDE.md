@@ -137,14 +137,21 @@ pnpm contract:lint           # Redocly lint of contracts/openapi.yaml
 pnpm check:contract-ids      # API001-API118: each in paths once, or in x-phase1-excluded
 pnpm check:bundle            # after build: no secrets in browser-facing output (SEC06)
 pnpm secrets:scan            # gitleaks over the whole git history, via Docker (SEC06)
+pnpm db:start                # local Supabase in Docker (db:stop, db:status, db:reset)
+pnpm env:local               # write apps/web/.env.local and apps/worker/.env.local from it
+pnpm test:integration        # tests against the local stack (needs db:start)
+pnpm emails:check            # Auth email templates match packages/i18n
 ```
 
-- CI (`.github/workflows/ci.yml`) runs all of the above on every push, plus actionlint on the workflow. Actions are pinned by commit SHA and Docker images by digest.
+- Local run and review steps for the owner: `ops/runbooks/local-dev.md`. Local URLs: site 3000, Studio 54323, Mailpit 54324.
+- Supabase Auth settings live in `packages/db/supabase/config.toml`; `tests/unit/supabase-config.test.ts` pins the decision values. Email templates are generated from `packages/i18n/src/ar/email.json` with `pnpm --filter @souq/db emails:build`; never edit the HTML by hand.
+- Every build goes through `pnpm build`: it checks the `NEXT_PUBLIC_*` values, and the server checks the rest at start-up (OPS05).
+- CI (`.github/workflows/ci.yml`) runs all of the above except the `db:*`, `env:local` and integration commands on every push, plus actionlint on the workflow. Actions are pinned by commit SHA and Docker images by digest.
 - Never commit a secret-like string, not even in tests: build fake keys at run time (see `tests/unit/check-client-bundle.test.ts`). gitleaks runs over every commit, and GitHub push protection is on.
 
 - Versions live in the `catalog` in `pnpm-workspace.yaml`, pinned exactly. pnpm refuses any release younger than 14 days (`minimumReleaseAge`) and blocks dependency install scripts unless listed in `allowBuilds` (version policy in `plan/task-1.2.md`).
 - The worker and the workspace packages are TypeScript run directly by Node (type stripping), so they have no build step. Use only erasable TypeScript syntax (no `enum`, no `namespace`, no constructor parameter properties); `erasableSyntaxOnly` in `tsconfig.base.json` makes `pnpm typecheck` reject them in every package. Write relative imports with the `.ts` extension.
-- Database commands (migrate, reset, seed) arrive with task 1.4.
+- Migrations and seeds arrive with task 2.1 (`packages/db/supabase/migrations`, `seed.sql`); `pnpm db:reset` applies them.
 
 ## Open items (ask the owner, don't assume)
 

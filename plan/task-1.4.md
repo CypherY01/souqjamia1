@@ -208,3 +208,57 @@ ops/runbooks/environments.md         إنشاء البيئات وتطبيق ال
 7. **Railway CLI 5.71.0:** أثبّته على الجهاز بعد موافقتك. حزمته تحمل سكربت تثبيت ينزّل الأداة، فأتحقق من طريقة التثبيت وقت التنفيذ.
 
 **ترتيب العمل:** الجزء المحلي (Supabase والمتغيرات و`/healthz` والقوالب والاختبارات) لا يحتاج حسابات، فأبدأ به بعد اعتمادك. الجزء المستضاف ينتظر البنود 1 إلى 7.
+
+## التنفيذ: الجزء المحلي (18 نوفمبر 2026)
+
+### ما بُني
+
+| البند | الملفات |
+| --- | --- |
+| Supabase CLI 3.0.0 في `packages/db`، وأوامر `db:start` و`db:stop` و`db:status` و`db:reset` | `packages/db/package.json` |
+| إعدادات Auth بقيم القرارات، وكل قيمة معها رقم قرارها | `packages/db/supabase/config.toml` |
+| قوالب البريد العربية الثلاثة، مولّدة من مفاتيح الترجمة | `packages/i18n/src/ar/email.json`، `packages/db/scripts/build-email-templates.ts`، `packages/db/supabase/templates/*.html` |
+| التحقق من متغيرات البيئة بـ zod 4.6.7 | `apps/web/lib/env.ts`، `apps/web/instrumentation.ts`، `apps/web/next.config.ts`، `apps/worker/src/env.ts` |
+| `/healthz` (API105) | `apps/web/app/healthz/route.ts` |
+| كتابة `.env.local` المحلي من Supabase المحلي | `scripts/write-local-env.ts`، `scripts/local-supabase.ts` |
+| دليل التشغيل والمراجعة المحلية | `ops/runbooks/local-dev.md` |
+| الاختبارات | `tests/unit/{env,supabase-config,email-templates,write-local-env}.test.ts`، `tests/integration/supabase-local.test.ts` |
+
+### اختلافات عن الخطة
+
+- **قوالب البريد مولّدة من `packages/i18n`،** لا مكتوبة بالعربية مباشرة. السبب قاعدة «لا نصوص ثابتة» في `CLAUDE.md`. اختبار وحدة يفشل إذا اختلف ملف HTML عن مفاتيح الترجمة، أو اختلف عنوان الرسالة في `config.toml`.
+- **إعداد DEC63 الواحد:** مصدره المحلي `enable_confirmations` في `config.toml`، و`pnpm env:local` ينسخه إلى `EMAIL_CONFIRMATION_REQUIRED`. Supabase CLI لا يقرأ متغير التطبيق، فلا يمكن أن يكون الإعداد في مكان واحد حرفياً. في البيئة المستضافة لاحقاً تُضبط القيمتان معاً، وهذا مكتوب في دليل التشغيل.
+- **التحقق من المتغيرات العامة عند البناء** يعمل مع أمر `build` فقط، لأن `next typegen` (في `pnpm typecheck`) يحمّل الإعداد في نفس المرحلة. لذلك كل بناء يمر عبر `pnpm build`. وCI يبني بقيم عامة بديلة غير سرية.
+- **إعدادات إضافية في `config.toml`:**
+  - `auto_expose_new_tables = false`: لا صلاحيات افتراضية للجداول الجديدة.
+  - `secure_password_change = true`.
+  - إيقاف `analytics` و`storage.vector` غير المستخدمين.
+- **ملف `seed.sql`:** أُضيف فارغاً بتعليق، لأن Supabase CLI يبحث عنه. البيانات التجريبية في 2.3.
+
+### نتائج الفحص
+
+1. **الفحوص كلها نجحت:** `lint` و`typecheck` و`test` و`format:check` و`contract:lint` و`check:contract-ids` و`emails:check` و`build` و`check:bundle`.
+2. **اختبارات التكامل على Supabase المحلي:** خمسة نجحت.
+   - Auth يعمل.
+   - التسجيل يفتح جلسة فوراً بلا بريد تأكيد (DEC63).
+   - رمز الوصول صالح 600 ثانية (DEC38).
+   - التسجيل بلا رمز Turnstile يُرفض (DEC52).
+   - كلمة مرور من 7 أحرف تُرفض (DEC32).
+   - رسالة الاستعادة تصل Mailpit بعنوانها العربي، ورابطها `/auth/recover?token_hash=` (DEC37).
+3. **الموقع:** `next start` يعرض `<html lang="ar" dir="rtl">` و«سوق الجامعة». و`/healthz` يرجع `{"status":"ok"}` بالحالة 200 وترويسة `no-store`.
+4. **رفض التشغيل:**
+   - الموقع مع `APP_ENV=bogus` خرج بالرمز 1 ولم يستقبل طلباً، والرسالة تذكر `APP_ENV` بلا قيمته.
+   - العامل بلا `APP_ENV` خرج بالرمز 1 بسطر خطأ منظم.
+   - البناء بلا المتغيرات العامة فشل بأسمائها.
+5. **فحص البناء:** يفحص الآن ثلاثة أسماء متغيرات خادم من `.env.example`، ولم يجدها في ما يصل للمتصفح.
+6. **gitleaks قبل الرفع:** وجد في اختبار نصاً تجريبياً يشبه مفتاح JWT قديماً (القاعدة generic-api-key). الـ commit لم يكن مرفوعاً، فأُعيد بناؤه بعد استبدال النص بنص يُبنى وقت التشغيل، كما تقول قاعدة CLAUDE.md. وأُضيف `--verbose` لسكربت الفحص، فيظهر الملف والسطر والقاعدة بلا القيمة.
+
+### المراجعة المحلية
+
+خطوات التشغيل في `ops/runbooks/local-dev.md`.
+
+### بانتظار
+
+- CI على GitHub بعد رفع الفرع.
+- مراجعة المالك المحلية واعتماده.
+- الأسئلة 27 إلى 29 في `plan/phase-1.md`، وهي تلزم قبل المهام 3.2 و3.8، لا قبل دمج هذه المهمة.
