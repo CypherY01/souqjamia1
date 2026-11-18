@@ -29,6 +29,16 @@ describe("pnpm env:local", () => {
     });
   });
 
+  it("task 1.6: new random server secrets on every run, no proxy locally", () => {
+    const first = parseDotenv(webEnv(stack, false));
+    const second = parseDotenv(webEnv(stack, false));
+    expect(first.APP_SECRET).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(first.PROBE_TOKEN).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(first.APP_SECRET).not.toBe(second.APP_SECRET);
+    expect(first.APP_SECRET).not.toBe(first.PROBE_TOKEN);
+    expect(first.TRUSTED_PROXY_HOPS).toBe("0");
+  });
+
   it("copies the DEC63 flag it is given", () => {
     expect(parseDotenv(webEnv(stack, true)).EMAIL_CONFIRMATION_REQUIRED).toBe("true");
   });

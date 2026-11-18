@@ -8,6 +8,10 @@ const validWeb = {
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_localdevelopmentkey",
   EMAIL_CONFIRMATION_REQUIRED: "false",
+  // Task 1.6. Built at run time: the repository never contains a secret-like string.
+  APP_SECRET: "a".repeat(43),
+  PROBE_TOKEN: "b".repeat(43),
+  TRUSTED_PROXY_HOPS: "0",
 };
 
 function errorOf(fn: () => unknown): EnvError {
@@ -57,6 +61,10 @@ describe("OPS05 web environment", () => {
     ["NEXT_PUBLIC_SUPABASE_URL", "not a url"],
     ["NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", legacyAnonKey],
     ["EMAIL_CONFIRMATION_REQUIRED", "yes"],
+    ["APP_SECRET", "too-short"],
+    ["PROBE_TOKEN", ""],
+    ["TRUSTED_PROXY_HOPS", "-1"],
+    ["TRUSTED_PROXY_HOPS", "two"],
   ])("rejects %s", (name, value) => {
     expect(errorOf(() => loadServerEnv({ ...validWeb, [name]: value })).message).toContain(name);
   });

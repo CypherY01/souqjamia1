@@ -1,9 +1,15 @@
-// E2E tests (task 1.5): Chromium at the three widths of NFR01, right to left only (DEC47).
+// E2E tests (tasks 1.5 and 1.6): Chromium at the three widths of NFR01, right to left only (DEC47).
 // Runs against the production build: `pnpm build`, then `pnpm test:e2e` starts `next start`.
 // WebKit and Firefox join in task 8.4.
+import { randomBytes } from "node:crypto";
 import { defineConfig } from "@playwright/test";
 
 const PORT = 3100;
+
+// Server secrets for this run (task 1.6): random, set once in the main process; the test workers
+// inherit them, so tests can call /readyz with the probe token.
+process.env.E2E_APP_SECRET ??= randomBytes(32).toString("base64url");
+process.env.E2E_PROBE_TOKEN ??= randomBytes(32).toString("base64url");
 
 export default defineConfig({
   testDir: ".",
@@ -37,6 +43,9 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "e2e", "placeholder"].join("_"),
       EMAIL_CONFIRMATION_REQUIRED: "false",
+      APP_SECRET: process.env.E2E_APP_SECRET,
+      PROBE_TOKEN: process.env.E2E_PROBE_TOKEN,
+      TRUSTED_PROXY_HOPS: "0",
       NEXT_TELEMETRY_DISABLED: "1",
     },
   },

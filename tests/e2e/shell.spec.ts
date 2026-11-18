@@ -39,6 +39,29 @@ for (const { name, path } of PAGES) {
       ).toEqual([]);
     });
 
+    test("loads, hydrates and opens the menu without CSP violations (SEC06, task 1.6)", async ({
+      page,
+    }) => {
+      await page.addInitScript(() => {
+        const store = window as unknown as { cspViolations: string[] };
+        store.cspViolations = [];
+        document.addEventListener("securitypolicyviolation", (event) => {
+          store.cspViolations.push(`${event.violatedDirective} ${event.blockedURI}`);
+        });
+      });
+      await page.goto(path, { waitUntil: "load" });
+      // The menu opens only after hydration, so this also shows the scripts ran under the CSP.
+      const toggle = page.locator("header").first().getByRole("button", { name: "القائمة" });
+      if (await toggle.isVisible()) {
+        await toggle.click();
+        await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      }
+      const violations = await page.evaluate(
+        () => (window as unknown as { cspViolations: string[] }).cspViolations,
+      );
+      expect(violations).toEqual([]);
+    });
+
     test("has no contribution link and no language switch (DEC30, DEC31)", async ({ page }) => {
       await page.goto(path);
       await expect(page.locator('a[href*="contribut"], a[href*="support"]')).toHaveCount(0);
