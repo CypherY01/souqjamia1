@@ -20,6 +20,7 @@
     "db:stop": "pnpm --filter @souq/db db:stop",
     "db:status": "pnpm --filter @souq/db db:status",
     "db:reset": "pnpm --filter @souq/db db:reset",
+    "db:lint": "pnpm --filter @souq/db db:lint",
     "env:local": "node scripts/write-local-env.ts",
     "emails:check": "pnpm --filter @souq/db emails:check",
     "format": "prettier --write .",
@@ -28,6 +29,8 @@
     "check:contract-ids": "redocly bundle contracts/openapi.yaml --ext json | node scripts/check-contract-ids.ts",
     "check:bundle": "node scripts/check-client-bundle.ts",
     "check:css": "node scripts/check-logical-css.ts",
+    "check:migrations": "node scripts/check-migrations.ts",
+    "check:supabase-images": "node scripts/check-supabase-images.ts",
     "secrets:scan": "node scripts/secrets-scan.ts"
   },
   "devDependencies": {

@@ -1,0 +1,14 @@
+{
+  "comment": "Digests of the Docker images Supabase CLI 3.0.0 starts (task 2.1, item 9). CI fails if a running image differs. After a CLI upgrade: start the full stack, then pnpm check:supabase-images --write.",
+  "images": {
+    "public.ecr.aws/supabase/gotrue:v2.197.0": "sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b",
+    "public.ecr.aws/supabase/kong:2.8.1": "sha256:1b53405d8680a09d6f44494b7990bf7da2ea43f84a258c59717d4539abf09f6d",
+    "public.ecr.aws/supabase/mailpit:v1.31.3": "sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d",
+    "public.ecr.aws/supabase/postgres-meta:v0.100.0": "sha256:145325b7e39f8ef4931d6e8cfd3f6f4d655de09d72a2ccc96d9513542c2202bd",
+    "public.ecr.aws/supabase/postgres:17.11.0.011": "sha256:7bd84e6a1d5322c7b864b9751873a0ac50f48df3f20a776e88114eadb2948fc0",
+    "public.ecr.aws/supabase/postgrest:v16.5": "sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc",
+    "public.ecr.aws/supabase/realtime:v2.151.3": "sha256:dac44c958d0776144f0046ff0c0f8d51e0ff4f8a86c4a5e25287dd2f79fffa1e",
+    "public.ecr.aws/supabase/storage-api:v1.88.0": "sha256:dd4a100612635a8eb0d64387ddc38769fb30eb3ddd9b411d0fe3121e1cb223b3",
+    "public.ecr.aws/supabase/studio:2026.11.02-sha-a05e7ec": "sha256:727a7f37b15f4c76c44e0d765e6be231d8d71c67f2933b2df8c6cbcc9b04c5d0"
+  }
+}

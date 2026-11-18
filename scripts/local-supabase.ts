@@ -17,6 +17,22 @@ export interface LocalStack {
   /** Local-only key, used by integration tests for admin calls. Never written to app env files. */
   readonly secretKey: string;
   readonly mailpitUrl: string;
+  /** postgres role on the local database (task 2.1). Integration tests only. */
+  readonly dbUrl: string;
+}
+
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+/**
+ * Throws unless the URL points at this machine. The integration tests change roles, grants and
+ * functions, so they must never reach a hosted database (task 2.1).
+ */
+export function assertLocalUrl(url: string): string {
+  const host = new URL(url).hostname;
+  if (!LOCAL_HOSTS.has(host)) {
+    throw new Error(`Refusing a non-local address (${host}). Integration tests run locally only.`);
+  }
+  return url;
 }
 
 function supabaseCli(): string {
@@ -53,6 +69,7 @@ export function readLocalStack(): LocalStack {
     publishableKey: asString(record.PUBLISHABLE_KEY, "PUBLISHABLE_KEY"),
     secretKey: asString(record.SECRET_KEY, "SECRET_KEY"),
     mailpitUrl: asString(record.MAILPIT_URL ?? record.INBUCKET_URL, "MAILPIT_URL"),
+    dbUrl: assertLocalUrl(asString(record.DB_URL, "DB_URL")),
   };
 }
 

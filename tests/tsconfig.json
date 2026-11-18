@@ -6,5 +6,5 @@
     "jsx": "react-jsx",
     "types": ["node"]
   },
-  "include": ["unit", "integration", "e2e", "types", "vitest.config.ts"]
+  "include": ["unit", "integration", "e2e", "support", "types", "vitest.config.ts"]
 }

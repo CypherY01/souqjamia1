@@ -24,7 +24,8 @@ const files = execFileSync("git", ["ls-files", "-co", "--exclude-standard"], {
   encoding: "utf8",
 })
   .split("\n")
-  .filter((file) => /\.(ts|tsx|mjs|js|css|json|ya?ml|toml|html)$/.test(file));
+  // .sql since task 2.1: migrations write special characters as U& escapes.
+  .filter((file) => /\.(ts|tsx|mjs|js|css|json|ya?ml|toml|html|sql)$/.test(file));
 
 describe("source hygiene", () => {
   it("found source files", () => {
