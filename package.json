@@ -14,6 +14,7 @@
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm --filter @souq/tests test",
     "test:integration": "pnpm --filter @souq/tests test:integration",
+    "test:e2e": "pnpm --filter @souq/tests test:e2e",
     "build": "pnpm --filter @souq/web build",
     "db:start": "pnpm --filter @souq/db db:start",
     "db:stop": "pnpm --filter @souq/db db:stop",
@@ -26,6 +27,7 @@
     "contract:lint": "redocly lint contracts/openapi.yaml --config contracts/redocly.yaml",
     "check:contract-ids": "redocly bundle contracts/openapi.yaml --ext json | node scripts/check-contract-ids.ts",
     "check:bundle": "node scripts/check-client-bundle.ts",
+    "check:css": "node scripts/check-logical-css.ts",
     "secrets:scan": "node scripts/secrets-scan.ts"
   },
   "devDependencies": {

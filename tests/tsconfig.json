@@ -1,7 +1,10 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    // Unit tests render web components (SafeText) and E2E tests run in a browser.
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
     "types": ["node"]
   },
-  "include": ["unit", "integration", "e2e", "vitest.config.ts"]
+  "include": ["unit", "integration", "e2e", "types", "vitest.config.ts"]
 }

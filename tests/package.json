@@ -6,11 +6,19 @@
   "scripts": {
     "test": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@playwright/test": "catalog:",
+    "@souq/domain": "workspace:*",
     "@souq/i18n": "workspace:*",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "smol-toml": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
