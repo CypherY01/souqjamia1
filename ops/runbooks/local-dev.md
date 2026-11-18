@@ -92,10 +92,45 @@
 
 أسرار الخادم وأثر تغييرها في [secrets.md](secrets.md).
 
+## مراجعة خط الأساس الأمني في القاعدة (المهمة 2.1)
+
+أول هجرات في المشروع. لا واجهة جديدة، فالمراجعة على القاعدة والاختبارات. نفّذ الخطوات من مجلد المستودع في PowerShell، وSupabase المحلي يعمل (`pnpm db:start`).
+
+1. **تطبيق الهجرات:** `pnpm db:reset`. يمسح القاعدة المحلية ويطبّق الهجرات الثلاث، ويجب أن تظهر أسماؤها بلا أخطاء:
+   - `20261119090000_sec02_dec36_baseline.sql`
+   - `20261119090100_enums.sql`
+   - `20261119090200_helpers.sql`
+2. **الاختبارات:** `pnpm test:integration`. يجب أن تنجح كلها، ومنها:
+   - الفحص الشامل بلا مخالفات.
+   - اختبار يزرع مخالفة لكل قاعدة داخل معاملة تُلغى، ويتأكد أن الفحص يجدها كلها.
+   - الهوية لا تنتقل لمعاملة تالية على نفس الاتصال (شرطك 2).
+3. **فحص دوال PL/pgSQL:** `pnpm db:lint`، ويجب أن يطبع `No schema errors found`.
+4. **Studio** (`http://127.0.0.1:54323`)، في Database:
+   - **Schemas:** تظهر `app` وفيها خمس دوال: `actor_id` و`app_now` و`normalize_text` و`raise_api_error` و`search_normalize`.
+   - **Enumerated Types:** 33 نوعاً في `public`.
+   - **Roles:** يظهر `souq_web` و`souq_worker`.
+5. **`app` غير مكشوفة عبر REST**، يرجع 406 و`PGRST106`:
+
+   ```powershell
+   $k = (pnpm --silent db:status -o json | ConvertFrom-Json).PUBLISHABLE_KEY
+   curl.exe -i -H "apikey: $k" -H "Accept-Profile: app" http://127.0.0.1:54321/rest/v1/
+   ```
+
+6. **تطبيع البحث (DEC67):** في Studio افتح SQL Editor ونفّذ:
+
+   ```sql
+   select app.search_normalize('أحمد يبيع مكتبة ومستشفى آيفون ١٣ iPhone');
+   ```
+
+   النتيجة: `احمد يبيع مكتبه ومستشفي ايفون 13 iphone`.
+7. **الفحوص الأخرى:**
+   - `pnpm check:migrations`: الهجرات المدموجة لم تتغير. يقارن بـ `origin/main`، فحدّثه أولاً بـ `git fetch origin main`.
+   - `pnpm check:supabase-images`: صور Supabase العاملة تطابق البصمات في `packages/db/supabase/images.lock.json`.
+
 ## الاختبارات
 
 - `pnpm test`: اختبارات الوحدة، بلا أي خدمة.
-- `pnpm test:integration`: يحتاج `pnpm db:start`. يختبر إعدادات Auth على Supabase المحلي.
+- `pnpm test:integration`: يحتاج `pnpm db:start` والهجرات مطبّقة (`pnpm db:reset`). يختبر إعدادات Auth، وخط الأساس الأمني في القاعدة. لا يعمل إلا على قاعدة على نفس الجهاز.
 - `pnpm build` ثم `pnpm test:e2e`: اختبارات المتصفح بالعروض الثلاثة، مع فحص الوصول axe.
   - تحتاج تنزيل متصفح الاختبار مرة واحدة: `pnpm --filter @souq/tests exec playwright install --only-shell chromium`.
   - تشغّل الموقع بنفسها على المنفذ 3100، فلا تتعارض مع `pnpm dev`.
@@ -104,7 +139,7 @@
 
 1. `Ctrl+C` في نافذة `pnpm dev`.
 2. `pnpm db:stop`. البيانات المحلية تبقى للتشغيل القادم.
-3. `pnpm db:reset` يمسح القاعدة المحلية ويعيدها من الهجرات. الهجرات تبدأ في المهمة 2.1.
+3. `pnpm db:reset` يمسح القاعدة المحلية ويعيدها من الهجرات في `packages/db/supabase/migrations`.
 
 ## تبديل التحقق من البريد (DEC63)
 

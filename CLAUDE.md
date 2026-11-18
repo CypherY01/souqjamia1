@@ -87,6 +87,7 @@ docs            specs (read-only, except recording owner decisions, DEC48)
 - Deny by default. RLS is enabled on **every** table.
 - `anon` and `authenticated` have **no direct INSERT/UPDATE/DELETE** on business tables. Business writes go through **Postgres functions** called from Next.js server code. Each function re-checks session, ownership, block state and account state.
 - Write functions live in the **non-exposed `app` schema**, with EXECUTE revoked from `PUBLIC`, `anon` and `authenticated`. Only Next.js calls them, over a direct Postgres connection with a dedicated role that has no BYPASSRLS, passing the verified identity with transaction-local `set_config`. Quotas, idempotency and state checks stay inside the functions. The browser uses Supabase only for RLS-protected reads and Realtime (DEC36).
+- Database baseline (task 2.1, rules in `packages/db/README.md`): roles `souq_web` (Next.js) and `souq_worker` (worker) own nothing and have no table privileges. Every app entry point is `security definer` owned by `postgres`, with `set search_path = ''` and schema-qualified names, granted to exactly one of the two roles; internal helpers get no grant. Identity: the server verifies the JWT signature first (`getClaims`), then `set_config('request.jwt.claims', <claims>, true)`; functions read it with `app.actor_id()`. Time comes only from `app.app_now()`. Contract errors: `app.raise_api_error('CODE')` (SQLSTATE `SJ001`). `tests/integration/_harness/security.ts` fails on any table without RLS, any direct write privilege, any open SECURITY DEFINER or app function, and any object in `public` or `app` not owned by `postgres`.
 - No market writes until the member has acknowledged the current terms and privacy versions. Turnstile CAPTCHA and Supabase Auth's built-in rate limits replace RL02, live from launch on every operation that takes `captcha_token` (DEC36, DEC52).
 - All auth email links are valid for **1 hour** and single-use (DEC37).
 - JWT lifetime is 10 minutes. Admin (8 h / 30 min idle), recovery (5 min) and reauthentication (5 min) limits are enforced in Next.js from the `aal` and `amr` claims and their timestamps (DEC38).
@@ -150,21 +151,25 @@ pnpm check:contract-ids      # API001-API118: each in paths once, or in x-phase1
 pnpm check:bundle            # after build: no secrets in browser-facing output (SEC06)
 pnpm secrets:scan            # gitleaks over the whole git history, via Docker (SEC06)
 pnpm db:start                # local Supabase in Docker (db:stop, db:status, db:reset)
+pnpm db:lint                 # plpgsql_check over the app and public functions (needs db:start)
+pnpm check:migrations        # merged migrations unchanged, new ones sort last (compares with origin/main)
+pnpm check:supabase-images   # running Supabase images match packages/db/supabase/images.lock.json
 pnpm env:local               # write apps/web/.env.local and apps/worker/.env.local from it (new local secrets each run)
-pnpm test:integration        # tests against the local stack (needs db:start)
+pnpm test:integration        # tests against the local stack (needs db:start and db:reset); refuses non-local hosts
 pnpm emails:check            # Auth email templates match packages/i18n
 ```
 
 - Local run and review steps for the owner: `ops/runbooks/local-dev.md`. Local URLs: site 3000, Studio 54323, Mailpit 54324.
 - Supabase Auth settings live in `packages/db/supabase/config.toml`; `tests/unit/supabase-config.test.ts` pins the decision values. Email templates are generated from `packages/i18n/src/ar/email.json` with `pnpm --filter @souq/db emails:build`; never edit the HTML by hand.
 - Every build goes through `pnpm build`: it checks the `NEXT_PUBLIC_*` values, and the server checks the rest at start-up (OPS05).
-- CI (`.github/workflows/ci.yml`) runs all of the above except the `db:*`, `env:local` and integration commands on every push, plus actionlint on the workflow. Actions are pinned by commit SHA and Docker images by digest.
+- CI (`.github/workflows/ci.yml`) runs all of the above except `env:local`, `db:stop` and `db:reset` on every push, plus actionlint on the workflow. The `integration` job starts local Supabase without Studio, postgres-meta, Realtime, Storage and imgproxy (add them back when a task needs them). Actions are pinned by commit SHA and Docker images by digest; the Supabase CLI pulls by tag, so `check:supabase-images` verifies the digests instead (after a CLI upgrade: full stack, then `pnpm check:supabase-images --write`).
 - E2E runs `next start` on port 3100 against the last `pnpm build`. Install the browser once with `pnpm --filter @souq/tests exec playwright install --only-shell chromium`. axe-core skips longer Arabic text in its contrast rule (an icon-ligature heuristic), so contrast is guaranteed by the token test, not by axe.
 - Never commit a secret-like string, not even in tests: build fake keys at run time (see `tests/unit/check-client-bundle.test.ts`). gitleaks runs over every commit, and GitHub push protection is on.
 
 - Versions live in the `catalog` in `pnpm-workspace.yaml`, pinned exactly. pnpm refuses any release younger than 14 days (`minimumReleaseAge`) and blocks dependency install scripts unless listed in `allowBuilds` (version policy in `plan/task-1.2.md`).
 - The worker and the workspace packages are TypeScript run directly by Node (type stripping), so they have no build step. Use only erasable TypeScript syntax (no `enum`, no `namespace`, no constructor parameter properties); `erasableSyntaxOnly` in `tsconfig.base.json` makes `pnpm typecheck` reject them in every package. Write relative imports with the `.ts` extension.
-- Migrations and seeds arrive with task 2.1 (`packages/db/supabase/migrations`, `seed.sql`); `pnpm db:reset` applies them.
+- Migrations live in `packages/db/supabase/migrations` (`<YYYYMMDDHHMMSS>_<snake_case>.sql`); `pnpm db:reset` applies them and `seed.sql` (fixtures from task 2.3). Stored enum values live in three places that tests keep equal: the migration, `packages/domain/src/enums.ts` and the contract.
+- Never `git fetch --depth` in the local clone: it makes the repository shallow (`git fetch --unshallow origin` repairs it). Shallow fetches are for CI only.
 
 ## Open items (ask the owner, don't assume)
 
