@@ -5,13 +5,17 @@ signup:
   post:
     operationId: api001Signup
     tags: [auth]
-    summary: إنشاء حساب غير مؤكد وإرسال رابط التأكيد
+    summary: إنشاء حساب
     description: >-
-      يسجل الإقرار بنسختي الشروط والخصوصية الحاليتين (API114). الرابط صالح ساعة (DEC37).
-      الرد 202 نفسه حتى لو كان البريد مستخدماً، بلا كشف للحساب (TC01).
-    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, BR24, TC01, TC26]
+      يسجل الإقرار بنسختي الشروط والخصوصية الحاليتين (API114).
+      التأكيد معطّل الآن (DEC63): ينشئ الحساب ويفتح جلسة فوراً، ويرد 200 مثل الدخول.
+      إذا فُعّل التأكيد بالإعداد email_confirmation_required: يرسل رابطاً صالحاً ساعة (DEC37)،
+      ويرد 202 نفسه حتى لو كان البريد مستخدماً، بلا كشف للحساب (TC01).
+      حكم البريد المستخدم والتأكيد معطّل بانتظار السؤال 27.
+    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, DEC63, BR24, TC01, TC25, TC26]
     x-access: guest
     x-rate-limit: [supabase_auth, turnstile]
+    x-open-question: [27]
     security:
       - csrfToken: []
     requestBody:
@@ -21,6 +25,8 @@ signup:
           schema:
             $ref: '../components/schemas.yaml#/SignupInput'
     responses:
+      '200':
+        $ref: '../components/responses.yaml#/LoginOk'
       '202':
         $ref: '../components/responses.yaml#/Accepted'
       '400':
@@ -95,8 +101,10 @@ confirm:
     description: >-
       صفحة الرابط بطلب GET تعرض زراً فقط، وهذا الطلب POST هو الذي يستهلك الرابط مرة واحدة،
       حماية من ماسحات البريد (القسم 5). لا تُنشأ جلسة سوق، والتوجيه لصفحة الدخول.
-    x-spec-ids: [API004, FR57, BR21, DEC37, TC26]
+      تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 (DEC63، السؤال 29).
+    x-spec-ids: [API004, FR57, BR21, DEC37, DEC63, TC26]
     x-access: guest
+    x-open-question: [29]
     security:
       - csrfToken: []
     requestBody:
@@ -112,6 +120,8 @@ confirm:
         $ref: '../components/responses.yaml#/BadRequest'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
 
@@ -120,10 +130,13 @@ resend:
     operationId: api005ResendLink
     tags: [auth]
     summary: إعادة إرسال رابط التأكيد
-    description: رد عام بلا كشف للحساب. مهلة 60 ثانية بين الإرسالين (RL03، DEC37).
-    x-spec-ids: [API005, FR57, DEC37, TC26]
+    description: >-
+      رد عام بلا كشف للحساب. مهلة 60 ثانية بين الإرسالين (RL03، DEC37).
+      تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 (DEC63، السؤال 29).
+    x-spec-ids: [API005, FR57, DEC37, DEC63, TC26]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
+    x-open-question: [29]
     security:
       - csrfToken: []
     requestBody:
@@ -139,6 +152,8 @@ resend:
         $ref: '../components/responses.yaml#/BadRequest'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
 

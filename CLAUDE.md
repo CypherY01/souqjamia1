@@ -12,7 +12,7 @@ An Arabic-first, responsive web marketplace where university students **and othe
 
 ## Sources of truth (in order of precedence)
 
-1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC61, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
+1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC63, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
 2. **`docs/spec-v3-en.md`** (English): full specification v3.0. Canonical for identifiers, field names, limits, error codes and tests.
 3. The Arabic edition of v3 is **not** in this repo on purpose. It contains hidden U+200E marks and six known translation errors. Never copy values from it.
 
@@ -26,7 +26,7 @@ Rules:
 The addendum's section 3 is the authority. In short:
 
 **Phase 1 (build now):**
-- Accounts: signup with any email, email confirmation, login, recovery, profile edit, email/password change, account deletion with a 30-day recovery window.
+- Accounts: signup with any email and immediate sign-in (email confirmation is built but switched off by `email_confirmation_required=false`, DEC63), login, recovery, profile edit, email/password change, account deletion with a 30-day recovery window.
 - Student badge by request: the member uploads a student-card photo, a moderator approves or rejects it, and the photo is deleted within 24 hours of the decision.
 - Discovery: home page, search, filters, sort, listing details, public profile, favorites.
 - Listings: 5-step wizard, image upload and processing, owner management. Wanted requests with expiry and one reopening.
@@ -43,6 +43,10 @@ The addendum's section 3 is the authority. In short:
 - Meetup attendance declarations.
 - Legal holds, deletion ledger, coordinated media backups with manifests.
 - PWA, Web Push, saved search, request matching, server drafts.
+
+## Cost rule (DEC62)
+
+No paid service and no hosted account before the student trial. Development and every review run locally (local Supabase in Docker, Mailpit, Cloudflare's official Turnstile test keys). Staging comes at cost stage 1, Supabase Pro at public launch (stage 2): leaked-password checks (DEC32), member session limits (DEC38) and daily backups (DEC42) only work after that upgrade. See `plan/cost-plan.md`.
 
 ## Stack (addendum section 5 overrides v3 chapter 07)
 
@@ -114,7 +118,7 @@ docs            specs (read-only, except recording owner decisions, DEC48)
 
 ## Definition of done (per feature)
 
-The feature has Arabic UI with all states, server-side validation and DB constraints, owner and third-party authorization tests, the relevant TC tests passing, an audit record for sensitive/admin actions, and docs/contracts updated if anything changed. A slice with UI is done only after it is deployed to staging and the owner has reviewed it there (DEC59).
+The feature has Arabic UI with all states, server-side validation and DB constraints, owner and third-party authorization tests, the relevant TC tests passing, an audit record for sensitive/admin actions, and docs/contracts updated if anything changed. Until staging exists (cost stage 1, DEC62), a slice is approved after CI is green and the owner has reviewed it locally with `pnpm dev`, following run steps you give them.
 
 ## Commands
 

@@ -5,7 +5,7 @@ info:
   version: 0.2.0-phase1
   summary: عقد REST للمرحلة الأولى حسب docs/addendum-v3.1.md وdocs/spec-v3-en.md.
   description: >-
-    معتمد من المالك في 18 نوفمبر 2026، مع القرارات حتى DEC61. تغطي 98 عملية للمرحلة الأولى.
+    معتمد من المالك في 18 نوفمبر 2026، مع القرارات حتى DEC63. تغطي 98 عملية للمرحلة الأولى.
     العمليات المستبعدة وأسبابها في x-phase1-excluded أدناه. الاتفاقات المشتركة، ومستويات الوصول،
     ورموز الأخطاء في contracts/README.md. عقد التحديث الفوري في contracts/realtime.md.
     الامتدادات x-spec-ids وx-access وx-rate-limit وx-open-question وx-phase1-excluded موثقة في README.
