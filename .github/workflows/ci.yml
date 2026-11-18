@@ -108,8 +108,26 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
 
-      - name: Install Chromium for Playwright (version pinned by @playwright/test)
-        run: pnpm --filter @souq/tests exec playwright install --with-deps --only-shell chromium
+      # Installing the browser took up to 8.5 minutes in some runs. The browser is cached between
+      # runs, keyed by the Playwright version, so a version bump downloads it once again. The
+      # system libraries (apt) are installed in their own step, so each part's time shows.
+      - name: Playwright version (browser cache key)
+        id: playwright
+        run: echo "version=$(pnpm --filter @souq/tests exec playwright --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore or save the Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-headless-shell-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Download Chromium (cache miss only)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @souq/tests exec playwright install --only-shell chromium
+
+      - name: Install Chromium system libraries
+        run: pnpm --filter @souq/tests exec playwright install-deps chromium
 
       - name: E2E tests
         run: pnpm test:e2e
