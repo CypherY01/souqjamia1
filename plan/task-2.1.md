@@ -369,3 +369,49 @@ plan/phase-1.md                    حالة المهمة، ونقل الدوال
 10. **فحوص الهجرات الإضافية:** `pnpm db:lint`، وفحص أن الهجرات المدموجة لا تُعدَّل ولا تُحذف، وفحص النظافة على `.sql`. كلها صغيرة، ويمكن تأجيل فحص الهجرات المدموجة إن أردت.
 
 بعد ردك: ما يغيّر قاعدة منتج، مثل قواعد البحث في البند 6، يُسجَّل قراراً جديداً DEC67 في آخر الملحق. والباقي يُسجَّل في هذا الملف، في قسم «قرارات المالك عند الاعتماد».
+
+## التنفيذ (19 نوفمبر 2026)
+
+### ما بُني
+
+| البند | الملفات |
+| --- | --- |
+| الصلاحيات الافتراضية، وschema `app`، والدوران `souq_web` و`souq_worker` | `packages/db/supabase/migrations/20261119090000_sec02_dec36_baseline.sql` |
+| 33 نوع enum بقيم المرحلة الأولى | `migrations/20261119090100_enums.sql`، و`packages/domain/src/enums.ts` |
+| `actor_id` و`app_now` و`normalize_text` و`search_normalize` (DEC67) و`raise_api_error` | `migrations/20261119090200_helpers.sql` |
+| أداة اختبارات التكامل | `tests/integration/_harness/{db,roles,parallel,clock,security,global-setup}.ts` |
+| اختبارات التكامل | `tests/integration/{sec02-baseline,db-helpers,enums}.test.ts` |
+| قراءة العقد وربط القوائم | `tests/support/{contract,stored-enums}.ts` |
+| الفحوص الجديدة | `scripts/check-migrations.ts`، `scripts/check-supabase-images.ts`، `packages/db/supabase/images.lock.json`، `pnpm db:lint` |
+| اختبارات الوحدة | `tests/unit/{enums,check-migrations,check-supabase-images}.test.ts`، و`.sql` في `source-hygiene.test.ts` |
+| CI | مهمة `integration`، وخطوة «Migrations are forward-only» في مهمة `checks` |
+| التوثيق | `packages/db/README.md` (قواعد الهجرات والدوال)، و`CLAUDE.md`، وقسم مراجعة 2.1 في `ops/runbooks/local-dev.md` |
+| القرارات | DEC67 في `docs/addendum-v3.1.md`، والسؤال 30 في `plan/phase-1.md` |
+
+### اختلافات عن الخطة
+
+- **`souq_worker` في هذه المهمة لا في 2.5،** حسب شرطك 4. تبقى لـ 2.5 دوال المهام وكلمة مرور الدور.
+- **صلاحيات `supabase_admin` الافتراضية:** تعذّرت كما في «قرارات المالك عند الاعتماد». البديل المطبّق: الفحص يرفض أي كائن في `public` أو `app` لا يملكه `postgres`. ينتظر اعتمادك في السؤال 30.
+- **`search_path = ''` مطلوب في كل دالة،** لا في `SECURITY DEFINER` وحدها. شرطك 3 يطلبه للثانية، والفحص أشد منه بلا كلفة.
+- **ساعة الاختبار بلا ملف `test-clock.sql`:** نسخة الاختبار مكتوبة في `clock.ts`. وتقرأ إعداد الاتصال `app_test.now` بدل جدول، فلا يتأثر `pnpm dev` لو بقيت بعد تشغيل متوقف.
+- **`app.raise_api_error` بصفة STABLE:** نبّه إليه `pnpm db:lint` (plpgsql_check)، لأن `app.actor_id()` بصفة STABLE تستدعيها. الدالة لا تغيّر شيئاً، فالصفة صحيحة.
+- **`app.actor_id()` تطلب أيضاً `role = authenticated`** في المطالبات، فرمز زائر (`anon`) يُرفض كغياب الهوية.
+- **اختبار القوائم يقرأ كل مخططات العقد:** `redocly bundle` لملف العقد وحده يُسقط المخطط `ModerationAction`، لأنه معرّف في العقد ولا تستخدمه أي عملية. فالاختبار يبني ملفاً جذرياً مؤقتاً يذكر كل المخططات.
+- **مجلد جديد `tests/support/`** لما تشترك فيه اختبارات الوحدة والتكامل.
+- **اختبار من المهمة 1.6 كان يفشل مرة من 16:** يغيّر آخر حرف في رمز CSRF إلى `A`، فإن كان الحرف `A` أصلاً بقي الرمز صحيحاً. صار يختار حرفاً مختلفاً دائماً. الكود نفسه سليم.
+- **خطأ مني وأصلحته:** شغّلت `git fetch --depth=1` محلياً لتجربة فحص الهجرات، فصارت النسخة المحلية سطحية (shallow) بتاريخ من commitين. أعدت التاريخ كاملاً بـ `git fetch --unshallow origin` (51 commit، والفروع كلها موجودة). وأضفت تحذيراً في `CLAUDE.md`: الجلب السطحي لـ CI فقط.
+
+### نتائج الفحص
+
+1. **الهجرات:** `pnpm db:reset` طبّق الهجرات الثلاث بلا أخطاء، وتكرر ذلك عدة مرات. و`pnpm db:lint` بلا تحذيرات.
+2. **الدور الذي يشغّل الهجرات محلياً هو `postgres`:** schema `app` وكل الكائنات يملكها `postgres`، فالصلاحيات الافتراضية المضبوطة له هي التي تسري.
+3. **اختبارات التكامل:** 47 نجحت، منها:
+   - **الفحص الشامل:** صفر مخالفات في القاعدة بعد الهجرات.
+   - **المخالفات المزروعة:** 20 قاعدة من 21 أطلقت مخالفتها، والقاعدة الباقية (دور غير موجود) لها اختبار منفصل. والاختبار يتأكد أنه لا تظهر قاعدة غير متوقعة.
+   - **PostgREST:** `Accept-Profile: app` و`Content-Profile: app` يرجعان 406 `PGRST106`.
+   - **الهوية (شرطك 2):** لا تنتقل للمعاملة التالية بعد COMMIT ولا بعد ROLLBACK. ومطالبات تالفة أو ناقصة أو لزائر ترجع `UNAUTHENTICATED`.
+   - **دالة مدخل تجريبية:** ينفذها `souq_web` وحده، ولا ينفذها `anon` ولا `authenticated` ولا `service_role` ولا `souq_worker`. و`souq_web` لا ينفذ الدوال الداخلية مباشرة.
+   - **التطبيع:** `app.normalize_text` تطابق `normalizeText` على عينات منها كل محرف يقصه `trim()`. و`app.search_normalize` على 12 حالة من DEC67.
+   - **القوائم:** القاعدة = `packages/domain` = العقد.
+4. **الفحوص الأخرى محلياً:** `format:check` و`lint` و`check:css` و`typecheck` و`test` (432) و`contract:lint` و`check:contract-ids` و`emails:check` و`check:migrations` و`check:supabase-images` و`build` و`check:bundle` و`test:e2e` (58) و`secrets:scan` (بلا تسريب).
+5. **الصور:** `images.lock.json` فيه بصمات الصور التسع العاملة محلياً، والفحص يطابقها.
