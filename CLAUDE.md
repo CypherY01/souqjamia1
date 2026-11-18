@@ -12,14 +12,14 @@ An Arabic-first, responsive web marketplace where university students **and othe
 
 ## Sources of truth (in order of precedence)
 
-1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC38, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
+1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC59, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
 2. **`docs/spec-v3-en.md`** (English): full specification v3.0. Canonical for identifiers, field names, limits, error codes and tests.
 3. The Arabic edition of v3 is **not** in this repo on purpose. It contains hidden U+200E marks and six known translation errors. Never copy values from it.
 
 Rules:
 - Keep the spec identifiers (FR, UC, BR, DEC, API, TC, RL, RET, SEC, NFR) in code comments, migration names, test names and PR descriptions, e.g. `// BR33: one pending offer per conversation`.
 - If the code needs a decision the docs don't make, or the two docs conflict, **stop and ask**. Don't invent behavior.
-- When a limit or rule changes, update the docs, constants, DB constraints and tests together.
+- When a limit or rule changes, first record the owner's decision as a new DEC at the end of the addendum, then update the contract, constants, DB constraints and tests together. Recording owner-approved decisions is the only allowed edit to `docs/` (DEC48).
 
 ## Scope: build Phase 1 only
 
@@ -62,7 +62,10 @@ packages/domain rules, zod schemas, permissions, state transitions
 packages/db     SQL migrations, constraints, RLS policies, Postgres functions, seeds
 packages/i18n   Arabic resource keys (structure ready for English later)
 tests           unit, integration (DB + RLS), e2e
-docs            specs (this folder is read-only reference)
+contracts       approved OpenAPI contract and Realtime contract (task 1.1)
+plan            Phase 1 plan, screen inventory, per-task details
+ops             runbooks and operational scripts (DEC48)
+docs            specs (read-only, except recording owner decisions, DEC48)
 ```
 
 ## Non-negotiable engineering rules
@@ -80,7 +83,7 @@ docs            specs (this folder is read-only reference)
 - Deny by default. RLS is enabled on **every** table.
 - `anon` and `authenticated` have **no direct INSERT/UPDATE/DELETE** on business tables. Business writes go through **Postgres functions** called from Next.js server code. Each function re-checks session, ownership, block state and account state.
 - Write functions live in the **non-exposed `app` schema**, with EXECUTE revoked from `PUBLIC`, `anon` and `authenticated`. Only Next.js calls them, over a direct Postgres connection with a dedicated role that has no BYPASSRLS, passing the verified identity with transaction-local `set_config`. Quotas, idempotency and state checks stay inside the functions. The browser uses Supabase only for RLS-protected reads and Realtime (DEC36).
-- No market writes until the member has acknowledged the current terms and privacy versions. Signup uses Turnstile CAPTCHA and Supabase Auth's built-in rate limits instead of RL02 (DEC36).
+- No market writes until the member has acknowledged the current terms and privacy versions. Turnstile CAPTCHA and Supabase Auth's built-in rate limits replace RL02, live from launch on every operation that takes `captcha_token` (DEC36, DEC52).
 - All auth email links are valid for **1 hour** and single-use (DEC37).
 - JWT lifetime is 10 minutes. Admin (8 h / 30 min idle), recovery (5 min) and reauthentication (5 min) limits are enforced in Next.js from the `aal` and `amr` claims and their timestamps (DEC38).
 - Never trust client-sent `seller_id`, `buyer_id`, `role`, `status`, badge or rating fields. Derive them on the server.
@@ -93,9 +96,10 @@ docs            specs (this folder is read-only reference)
 **UI**
 - Arabic, **RTL**, built mobile-first and tested at 360, 768 and 1440 px.
 - Use CSS logical properties (`margin-inline-start`, not `margin-left`). Isolate numbers, URLs and IDs with `<bdi>` or `dir="ltr"`.
+- Numbers are displayed as Western digits (350). Numeric inputs also accept Arabic-Indic digits (٣٥٠), and the server converts them before validation. Member free text is stored as typed (DEC50).
 - **No hard-coded UI strings.** Every string goes through `packages/i18n` keys (Arabic only for now).
 - Target WCAG 2.2 AA: labels, visible focus, keyboard access, contrast, and never color alone.
-- Design tokens are in v3 chapter 02 (dark green `#0B3B2D`, gold accent `#C59B27`, cream surfaces).
+- Design tokens are in v3 chapter 02 (dark green `#0B3B2D`, gold accent `#C59B27`, cream surfaces). There is no designer and no mockups: build screens from the tokens and the shared components, following `plan/screens.md` (DEC59).
 - Every screen has distinct loading, empty, error and retry states.
 
 ## How to work in this repo
@@ -110,7 +114,7 @@ docs            specs (this folder is read-only reference)
 
 ## Definition of done (per feature)
 
-The feature has Arabic UI with all states, server-side validation and DB constraints, owner and third-party authorization tests, the relevant TC tests passing, an audit record for sensitive/admin actions, and docs/contracts updated if anything changed.
+The feature has Arabic UI with all states, server-side validation and DB constraints, owner and third-party authorization tests, the relevant TC tests passing, an audit record for sensitive/admin actions, and docs/contracts updated if anything changed. A slice with UI is done only after it is deployed to staging and the owner has reviewed it there (DEC59).
 
 ## Commands
 
