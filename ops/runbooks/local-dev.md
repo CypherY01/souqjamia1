@@ -51,6 +51,47 @@
 
 روابط الشريط والتذييل تذهب لصفحات لم تُبنَ بعد، مثل `/market` و`/login`، فترجع «غير متاح» حتى تُبنى في مهامها.
 
+## مراجعة طبقة HTTP (المهمة 1.6)
+
+المهمة أضافت متغيرات بيئة جديدة، فشغّل أولاً `pnpm env:local` ثم أعد تشغيل `pnpm dev`. بدونها يرفض الخادم التشغيل ويذكر أسماء المتغيرات الناقصة (OPS05).
+
+1. **رمز CSRF:** افتح `http://localhost:3000/api/csrf`، فيظهر JSON فيه `token`.
+2. **ترويسات الأمان:** في Chrome اضغط F12، ثم تبويب Network، وحدّث الصفحة الرئيسية، واضغط أول طلب (`localhost`). في Response Headers يجب أن تظهر:
+   - `Content-Security-Policy`، وفيها `nonce-` يتغير مع كل تحديث.
+   - `X-Trace-Id` و`X-Frame-Options: DENY` و`X-Robots-Tag: noindex, nofollow`.
+3. **Console:** يجب ألا يظهر خطأ CSP في الرئيسية ولا في `/dev/ui`.
+4. **طلبات مرفوضة:** في PowerShell من مجلد المستودع. استخدم `curl.exe` لا `curl`، لأن `curl` في PowerShell اسم بديل لأمر آخر.
+   - طلب بلا رمز، يرجع 403 و`CSRF_FAILED` مع `trace_id`:
+
+     ```powershell
+     curl.exe -i -X POST http://localhost:3000/api/csrf -H "Origin: http://localhost:3000"
+     ```
+
+   - طلب من موقع آخر، يرجع 403 و`ORIGIN_REJECTED`:
+
+     ```powershell
+     curl.exe -i -X POST http://localhost:3000/api/csrf -H "Origin: https://evil.example"
+     ```
+
+5. **فحص الجاهزية `/readyz`:**
+   - بلا رمز، يرجع 401:
+
+     ```powershell
+     curl.exe -i http://localhost:3000/readyz
+     ```
+
+   - بالرمز من `.env.local`، يرجع 200 و`ready` ما دام Supabase المحلي يعمل:
+
+     ```powershell
+     $t = (Select-String -Path apps/web/.env.local -Pattern '^PROBE_TOKEN=(.*)').Matches.Groups[1].Value
+     curl.exe -i -H "X-Probe-Token: $t" http://localhost:3000/readyz
+     ```
+
+   - بعد `pnpm db:stop` يرجع نفس الطلب 503 و`not_ready`.
+6. **السجلات:** في نافذة `pnpm dev` يظهر سطر JSON لكل طلب API (`api.request`) ولكل طلب مرفوض (`http.rejected`)، بلا رموز ولا كوكيز.
+
+أسرار الخادم وأثر تغييرها في [secrets.md](secrets.md).
+
 ## الاختبارات
 
 - `pnpm test`: اختبارات الوحدة، بلا أي خدمة.

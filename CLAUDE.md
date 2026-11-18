@@ -92,7 +92,12 @@ docs            specs (read-only, except recording owner decisions, DEC48)
 - JWT lifetime is 10 minutes. Admin (8 h / 30 min idle), recovery (5 min) and reauthentication (5 min) limits are enforced in Next.js from the `aal` and `amr` claims and their timestamps (DEC38).
 - Never trust client-sent `seller_id`, `buyer_id`, `role`, `status`, badge or rating fields. Derive them on the server.
 - `service_role` key: worker and server-only code. **Never in the browser bundle.**
-- Every browser mutation carries CSRF protection and an Origin check (SEC05). No state change on GET.
+- Every browser mutation carries CSRF protection and an Origin check (SEC05). No state change on GET. `apps/web/proxy.ts` (Next.js 16's name for Middleware) enforces this for every path: exact `Origin`, `Sec-Fetch-Site: same-origin` when sent, and `X-CSRF-Token` from `/api/csrf`, signed and bound to the guest cookie or (from task 3.1) the member's session.
+- **No Server Actions.** Mutations go through `/api/*` route handlers from the contract, called with `fetch` and the CSRF token. The signup, login and logout handlers call `rotateGuestBinding()` (owner condition on task 1.6), and the UI fetches a new token afterwards.
+- Every route handler is wrapped: `export const GET = apiHandler("/api/route/[id]", async (request, context, { traceId }) => ok(data));` from `apps/web/lib/http/`. Throw `ApiError("CODE")` for contract errors; anything else becomes 500 `INTERNAL_ERROR` with only the trace id. Read bodies with `readJson(request, z.strictObject({...}))` (128 KiB, unknown fields rejected). Page with `encodeCursor`/`decodeCursor`/`parseLimit`. Client addresses come from `clientIp()` only.
+- Log with `log` from `apps/web/lib/log.ts`, never `console` directly, and never log request bodies, cookies or headers. It masks tokens, JWTs, keys and auth links, but do not rely on that: don't pass them.
+- No `style` attributes in markup: the CSP blocks them. Use CSS Modules.
+- Server secrets (`APP_SECRET`, `PROBE_TOKEN`) are described in `ops/runbooks/secrets.md`. Keys are derived from `APP_SECRET` with HKDF, one purpose name each (`csrf`, `cursor`).
 - Member text is rendered as escaped plain text, always through `SafeText` (`apps/web/components/text/SafeText.tsx`). Only http/https URLs are linkified, with `rel="noopener noreferrer nofollow ugc"`, and bidi control characters are dropped for display (TC31).
 - Raw uploads are private and quarantined. The worker verifies real bytes, strips EXIF and generates 150/600/1200 px variants. Chat images and student-card photos are **never public**, and access to them goes through ≤ 60-second signed URLs after an authorization check.
 - Never log passwords, tokens, auth links, chat text or card images.
@@ -145,7 +150,7 @@ pnpm check:contract-ids      # API001-API118: each in paths once, or in x-phase1
 pnpm check:bundle            # after build: no secrets in browser-facing output (SEC06)
 pnpm secrets:scan            # gitleaks over the whole git history, via Docker (SEC06)
 pnpm db:start                # local Supabase in Docker (db:stop, db:status, db:reset)
-pnpm env:local               # write apps/web/.env.local and apps/worker/.env.local from it
+pnpm env:local               # write apps/web/.env.local and apps/worker/.env.local from it (new local secrets each run)
 pnpm test:integration        # tests against the local stack (needs db:start)
 pnpm emails:check            # Auth email templates match packages/i18n
 ```
