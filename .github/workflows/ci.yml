@@ -68,6 +68,12 @@ jobs:
       - name: Contract ID coverage
         run: pnpm check:contract-ids
 
+      # Task 2.1: merged migrations are never edited or deleted, new ones sort after them.
+      - name: Migrations are forward-only
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          pnpm check:migrations
+
       - name: Build
         run: pnpm build
         env:
@@ -129,6 +135,56 @@ jobs:
 
       - name: E2E tests
         run: pnpm test:e2e
+
+  integration:
+    name: Integration (local Supabase, database and RLS)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm (version from packageManager)
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Turn off Supabase CLI telemetry
+        run: pnpm --filter @souq/db exec supabase telemetry disable
+
+      # The Supabase CLI pinned in packages/db applies the migrations on start. Only the
+      # services the tests use run: Postgres, Auth, PostgREST, Kong and Mailpit. Realtime and
+      # Storage join when tasks 4.1 and 5.4 need them.
+      - name: Start local Supabase
+        run: pnpm --filter @souq/db exec supabase start -x studio,postgres-meta,realtime,storage-api,imgproxy
+
+      # The CLI pulls by tag; the digests are pinned in packages/db/supabase/images.lock.json.
+      - name: Supabase images match their pinned digests
+        run: pnpm check:supabase-images
+
+      - name: PL/pgSQL lint (plpgsql_check)
+        run: pnpm db:lint
+
+      - name: Integration tests
+        run: pnpm test:integration
+
+      - name: Supabase container logs (on failure)
+        if: failure()
+        run: |
+          for container in $(docker ps -a --filter label=com.supabase.cli.project=souqjamia1 --format '{{.Names}}'); do
+            echo "::group::${container}"
+            docker logs --tail 80 "${container}" 2>&1
+            echo "::endgroup::"
+          done
 
   secrets:
     name: Secret scan of git history (gitleaks)
