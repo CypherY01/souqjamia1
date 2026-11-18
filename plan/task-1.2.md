@@ -140,4 +140,5 @@ ops/README.md             ما يوضع هنا من أدلة وسكربتات (D
 4. `next dev`: الصفحة فيها `<html lang="ar" dir="rtl">`، والعنوان و`<h1>` «سوق الجامعة» من مفتاح الترجمة.
 5. العامل يبدأ على Windows ويسجّل `worker.started`. وفي حاوية Linux (`node:26.13.1-alpine`)، `docker stop` يرسل SIGTERM، فيسجّل `worker.stopped` ويخرج بالرمز 0.
 6. Node يستورد `@souq/i18n` مباشرة من مصدره، مع ملف JSON، عبر روابط pnpm.
-7. نسخة نظيفة من المستودع: `pnpm install --frozen-lockfile` ثم كل الفحوص. النتيجة في رسالة الـ commit.
+7. نسخة نظيفة من الفرع (`git clone` جديد): `pnpm install --frozen-lockfile`، ثم الفحوص الستة. كلها نجحت، و`git status` نظيف بعد البناء.
+8. `apps/web/AGENTS.md` يولّده `next dev` في Next 16.4 تلقائياً، ومحتواه يوجّه أدوات الذكاء الاصطناعي إلى وثائق Next المرفقة. رُفع مع الكود حتى لا يظهر كتغيير بعد كل تشغيل.
