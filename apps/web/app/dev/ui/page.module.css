@@ -105,3 +105,56 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* Swatch colors by token (no style attributes under the CSP). */
+.chip[data-token="--color-primary"] {
+  background-color: var(--color-primary);
+}
+
+.chip[data-token="--color-surface-dark"] {
+  background-color: var(--color-surface-dark);
+}
+
+.chip[data-token="--color-accent"] {
+  background-color: var(--color-accent);
+}
+
+.chip[data-token="--color-page"] {
+  background-color: var(--color-page);
+}
+
+.chip[data-token="--color-card"] {
+  background-color: var(--color-card);
+}
+
+.chip[data-token="--color-subtle-green"] {
+  background-color: var(--color-subtle-green);
+}
+
+.chip[data-token="--color-subtle-gold"] {
+  background-color: var(--color-subtle-gold);
+}
+
+.chip[data-token="--color-warning-bg"] {
+  background-color: var(--color-warning-bg);
+}
+
+.chip[data-token="--color-danger"] {
+  background-color: var(--color-danger);
+}
+
+.chip[data-token="--color-control-border"] {
+  background-color: var(--color-control-border);
+}
+
+.chip[data-token="--color-divider"] {
+  background-color: var(--color-divider);
+}
+
+.chip[data-token="--color-text"] {
+  background-color: var(--color-text);
+}
+
+.chip[data-token="--color-text-muted"] {
+  background-color: var(--color-text-muted);
+}

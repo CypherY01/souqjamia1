@@ -23,7 +23,7 @@ import { AmountField, Checkbox, RadioGroup, Select, TextField } from "../../../c
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";
 import { TextArea } from "../../../components/ui/TextArea";
 import { devGalleryEnabled } from "../../../lib/dev-gallery";
-import { loadServerEnv } from "../../../lib/env";
+import { serverEnv } from "../../../lib/env";
 import { routes } from "../../../lib/routes";
 import styles from "./page.module.css";
 
@@ -34,6 +34,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Each chip is colored by a rule in page.module.css: the CSP (task 1.6) blocks style attributes.
 const swatches: readonly { token: string; label: MessageKey }[] = [
   { token: "--color-primary", label: "dev.colors.primary" },
   { token: "--color-surface-dark", label: "dev.colors.surfaceDark" },
@@ -78,7 +79,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 export default function DevUiPage() {
-  if (!devGalleryEnabled(loadServerEnv().APP_ENV)) notFound();
+  if (!devGalleryEnabled(serverEnv().APP_ENV)) notFound();
 
   return (
     <>
@@ -89,11 +90,7 @@ export default function DevUiPage() {
         <ul className={styles.swatches}>
           {swatches.map((swatch) => (
             <li key={swatch.token} className={styles.swatch}>
-              <span
-                className={styles.chip}
-                style={{ backgroundColor: `var(${swatch.token})` }}
-                aria-hidden="true"
-              />
+              <span className={styles.chip} data-token={swatch.token} aria-hidden="true" />
               <span>{t(swatch.label)}</span>
               <code dir="ltr">{swatch.token}</code>
             </li>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Arabic } from "next/font/google";
+import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { t } from "@souq/i18n";
 import { MAIN_CONTENT_ID, SkipLink } from "../components/layout/SkipLink";
@@ -24,7 +25,9 @@ export const metadata: Metadata = {
 };
 
 // DEC30: Arabic only, right to left.
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+// SEC06: the CSP nonce is new on every request, so every page renders on request (task 1.6).
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  await connection();
   return (
     <html lang="ar" dir="rtl" className={`${arabic.variable} ${latin.variable}`}>
       <body>

@@ -19,10 +19,20 @@ export const publicEnvSchema = z.object({
 
 export const serverEnvSchema = publicEnvSchema.extend({
   APP_ENV: z.enum(["development", "staging", "production"]),
-  // The trusted origin of the site; the Origin check (SEC05) uses it in task 1.6.
+  // The trusted origin of the site: the Origin check (SEC05) compares requests with it exactly.
   APP_ORIGIN: origin,
   // DEC63: email_confirmation_required. Must match enable_confirmations in config.toml.
   EMAIL_CONFIRMATION_REQUIRED: booleanString,
+  // Task 1.6: the server secret. The CSRF and cursor keys are derived from it with HKDF, one
+  // purpose name each. Changing it invalidates both (ops/runbooks/secrets.md).
+  APP_SECRET: z.string().min(32),
+  // API106: shared with the hosting platform's readiness probe (X-Probe-Token).
+  PROBE_TOKEN: z.string().min(32),
+  // SEC07: how many trusted proxies in front of the app append to X-Forwarded-For (0 locally).
+  TRUSTED_PROXY_HOPS: z
+    .string()
+    .regex(/^[0-9]$/)
+    .transform(Number),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -51,4 +61,12 @@ export function loadPublicEnv(source: Source = process.env): PublicEnv {
 
 export function loadServerEnv(source: Source = process.env): ServerEnv {
   return parseEnv(serverEnvSchema, source);
+}
+
+let cached: ServerEnv | undefined;
+
+/** The validated server configuration, parsed once per process (it never changes at run time). */
+export function serverEnv(): ServerEnv {
+  cached ??= loadServerEnv();
+  return cached;
 }

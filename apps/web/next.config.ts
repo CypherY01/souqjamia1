@@ -1,12 +1,23 @@
 import type { NextConfig } from "next";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { loadPublicEnv } from "./lib/env";
+import { STATIC_SECURITY_HEADERS } from "./lib/http/security-headers";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript source; Next compiles them.
   transpilePackages: ["@souq/domain", "@souq/i18n"],
+  // SEC06: static files skip proxy.ts, so they get the fixed security headers here. Every other
+  // response gets them, with the CSP nonce, from proxy.ts.
+  headers() {
+    const headers = STATIC_SECURITY_HEADERS.map(([key, value]) => ({ key, value }));
+    return Promise.resolve([
+      { source: "/_next/static/:path*", headers },
+      { source: "/_next/image", headers },
+      { source: "/favicon.ico", headers },
+    ]);
+  },
 };
 
 export default function config(phase: string): NextConfig {
