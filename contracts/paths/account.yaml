@@ -290,8 +290,8 @@ preferences:
     summary: تفضيلات البريد الاختيارية
     description: >-
       اللغة ليست هنا، فمصدرها Profile.locale (القسم 6.3). بريد الأمان والإدارة لا يُعطَّل (BR38).
-      مجموعة reviews مغلقة افتراضياً (SEC11، DEC49).
-    x-spec-ids: [API029, FR68, BR38, SEC11, DEC49, TC55]
+      كل المجموعات الاختيارية مطفأة افتراضياً للعضو الجديد، ويفعّلها بنفسه (SEC11، DEC49، DEC65).
+    x-spec-ids: [API029, FR68, BR38, SEC11, DEC49, DEC65, TC55]
     x-access: member
     security:
       - sessionCookie: []

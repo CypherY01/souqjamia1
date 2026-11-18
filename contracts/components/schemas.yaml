@@ -629,7 +629,7 @@ EmailGroups:
   additionalProperties: false
   description: >-
     مجموعات البريد الاختيارية (SEC11). بريد الأمان والإدارة لا يُعطَّل.
-    reviews مغلقة افتراضياً (DEC49).
+    كلها false افتراضياً للعضو الجديد (DEC49، DEC65).
   properties:
     offers:
       type: boolean

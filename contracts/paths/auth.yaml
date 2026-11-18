@@ -11,11 +11,12 @@ signup:
       التأكيد معطّل الآن (DEC63): ينشئ الحساب ويفتح جلسة فوراً، ويرد 200 مثل الدخول.
       إذا فُعّل التأكيد بالإعداد email_confirmation_required: يرسل رابطاً صالحاً ساعة (DEC37)،
       ويرد 202 نفسه حتى لو كان البريد مستخدماً، بلا كشف للحساب (TC01).
-      حكم البريد المستخدم والتأكيد معطّل بانتظار السؤال 27.
-    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, DEC63, BR24, TC01, TC25, TC26]
+      والتأكيد معطّل، البريد المستخدم يرد 422 VALIDATION_FAILED مع خطأ الحقل email بالرمز
+      email_registered ورسالة «هذا البريد مسجّل. سجّل الدخول أو استعد كلمة المرور»،
+      بلا حساب ولا جلسة (DEC64).
+    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, DEC63, DEC64, BR24, TC01, TC25, TC26]
     x-access: guest
     x-rate-limit: [supabase_auth, turnstile]
-    x-open-question: [27]
     security:
       - csrfToken: []
     requestBody:
@@ -101,10 +102,9 @@ confirm:
     description: >-
       صفحة الرابط بطلب GET تعرض زراً فقط، وهذا الطلب POST هو الذي يستهلك الرابط مرة واحدة،
       حماية من ماسحات البريد (القسم 5). لا تُنشأ جلسة سوق، والتوجيه لصفحة الدخول.
-      تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 (DEC63، السؤال 29).
-    x-spec-ids: [API004, FR57, BR21, DEC37, DEC63, TC26]
+      تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 NOT_FOUND (DEC63، DEC66).
+    x-spec-ids: [API004, FR57, BR21, DEC37, DEC63, DEC66, TC26]
     x-access: guest
-    x-open-question: [29]
     security:
       - csrfToken: []
     requestBody:
@@ -132,11 +132,10 @@ resend:
     summary: إعادة إرسال رابط التأكيد
     description: >-
       رد عام بلا كشف للحساب. مهلة 60 ثانية بين الإرسالين (RL03، DEC37).
-      تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 (DEC63، السؤال 29).
-    x-spec-ids: [API005, FR57, DEC37, DEC63, TC26]
+      تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 NOT_FOUND (DEC63، DEC66).
+    x-spec-ids: [API005, FR57, DEC37, DEC63, DEC66, TC26]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
-    x-open-question: [29]
     security:
       - csrfToken: []
     requestBody:

@@ -12,7 +12,7 @@ An Arabic-first, responsive web marketplace where university students **and othe
 
 ## Sources of truth (in order of precedence)
 
-1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC63, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
+1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC66, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
 2. **`docs/spec-v3-en.md`** (English): full specification v3.0. Canonical for identifiers, field names, limits, error codes and tests.
 3. The Arabic edition of v3 is **not** in this repo on purpose. It contains hidden U+200E marks and six known translation errors. Never copy values from it.
 
