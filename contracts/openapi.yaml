@@ -5,10 +5,10 @@ info:
   version: 0.2.0-phase1
   summary: عقد REST للمرحلة الأولى حسب docs/addendum-v3.1.md وdocs/spec-v3-en.md.
   description: >-
-    معتمد من المالك في 18 نوفمبر 2026، مع القرارات حتى DEC61. تغطي 98 عملية للمرحلة الأولى. العمليات المستبعدة وأسبابها،
-    والاتفاقات المشتركة، ومستويات الوصول، ورموز الأخطاء، كلها في contracts/README.md.
-    عقد التحديث الفوري في contracts/realtime.md.
-    الامتدادات x-spec-ids وx-access وx-rate-limit وx-open-question موثقة في README.
+    معتمد من المالك في 18 نوفمبر 2026، مع القرارات حتى DEC61. تغطي 98 عملية للمرحلة الأولى.
+    العمليات المستبعدة وأسبابها في x-phase1-excluded أدناه. الاتفاقات المشتركة، ومستويات الوصول،
+    ورموز الأخطاء في contracts/README.md. عقد التحديث الفوري في contracts/realtime.md.
+    الامتدادات x-spec-ids وx-access وx-rate-limit وx-open-question وx-phase1-excluded موثقة في README.
 
 servers:
   - url: https://souqjamia1.com
@@ -54,6 +54,50 @@ tags:
     description: لوحة الإدارة
   - name: ops
     description: فحوص التشغيل
+
+# عمليات v3 والملحق (API001 إلى API118) التي لا تدخل المرحلة الأولى. المصدر الوحيد لهذه القائمة:
+# الأمر pnpm check:contract-ids يتأكد أن كل رقم آخر في المدى موجود في paths مرة واحدة بالضبط.
+x-phase1-excluded:
+  - id: API012
+    reason: استرجاع MFA يدوي من لوحة Supabase بيد المالك (القسم 5)
+  - id: API014
+    reason: أُلغي Send Email Hook (القسم 5)
+  - id: API023
+    reason: أُلغي توثيق البريد الجامعي، وحلت محله شارة الطالب API107–API112 (القسم 4.1)
+  - id: API024
+    reason: أُلغي توثيق البريد الجامعي (القسم 4.1)
+  - id: API025
+    reason: أُلغي توثيق البريد الجامعي (القسم 4.1)
+  - id: API061
+    reason: إفادات الحضور، المرحلة الثانية
+  - id: API065
+    reason: حل محله Supabase Realtime (القسم 5، contracts/realtime.md)
+  - id: API072
+    reason: نزاعات الصفقات، المرحلة الثانية
+  - id: API076
+    reason: الاستئناف، المرحلة الثانية
+  - id: API077
+    reason: الاستئناف، المرحلة الثانية
+  - id: API080
+    reason: الدعم بالدفع، المرحلة الثانية (DEC31)
+  - id: API081
+    reason: الدعم بالدفع، المرحلة الثانية (DEC31)
+  - id: API082
+    reason: الدعم بالدفع، المرحلة الثانية (DEC31)
+  - id: API091
+    reason: الاستئناف، المرحلة الثانية
+  - id: API092
+    reason: الاستئناف، المرحلة الثانية
+  - id: API093
+    reason: نزاعات الصفقات، المرحلة الثانية
+  - id: API097
+    reason: أُلغي توثيق البريد الجامعي (القسم 4.1)
+  - id: API098
+    reason: أُلغي توثيق البريد الجامعي (القسم 4.1)
+  - id: API099
+    reason: أُلغي توثيق البريد الجامعي (القسم 4.1)
+  - id: API104
+    reason: تجميد الأدلة، المرحلة الثانية
 
 paths:
   # الهوية والجلسات
