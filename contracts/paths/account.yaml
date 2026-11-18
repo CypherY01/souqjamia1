@@ -7,10 +7,9 @@ me:
     summary: بيانات الحساب الخاصة
     description: >-
       متاح لأي جلسة صالحة حتى يعرض الحساب غير المؤكد أو المقيّد حالته.
-      الصلاحيات الفعلية في capabilities (السؤال 23).
-    x-spec-ids: [API015, FR49, FR04]
+      الصلاحيات الفعلية في capabilities (DEC58).
+    x-spec-ids: [API015, FR49, FR04, DEC58]
     x-access: session
-    x-open-question: [23]
     responses:
       '200':
         $ref: '../components/responses.yaml#/MeOk'
@@ -25,9 +24,8 @@ profileMe:
     description: >-
       الحقول المسموحة فقط، وأي حقل للدور أو الشارة أو التقييم يُرفض (TC21، TC65).
       الصورة الشخصية يجب أن تكون بغرض avatar وجاهزة ويملكها العضو (TC75).
-    x-spec-ids: [API016, FR49, FR61, DEC30, TC21, TC65, TC75]
+    x-spec-ids: [API016, FR49, FR61, DEC30, DEC51, DEC54, TC21, TC65, TC75]
     x-access: member
-    x-open-question: [16]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -206,10 +204,11 @@ deletion:
     operationId: api026RequestDeletion
     tags: [account]
     summary: طلب حذف الحساب مع مهلة استرجاع 30 يوماً
-    description: يلغي الجلسات ويخفي محتوى العضو من الصفحات العامة (FR72).
-    x-spec-ids: [API026, FR72, BR40, DEC38, TC59]
+    description: >-
+      يلغي الجلسات، ويخفي محتوى العضو من الصفحات العامة بلا تغيير حالته (FR72، DEC41)، ويلغي
+      صفقاته وعروضه ولقاءاته المعلّقة بالسبب account_restricted (DEC39).
+    x-spec-ids: [API026, FR72, BR40, DEC38, DEC39, DEC41, TC59]
     x-access: member_reauth
-    x-open-question: [4, 6]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -234,11 +233,12 @@ deletionRecoveryRequest:
     operationId: api027RequestDeletionRecovery
     tags: [account]
     summary: طلب رابط استرجاع حساب بانتظار الحذف
-    description: رد عام بلا كشف للحساب. آلية الاسترجاع بانتظار السؤال 6.
-    x-spec-ids: [API027, FR72, DEC37, TC59]
+    description: >-
+      رد عام بلا كشف للحساب. يُرسل رابط استرجاع صالحاً ساعة ولمرة واحدة (DEC37، DEC41).
+      الدخول خلال المهلة يفتح شاشة الاسترجاع فقط، ومنها يُطلب الرابط.
+    x-spec-ids: [API027, FR72, DEC37, DEC41, TC59]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
-    x-open-question: [6]
     security:
       - csrfToken: []
     requestBody:
@@ -262,10 +262,9 @@ deletionRecoveryConfirm:
     operationId: api028ConfirmDeletionRecovery
     tags: [account]
     summary: استرجاع الحساب خلال المهلة
-    description: يبقى الإيقاف أو الحظر الإداري كما هو بعد الاسترجاع (FR72، TC59).
-    x-spec-ids: [API028, FR72, TC59]
+    description: يبقى الإيقاف أو الحظر الإداري كما هو بعد الاسترجاع (FR72، DEC41، TC59).
+    x-spec-ids: [API028, FR72, DEC41, TC59]
     x-access: guest
-    x-open-question: [6]
     security:
       - csrfToken: []
     requestBody:
@@ -291,9 +290,9 @@ preferences:
     summary: تفضيلات البريد الاختيارية
     description: >-
       اللغة ليست هنا، فمصدرها Profile.locale (القسم 6.3). بريد الأمان والإدارة لا يُعطَّل (BR38).
-    x-spec-ids: [API029, FR68, BR38, TC55]
+      مجموعة reviews مغلقة افتراضياً (SEC11، DEC49).
+    x-spec-ids: [API029, FR68, BR38, SEC11, DEC49, TC55]
     x-access: member
-    x-open-question: [14]
     security:
       - sessionCookie: []
         csrfToken: []

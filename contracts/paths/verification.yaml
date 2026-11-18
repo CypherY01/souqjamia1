@@ -7,10 +7,10 @@ myVerification:
     summary: تقديم طلب شارة طالب بصورة أو صورتين للبطاقة
     description: >-
       طلب معلّق واحد لكل عضو، و3 طلبات كحد أقصى خلال 30 يوماً، وبعد الرفض بـ 24 ساعة.
-      محاولة العضو تعيين الشارة بنفسه مرفوضة (TC87).
-    x-spec-ids: [API107, DEC27, TC85, TC87]
+      محاولة العضو تعيين الشارة بنفسه مرفوضة (TC87). صورة البطاقة تُفحص ويُحذف منها EXIF،
+      وتُحفظ نسخة خاصة واحدة بلا مقاسات (DEC45).
+    x-spec-ids: [API107, DEC27, DEC45, TC85, TC87]
     x-access: member
-    x-open-question: [10]
     security:
       - sessionCookie: []
         csrfToken: []

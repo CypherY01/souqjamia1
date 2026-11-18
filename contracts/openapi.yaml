@@ -2,10 +2,10 @@ openapi: 3.1.0
 
 info:
   title: سوق الجامعة — واجهة المرحلة الأولى
-  version: 0.1.0-phase1
+  version: 0.2.0-phase1
   summary: عقد REST للمرحلة الأولى حسب docs/addendum-v3.1.md وdocs/spec-v3-en.md.
   description: >-
-    مسودة بانتظار اعتماد المالك. تغطي 98 عملية للمرحلة الأولى. العمليات المستبعدة وأسبابها،
+    معتمد من المالك في 18 نوفمبر 2026، مع القرارات حتى DEC59. تغطي 98 عملية للمرحلة الأولى. العمليات المستبعدة وأسبابها،
     والاتفاقات المشتركة، ومستويات الوصول، ورموز الأخطاء، كلها في contracts/README.md.
     عقد التحديث الفوري في contracts/realtime.md.
     الامتدادات x-spec-ids وx-access وx-rate-limit وx-open-question موثقة في README.

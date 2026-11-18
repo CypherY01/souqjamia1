@@ -153,11 +153,19 @@ OfferStatus:
 
 OfferCancelReason:
   type: string
-  enum: [context_closed, price_changed, made_free_or_fixed, blocked]
+  enum: [context_closed, price_changed, made_free_or_fixed, blocked, account_restricted]
+  description: account_restricted عند الإيقاف أو الحظر الإداري أو طلب الحذف (DEC39).
 
 MeetupStatus:
   type: string
   enum: [proposed, accepted, rejected, cancelled, expired]
+
+MeetupCancelReason:
+  type: string
+  enum: [by_proposer, by_recipient, blocked, account_restricted]
+  description: >-
+    قائمة جديدة في DEC39. by_proposer وby_recipient يحددهما الخادم من المتصل،
+    وblocked عند الحظر (UC16)، وaccount_restricted عند التقييد الإداري أو طلب الحذف.
 
 DealStatus:
   type: string
@@ -233,7 +241,9 @@ AccountStatus:
 StudentVerificationStatus:
   type: string
   enum: [pending, approved, rejected, expired, revoked]
-  x-open-question: [10]
+  description: >-
+    expired للطلب غير المراجع خلال 30 يوماً فقط. انتهاء الشارة بعد 12 شهراً يُحسب
+    من badge_expires_at ولا يغيّر الحالة (DEC45).
 
 StudentVerificationReason:
   type: string
@@ -242,8 +252,7 @@ StudentVerificationReason:
 Locale:
   type: string
   enum: [ar]
-  description: العربية فقط في المرحلة الأولى (DEC30).
-  x-open-question: [16]
+  description: العربية فقط في المرحلة الأولى (DEC30، DEC51).
 
 ConversationRole:
   type: string
@@ -616,13 +625,17 @@ DeletionInput:
 EmailGroups:
   type: object
   additionalProperties: false
-  description: مجموعات البريد الاختيارية (SEC11). بريد الأمان والإدارة لا يُعطَّل.
+  description: >-
+    مجموعات البريد الاختيارية (SEC11). بريد الأمان والإدارة لا يُعطَّل.
+    reviews مغلقة افتراضياً (DEC49).
   properties:
     offers:
       type: boolean
     meetups:
       type: boolean
     deals:
+      type: boolean
+    reviews:
       type: boolean
     reports:
       type: boolean
@@ -1233,15 +1246,18 @@ MediaAccessInput:
   type: object
   additionalProperties: false
   description: >-
-    واحد بالضبط. verification_request_id توسعة في العقد لصور البطاقة الجامعية
-    (السؤال 20 في plan/phase-1.md).
+    واحد بالضبط. conversation_id لصور المحادثة لطرفيها. verification_request_id لصور البطاقة
+    الجامعية للمالك والمشرف (DEC55). report_id لصور أدلة البلاغ للمالك والمشرف (DEC43).
   oneOf:
     - required: [conversation_id]
     - required: [verification_request_id]
+    - required: [report_id]
   properties:
     conversation_id:
       $ref: '#/Uuid'
     verification_request_id:
+      $ref: '#/Uuid'
+    report_id:
       $ref: '#/Uuid'
 
 # ---------- المحادثات ----------
@@ -1420,7 +1436,7 @@ OfferListItem:
 
 Meetup:
   type: object
-  required: [id, conversation_id, message_id, proposer_id, recipient_id, location, place_text, scheduled_at, timezone, note, status, replaces_id, cancelled_at, late_cancel, version]
+  required: [id, conversation_id, message_id, proposer_id, recipient_id, location, place_text, scheduled_at, timezone, note, status, replaces_id, cancelled_at, cancel_reason, late_cancel, version]
   properties:
     id:
       $ref: '#/Uuid'
@@ -1453,6 +1469,10 @@ Meetup:
     cancelled_at:
       anyOf:
         - $ref: '#/Timestamp'
+        - type: 'null'
+    cancel_reason:
+      anyOf:
+        - $ref: '#/MeetupCancelReason'
         - type: 'null'
     late_cancel:
       type: boolean
@@ -1582,7 +1602,7 @@ MeetupInput:
   additionalProperties: false
   required: [scheduled_at, timezone]
   description: >-
-    نقطة لقاء مقترحة أو نص حر، واحد منهما بالضبط حسب اقتراح السؤال 9.
+    نقطة لقاء مقترحة أو نص حر، واحد منهما بالضبط (DEC44).
     الموعد بعد 30 دقيقة على الأقل و30 يوماً على الأكثر بتوقيت الخادم (BR14).
   oneOf:
     - required: [location_id]
@@ -1993,8 +2013,10 @@ AdminReportSummary:
 
 EvidenceItem:
   type: object
-  required: [id, captured_at, content]
-  description: لقطة محدودة بالقضية فقط، والوصول لها يُسجَّل (SEC09).
+  required: [id, captured_at, content, message_seq, is_reported, media_ids]
+  description: >-
+    لقطة محدودة بالقضية فقط، والوصول لها يُسجَّل (SEC09). في البلاغ على رسالة: الرسالة
+    المبلّغ عنها مع صورها، وآخر 10 رسائل قبلها نصاً فقط (DEC43). الصور تُفتح عبر API041 بحقل report_id.
   properties:
     id:
       $ref: '#/Uuid'
@@ -2002,6 +2024,19 @@ EvidenceItem:
       $ref: '#/Timestamp'
     content:
       type: string
+    message_seq:
+      anyOf:
+        - $ref: '#/Seq'
+        - type: 'null'
+      description: تسلسل الرسالة في المحادثة، وnull لغير الرسائل.
+    is_reported:
+      type: boolean
+      description: true للعنصر المبلّغ عنه نفسه، وfalse لرسائل السياق قبله.
+    media_ids:
+      type: array
+      description: صور العنصر المبلّغ عنه فقط. فارغة لرسائل السياق.
+      items:
+        $ref: '#/Uuid'
 
 AdminReportDetail:
   allOf:
@@ -2075,8 +2110,8 @@ AccountActionInput:
   additionalProperties: false
   required: [action, reason, expected_version]
   description: >-
-    ban وunban للمالك فقط (BR36). suspend_days بدل الحقل until في v3، لأن المشرف
-    يوقف 7 أو 30 يوماً فقط (السؤال 22).
+    ban وunban للمالك فقط، وunsuspend للمالك والمشرف (BR36، DEC53). suspend_days بقيمة
+    7 أو 30 بدل الحقل until في v3 (DEC57).
   properties:
     action:
       type: string

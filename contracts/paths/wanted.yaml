@@ -95,11 +95,10 @@ wantedItem:
     tags: [wanted]
     summary: تعديل طلب نشط
     description: >-
-      لا يغيّر وقت الإنشاء. حذف الميزانية أو تصفيرها يلغي العروض المعلّقة (الفصل 06)،
-      وسبب الإلغاء وحكم تغيير الميزانية لقيمة أخرى بانتظار السؤال 11.
-    x-spec-ids: [API046, FR27, TC10]
+      لا يغيّر وقت الإنشاء. تغيير الميزانية لقيمة أخرى يلغي العروض المعلّقة بالسبب price_changed،
+      وحذفها أو تصفيرها بالسبب made_free_or_fixed، في نفس المعاملة (BR41، DEC46).
+    x-spec-ids: [API046, FR27, BR41, DEC46, TC10]
     x-access: resource_owner
-    x-open-question: [11]
     security:
       - sessionCookie: []
         csrfToken: []

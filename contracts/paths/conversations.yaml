@@ -302,10 +302,9 @@ meetupsCreate:
       نقطة لقاء مقترحة أو نص حر قصير (DEC28). الموعد بعد 30 دقيقة إلى 30 يوماً، يُخزَّن UTC
       ويُعرض بتوقيت الرياض (BR14). إعادة الجدولة اقتراح جديد مرتبط بالسابق (BR34).
       أربعة لقاءات مستقبلية غير ملغاة كحد أقصى لكل محادثة (RL08).
-    x-spec-ids: [API059, FR37, FR38, FR42, BR10, BR14, BR34, DEC15, DEC28, TC16, TC46]
+    x-spec-ids: [API059, FR37, FR38, FR42, BR10, BR14, BR34, DEC15, DEC28, DEC44, TC16, TC46]
     x-access: participant
     x-rate-limit: [RL08]
-    x-open-question: [9]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -345,8 +344,9 @@ meetup:
     summary: قبول اقتراح لقاء أو رفضه أو إلغاؤه
     description: >-
       المستلم يقبل أو يرفض قبل الموعد. أي طرف يلغي المقترح أو المقبول، والإلغاء في الساعة الأخيرة
-      أو بعدها يُعلَّم متأخراً (BR34، TC47). الإلغاء مسموح حتى مع الحظر.
-    x-spec-ids: [API060, FR39, FR65, BR34, TC16, TC47]
+      أو بعدها يُعلَّم متأخراً (BR34، TC47). الإلغاء مسموح حتى مع الحظر. سبب الإلغاء
+      by_proposer أو by_recipient يحدده الخادم من المتصل (DEC39).
+    x-spec-ids: [API060, FR39, FR65, BR34, DEC39, TC16, TC47]
     x-access: participant
     security:
       - sessionCookie: []
@@ -381,10 +381,10 @@ block:
     summary: حظر عضو تعرفه من سياق مسموح
     description: >-
       يمنع التواصل الجديد في الاتجاهين، ويلغي العروض المعلّقة واللقاءات المستقبلية بسبب مسجّل،
-      تحت أقفال الزوج المرتبة (BR30، FR79). لا يُشعَر المحظور. أثره على الصفقات بانتظار السؤال 4.
-    x-spec-ids: [API062, FR44, FR79, BR16, BR30, DEC12, TC17, TC45, TC49]
+      تحت أقفال الزوج المرتبة (BR30، FR79). لا يُشعَر المحظور. لا يلغي الصفقة المعلّقة، ويبقى
+      تأكيدها مسموحاً (DEC12، DEC39).
+    x-spec-ids: [API062, FR44, FR79, BR16, BR30, DEC12, DEC39, TC17, TC45, TC49]
     x-access: member
-    x-open-question: [4]
     security:
       - sessionCookie: []
         csrfToken: []

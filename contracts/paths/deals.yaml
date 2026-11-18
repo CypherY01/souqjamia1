@@ -7,11 +7,11 @@ deals:
     summary: البائع ينشئ صفقة من محادثة ويسجل تأكيده
     description: >-
       المدخل conversation_id فقط، والخادم يستنتج الإعلان أو الطلب منها (DEC33). صفقة واحدة غير ملغاة
-      لكل إعلان ولكل طلب كقيد في القاعدة. صفقة الطلب لا تحتاج إعلاناً (TC78 المعدّل).
-      المهلة سبعة أيام للتأكيدين (DEC16).
-    x-spec-ids: [API066, FR66, FR36, BR35, DEC16, DEC33, TC36, TC78]
+      لكل إعلان ولكل طلب كقيد في القاعدة. صفقة الطلب لا تحتاج إعلاناً (TC78 المعدّل)، وتجوز
+      للطلب المغلق خلال 30 يوماً من أول إغلاق (DEC40). المهلة سبعة أيام للتأكيدين (DEC16).
+      الحظر بين الطرفين لا يلغي الصفقة القائمة، والتقييد الإداري يلغيها بالسبب account_restricted (DEC39).
+    x-spec-ids: [API066, FR66, FR36, BR35, DEC16, DEC33, DEC39, DEC40, TC36, TC78]
     x-access: participant
-    x-open-question: [4, 5]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -125,10 +125,9 @@ dealCancel:
     summary: إلغاء صفقة معلّقة
     description: >-
       للصفقة المعلّقة فقط، ولا يعيد الإعلان المباع نشطاً. سبب الإلغاء by_seller أو by_buyer يحدده
-      الخادم من المتصل (القسم 6.2، السؤال 21).
-    x-spec-ids: [API070, FR66, DEC33]
+      الخادم من المتصل (القسم 6.2، DEC56).
+    x-spec-ids: [API070, FR66, DEC33, DEC56]
     x-access: participant
-    x-open-question: [21]
     security:
       - sessionCookie: []
         csrfToken: []

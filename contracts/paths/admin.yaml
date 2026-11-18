@@ -97,8 +97,9 @@ reportDecision:
     summary: قرار في قضية بلاغ
     description: >-
       القرار والإجراء والتدقيق والإشعار في معاملة واحدة. الحظر النهائي للمالك فقط (TC57).
+      قرار الإيقاف أو الحظر يلغي ما هو معلّق للحساب بالسبب account_restricted (DEC39).
       إشعار المتأثر يذكر السبب وبريد التواصل للاعتراض اليدوي (القسم 3).
-    x-spec-ids: [API086, FR54, FR67, BR11, BR17, BR36, TC18, TC48, TC57]
+    x-spec-ids: [API086, FR54, FR67, BR11, BR17, BR36, DEC39, TC18, TC48, TC57]
     x-access: staff_reauth
     x-rate-limit: [RL12]
     security:
@@ -164,11 +165,11 @@ accountAction:
     summary: تحذير أو إيقاف أو حظر حساب
     description: >-
       الإيقاف يمنع العمليات الخاصة فوراً ويخفي محتوى الحساب من الصفحات العامة (FR78).
-      الحظر ورفعه للمالك فقط. من يرفع الإيقاف بانتظار السؤال 18، وأثر التقييد على الصفقات بانتظار السؤال 4.
-    x-spec-ids: [API088, FR77, FR78, FR79, BR16, BR36, TC57, TC67]
+      الإيقاف والحظر يلغيان صفقات الحساب وعروضه ولقاءاته المعلّقة بالسبب account_restricted (DEC39).
+      رفع الإيقاف للمالك والمشرف، والحظر ورفعه للمالك فقط (DEC53). مدة الإيقاف 7 أو 30 يوماً (DEC57).
+    x-spec-ids: [API088, FR77, FR78, FR79, BR16, BR36, DEC39, DEC53, DEC57, TC57, TC67]
     x-access: staff_reauth
     x-rate-limit: [RL12]
-    x-open-question: [4, 18, 22]
     security:
       - sessionCookie: []
         csrfToken: []
