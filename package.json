@@ -1,0 +1,31 @@
+{
+  "name": "souqjamia1",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.17.0",
+  "engines": {
+    "node": ">=26.13.1 <27"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @souq/web dev",
+    "dev:worker": "pnpm --filter @souq/worker dev",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm --filter @souq/tests test",
+    "build": "pnpm --filter @souq/web build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "contract:lint": "redocly lint contracts/openapi.yaml --config contracts/redocly.yaml"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "@redocly/cli": "catalog:",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-next": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}

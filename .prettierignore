@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+*.md
+docs/
+plan/
+contracts/
+**/.next/
+**/coverage/
+**/next-env.d.ts

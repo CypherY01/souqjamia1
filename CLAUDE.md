@@ -118,7 +118,23 @@ The feature has Arabic UI with all states, server-side validation and DB constra
 
 ## Commands
 
-_To be filled in once the project is scaffolded (install, dev, test, lint, typecheck, db migrate, db reset, seed)._
+Requires Node 26.13.1 (`.nvmrc`) and pnpm 12.17.0. Run from the repository root.
+
+```bash
+pnpm install                 # install from pnpm-lock.yaml (CI: --frozen-lockfile)
+pnpm dev                     # web app on http://localhost:3000
+pnpm dev:worker              # worker, restarts on change
+pnpm lint                    # ESLint, zero warnings allowed
+pnpm typecheck               # tsc --noEmit in every package
+pnpm test                    # unit tests (Vitest)
+pnpm build                   # production build of the web app
+pnpm format:check            # Prettier check (pnpm format to fix)
+pnpm contract:lint           # Redocly lint of contracts/openapi.yaml
+```
+
+- Versions live in the `catalog` in `pnpm-workspace.yaml`, pinned exactly. pnpm refuses any release younger than 14 days (`minimumReleaseAge`) and blocks dependency install scripts unless listed in `allowBuilds` (version policy in `plan/task-1.2.md`).
+- The worker and the workspace packages are TypeScript run directly by Node (type stripping), so they have no build step. Use only erasable TypeScript syntax (no `enum`, no `namespace`), and write relative imports with the `.ts` extension.
+- Database commands (migrate, reset, seed) arrive with task 1.4.
 
 ## Open items (ask the owner, don't assume)
 

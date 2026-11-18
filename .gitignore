@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Secrets live only in .env.local and the hosting dashboards
+.env
+.env.*
+!.env.example
+
+# OS and logs
+.DS_Store
+Thumbs.db
+*.log

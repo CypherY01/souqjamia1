@@ -19,10 +19,10 @@
 ## الفحص
 
 ```bash
-npx --yes @redocly/cli@2.72.1 lint contracts/openapi.yaml --config contracts/redocly.yaml
+pnpm contract:lint
 ```
 
-المهمة 1.2 تضيف Redocly كاعتمادية تطوير، والمهمة 1.3 تضيف الفحص إلى CI مع فحص تغطية المعرّفات.
+Redocly اعتمادية تطوير في المستودع بالإصدار المثبت في `pnpm-workspace.yaml`. المهمة 1.3 تضيف الفحص إلى CI مع فحص تغطية المعرّفات.
 
 ## الاتفاقات المشتركة
 
