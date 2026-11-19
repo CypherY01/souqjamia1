@@ -43,7 +43,13 @@ try {
     process.exit(1);
   }
 } catch (error) {
-  log.error("worker.db_unavailable", { error });
+  log.error("worker.db_unavailable", {
+    error,
+    // `pnpm db:reset` recreates the local database without the role's password.
+    ...(env.APP_ENV === "development"
+      ? { hint: "Run pnpm env:local after pnpm db:start or pnpm db:reset." }
+      : {}),
+  });
   await pool.end().catch(() => undefined);
   process.exit(1);
 }
