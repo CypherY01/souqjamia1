@@ -177,6 +177,8 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
 
   it("reports a missing server role", async () => {
     const violations = await rolledBack(async (client) => {
+      // Every grant to the role first (task 2.4 gives it the audit cleanup function).
+      await client.query("revoke execute on all functions in schema app from souq_worker");
       await client.query("revoke usage on schema app from souq_worker");
       await client.query("revoke souq_worker from postgres");
       await client.query("drop role souq_worker");

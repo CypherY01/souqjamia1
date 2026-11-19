@@ -68,6 +68,7 @@ export const STORED_ENUMS: readonly StoredEnum[] = [
     contract: ["StudentVerificationReason"],
   },
   { db: "idempotency_state", values: enums.IdempotencyState, contract: null },
+  { db: "job_status", values: enums.JobStatus, contract: null },
   {
     db: "notification_context_type",
     values: enums.NotificationContextType,

@@ -49,9 +49,12 @@ export async function dbError(
   throw new Error(`expected a database error from: ${sql}`);
 }
 
+/** A connection or the pool (each pool query is its own transaction). */
+export type Queryable = pg.ClientBase | pg.Pool;
+
 /** The single value of a one-row, one-column query. */
 export async function scalar<T>(
-  client: pg.ClientBase,
+  client: Queryable,
   sql: string,
   params: unknown[] = [],
 ): Promise<T> {
