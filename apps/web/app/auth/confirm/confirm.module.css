@@ -1,0 +1,11 @@
+/* The confirmation link page (task 3.2). */
+.page {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

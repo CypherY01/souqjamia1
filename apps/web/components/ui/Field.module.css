@@ -87,3 +87,59 @@ textarea.control {
   margin-block-end: var(--space-1);
   font-weight: 600;
 }
+
+/* PasswordField (task 3.2): the field and its show/hide toggle on one row. */
+.passwordRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.passwordRow .control {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.reveal {
+  flex: 0 0 auto;
+  min-block-size: var(--target-size);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-card);
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reveal[aria-pressed="true"] {
+  background-color: var(--color-subtle-green);
+}
+
+.notice {
+  margin: 0;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-control);
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  font-size: var(--text-sm);
+}
+
+/* A checkbox with its error and a related link below it (task 3.2: terms and privacy). */
+.choiceField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-end: var(--space-3);
+}
+
+.choiceExtra {
+  margin: 0;
+  padding-inline-start: calc(1.25rem + var(--space-2));
+  font-size: var(--text-sm);
+}
+
+.choiceField .error {
+  padding-inline-start: calc(1.25rem + var(--space-2));
+}

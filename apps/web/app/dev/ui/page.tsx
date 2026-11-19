@@ -21,6 +21,7 @@ import {
   RelativeDate,
 } from "../../../components/ui/Display";
 import { AmountField, Checkbox, RadioGroup, Select, TextField } from "../../../components/ui/Field";
+import { PasswordField } from "../../../components/ui/PasswordField";
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";
 import { TextArea } from "../../../components/ui/TextArea";
 import { devGalleryEnabled } from "../../../lib/dev-gallery";
@@ -29,6 +30,11 @@ import { routes } from "../../../lib/routes";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
+
+// PasswordField states (task 3.2): seven characters, and 40 Arabic letters (80 UTF-8 bytes, over
+// the 72-byte limit of DEC32 while under 64 characters).
+const DEV_SHORT_PASSWORD = "abc1234";
+const DEV_LONG_ARABIC_PASSWORD = "ك".repeat(40);
 
 export const metadata: Metadata = {
   title: t("dev.title"),
@@ -172,6 +178,36 @@ export default function DevUiPage() {
             ]}
           />
           <Checkbox id="dev-negotiable" label={t("dev.fields.negotiable")} />
+          <Checkbox
+            id="dev-terms"
+            label={t("auth.signup.terms.label")}
+            error={t("auth.fields.terms.required")}
+            extra={<a href={routes.terms}>{t("auth.signup.terms.link")}</a>}
+          />
+        </div>
+      </Section>
+
+      <Section id="password" title={t("dev.sections.password")}>
+        <div className={styles.form}>
+          <PasswordField
+            id="dev-password"
+            label={t("dev.password.label")}
+            hint={t("dev.password.hint")}
+            autoComplete="new-password"
+          />
+          <PasswordField
+            id="dev-password-error"
+            label={t("dev.password.errorLabel")}
+            error={t("dev.password.error")}
+            autoComplete="new-password"
+            defaultValue={DEV_SHORT_PASSWORD}
+          />
+          <PasswordField
+            id="dev-password-bytes"
+            label={t("dev.password.bytesLabel")}
+            autoComplete="new-password"
+            defaultValue={DEV_LONG_ARABIC_PASSWORD}
+          />
         </div>
       </Section>
 

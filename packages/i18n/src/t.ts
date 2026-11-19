@@ -1,6 +1,7 @@
 // DEC30: Arabic only in Phase 1. Every UI string goes through a key here, so English can be
 // added later without rewriting screens.
 import account from "./ar/account.json" with { type: "json" };
+import auth from "./ar/auth.json" with { type: "json" };
 import common from "./ar/common.json" with { type: "json" };
 import dev from "./ar/dev.json" with { type: "json" };
 // Supabase Auth email templates are generated from these keys (packages/db, task 1.4).
@@ -10,7 +11,17 @@ import format from "./ar/format.json" with { type: "json" };
 import layout from "./ar/layout.json" with { type: "json" };
 import ui from "./ar/ui.json" with { type: "json" };
 
-export const messages = { account, common, dev, email, errors, format, layout, ui } as const;
+export const messages = {
+  account,
+  auth,
+  common,
+  dev,
+  email,
+  errors,
+  format,
+  layout,
+  ui,
+} as const;
 
 type Leaves<T, Prefix extends string = ""> = {
   [K in keyof T & string]: T[K] extends string ? `${Prefix}${K}` : Leaves<T[K], `${Prefix}${K}.`>;

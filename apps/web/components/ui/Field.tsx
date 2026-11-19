@@ -154,13 +154,36 @@ export function Select({
 interface CheckboxProps extends Omit<InputProps, "children"> {
   id: string;
   label: string;
+  /** Task 3.2: a field error under the box, linked with aria-describedby. */
+  error?: string;
+  /** Task 3.2: content under the label, such as a link to the policy being accepted. */
+  extra?: ReactNode;
 }
 
-export function Checkbox({ id, label, ...rest }: CheckboxProps) {
-  return (
+export function Checkbox({ id, label, error, extra, ...rest }: CheckboxProps) {
+  const box = (
     <div className={styles.choice}>
-      <input {...rest} id={id} type="checkbox" />
+      <input
+        {...rest}
+        id={id}
+        type="checkbox"
+        aria-invalid={error === undefined ? undefined : true}
+        aria-describedby={error === undefined ? undefined : `${id}-error`}
+      />
       <label htmlFor={id}>{label}</label>
+    </div>
+  );
+  if (error === undefined && extra === undefined) return box;
+  return (
+    <div className={styles.choiceField}>
+      {box}
+      {extra !== undefined && <p className={styles.choiceExtra}>{extra}</p>}
+      {error !== undefined && (
+        <p id={`${id}-error`} className={styles.error}>
+          <Icon name="error" size={18} />
+          {error}
+        </p>
+      )}
     </div>
   );
 }
