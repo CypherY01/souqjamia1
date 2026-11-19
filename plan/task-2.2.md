@@ -196,3 +196,8 @@ packages/db/README.md، CLAUDE.md، ops/runbooks/local-dev.md، plan/phase-1.md
    - **الحارس:** كل سطر في جدوله، ومنه انتهاء الإيقاف بساعة الاختبار، ونسخة شروط جديدة قبل وقتها وبعده. وإيقاف من اتصال ثانٍ ينتظر كتابة مرّت بالحارس (`55P03` بمهلة 300 ms).
 3. **الفحوص الأخرى محلياً:** `format:check` و`lint` و`check:css` و`typecheck` و`test` (436) و`db:lint` و`check:migrations`.
 4. **خطوات المراجعة** في `ops/runbooks/local-dev.md` جُرّبت على Supabase المحلي في PowerShell.
+5. **CI أخضر** على الفرع في التشغيل [44469433324](https://github.com/CypherY01/souqjamia1/actions/runs/44469433324). مهمة `integration` أخذت 86 ثانية، منها 6 لاختبارات التكامل الـ81.
+
+### المراجعة المحلية
+
+خطوات المراجعة في `ops/runbooks/local-dev.md`، قسم «مراجعة جداول الهوية».
