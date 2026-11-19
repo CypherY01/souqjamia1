@@ -1,7 +1,18 @@
+import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { loadServerEnv } from "../../apps/web/lib/env.ts";
 import { loadWorkerEnv } from "../../apps/worker/src/env.ts";
-import { GENERATED_HEADER, webEnv, workerEnv } from "../../scripts/write-local-env.ts";
+import {
+  GENERATED_HEADER,
+  newRolePassword,
+  roleDatabaseUrl,
+  webEnv,
+  workerEnv,
+} from "../../scripts/write-local-env.ts";
+
+// The local postgres URL as `supabase status` reports it, built at run time (no committed
+// connection string with a password).
+const localDbUrl = `postgresql://postgres:${randomBytes(4).toString("hex")}@127.0.0.1:54322/postgres`;
 
 function parseDotenv(text: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -43,7 +54,23 @@ describe("pnpm env:local", () => {
     expect(parseDotenv(webEnv(stack, true)).EMAIL_CONFIRMATION_REQUIRED).toBe("true");
   });
 
-  it("writes a worker env that passes the worker's validation", () => {
-    expect(loadWorkerEnv(parseDotenv(workerEnv()))).toEqual({ APP_ENV: "development" });
+  it("task 2.5: writes a worker env for souq_worker that passes the worker's validation", () => {
+    const password = newRolePassword();
+    const url = roleDatabaseUrl(localDbUrl, "souq_worker", password);
+    const env = loadWorkerEnv(parseDotenv(workerEnv(url)));
+    expect(env.APP_ENV).toBe("development");
+    const parsed = new URL(env.DATABASE_URL);
+    expect(parsed.username).toBe("souq_worker");
+    expect(parsed.password).toBe(password);
+    expect(`${parsed.host}${parsed.pathname}`).toBe("127.0.0.1:54322/postgres");
+  });
+
+  it("task 2.5: a new random role password on every run, for local databases only", () => {
+    const first = newRolePassword();
+    expect(first).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(first).not.toBe(newRolePassword());
+    expect(() =>
+      roleDatabaseUrl("postgresql://db.example.com:5432/postgres", "souq_worker", first),
+    ).toThrow("Refusing a non-local address");
   });
 });

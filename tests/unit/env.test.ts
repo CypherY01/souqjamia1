@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { EnvError, loadPublicEnv, loadServerEnv } from "../../apps/web/lib/env.ts";
 import { loadWorkerEnv } from "../../apps/worker/src/env.ts";
@@ -78,8 +79,30 @@ describe("OPS05 web environment", () => {
 });
 
 describe("OPS05 worker environment", () => {
-  it("accepts APP_ENV and rejects a missing one", () => {
-    expect(loadWorkerEnv({ APP_ENV: "staging" })).toEqual({ APP_ENV: "staging" });
-    expect(() => loadWorkerEnv({})).toThrow("Invalid or missing environment variables: APP_ENV.");
+  // Built at run time: no connection string with a password is ever committed.
+  const databaseUrl = `postgresql://souq_worker:${randomBytes(8).toString("hex")}@127.0.0.1:54322/postgres`;
+
+  it("accepts APP_ENV and DATABASE_URL, and names each missing one", () => {
+    expect(loadWorkerEnv({ APP_ENV: "staging", DATABASE_URL: databaseUrl })).toEqual({
+      APP_ENV: "staging",
+      DATABASE_URL: databaseUrl,
+    });
+    expect(() => loadWorkerEnv({})).toThrow(
+      "Invalid or missing environment variables: APP_ENV, DATABASE_URL.",
+    );
+  });
+
+  it("task 2.5: DATABASE_URL must be a postgres connection string, and the error hides it", () => {
+    for (const value of ["", "not a url", "https://127.0.0.1:54322/postgres", "postgres://"]) {
+      expect(() => loadWorkerEnv({ APP_ENV: "development", DATABASE_URL: value }), value).toThrow(
+        "Invalid or missing environment variables: DATABASE_URL.",
+      );
+    }
+    const short = databaseUrl.replace("postgresql:", "postgres:");
+    expect(loadWorkerEnv({ APP_ENV: "development", DATABASE_URL: short }).DATABASE_URL).toBe(short);
+    const wrong = databaseUrl.replace("postgresql:", "https:");
+    expect(() => loadWorkerEnv({ APP_ENV: "development", DATABASE_URL: wrong })).toThrow(
+      expect.objectContaining({ message: expect.not.stringContaining("souq_worker:") as string }),
+    );
   });
 });
