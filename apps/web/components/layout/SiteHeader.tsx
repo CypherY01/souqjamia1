@@ -1,6 +1,6 @@
 // Shared navigation (chapter 02, plan/screens.md). In Arabic the logo is on the right, then
 // search and the main links. No contribution link and no language switch (DEC30, DEC31).
-// The member variant is wired to the session in task 3.1; until then the site shows the visitor.
+// The layout shows the member variant for an ordinary session (task 3.1), the visitor otherwise.
 import Link from "next/link";
 import { formatNumber, t } from "@souq/i18n";
 import { routes } from "../../lib/routes";

@@ -12,6 +12,8 @@ export const routes = {
   guidelines: "/guidelines",
   login: "/login",
   signup: "/signup",
+  // FR78, task 3.1: the state of a restricted or deletion-pending account.
+  restricted: "/restricted",
   sell: "/sell",
   messages: "/messages",
   notifications: "/notifications",

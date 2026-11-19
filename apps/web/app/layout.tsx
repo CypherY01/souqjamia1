@@ -3,9 +3,11 @@ import { Noto_Sans, Noto_Sans_Arabic } from "next/font/google";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { t } from "@souq/i18n";
+import { log } from "@souq/log";
 import { MAIN_CONTENT_ID, SkipLink } from "../components/layout/SkipLink";
 import { SiteFooter } from "../components/layout/SiteFooter";
-import { SiteHeader } from "../components/layout/SiteHeader";
+import { SiteHeader, type HeaderMember } from "../components/layout/SiteHeader";
+import { pageSession } from "../lib/auth/page";
 import "./tokens.css";
 import "./globals.css";
 import styles from "./layout.module.css";
@@ -24,6 +26,23 @@ export const metadata: Metadata = {
   description: t("common.app.description"),
 };
 
+/**
+ * Task 3.1 (from task 1.5): the member variant of the header for an ordinary session. A limited
+ * session or a guest sees the visitor header. If the database does not answer, the header falls
+ * back to the visitor variant, and the page shows its own error state where it needs the data.
+ * The unread count joins with the notifications in task 3.8.
+ */
+async function headerMember(): Promise<HeaderMember | null> {
+  try {
+    const auth = await pageSession();
+    if (auth === null || auth.identity.limited) return null;
+    return { name: auth.state.displayName, unreadNotifications: 0 };
+  } catch (error) {
+    log.warn("layout.session_unavailable", { name: (error as Error).name });
+    return null;
+  }
+}
+
 // DEC30: Arabic only, right to left.
 // SEC06: the CSP nonce is new on every request, so every page renders on request (task 1.6).
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -32,7 +51,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="ar" dir="rtl" className={`${arabic.variable} ${latin.variable}`}>
       <body>
         <SkipLink />
-        <SiteHeader />
+        <SiteHeader member={await headerMember()} />
         <main id={MAIN_CONTENT_ID} tabIndex={-1} className={styles.main}>
           {children}
         </main>

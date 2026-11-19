@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { t, type MessageKey } from "@souq/i18n";
+import { AccountRestrictedNotice } from "../../../components/account/AccountRestrictedNotice";
 import { SiteHeader } from "../../../components/layout/SiteHeader";
 import { SafeText } from "../../../components/text/SafeText";
 import { Alert, SafeMeetupNotice } from "../../../components/ui/Alert";
@@ -68,6 +69,10 @@ const sampleMember = { name: "عضو تجريبي", college: "كلية تجري�
 const now = new Date();
 const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
 const meetupAt = "2026-11-18T13:30:00Z";
+// Task 3.1: fixture restriction dates and the fixture contact address (G05 gives the real one).
+const suspendedUntil = new Date("2026-12-01T09:00:00Z");
+const deletionDeadline = new Date("2026-12-19T12:00:00Z");
+const sampleContactEmail = "contact@example.test";
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
@@ -307,6 +312,34 @@ export default function DevUiPage() {
             member={sampleMember}
             navLabel={t("dev.header.navLabel")}
             idPrefix="preview"
+          />
+        </div>
+      </Section>
+
+      <Section id="account-restricted" title={t("dev.sections.restricted")}>
+        <p>{t("dev.restricted.intro")}</p>
+        <h3>{t("dev.restricted.suspended")}</h3>
+        <div className={styles.preview}>
+          <AccountRestrictedNotice
+            restriction={{ kind: "suspended", until: suspendedUntil }}
+            contactEmail={sampleContactEmail}
+            idPrefix="dev-suspended"
+          />
+        </div>
+        <h3>{t("dev.restricted.banned")}</h3>
+        <div className={styles.preview}>
+          <AccountRestrictedNotice
+            restriction={{ kind: "banned" }}
+            contactEmail={sampleContactEmail}
+            idPrefix="dev-banned"
+          />
+        </div>
+        <h3>{t("dev.restricted.deletionPending")}</h3>
+        <div className={styles.preview}>
+          <AccountRestrictedNotice
+            restriction={{ kind: "deletion_pending", deadline: deletionDeadline }}
+            contactEmail={sampleContactEmail}
+            idPrefix="dev-deletion"
           />
         </div>
       </Section>
