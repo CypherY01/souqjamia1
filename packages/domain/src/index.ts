@@ -4,3 +4,10 @@ export { linkify, type TextPart } from "./linkify.ts";
 export { parseAmount, type ParseAmountError, type ParseAmountResult } from "./money.ts";
 export { countChars, normalizeText, stripBidiControls } from "./text.ts";
 export * as enums from "./enums.ts";
+export {
+  DISPLAY_NAME_MAX,
+  DISPLAY_NAME_MIN,
+  parseDisplayName,
+  type DisplayNameError,
+  type DisplayNameResult,
+} from "./account/display-name.ts";
