@@ -4,6 +4,7 @@ import { loadServerEnv } from "../../apps/web/lib/env.ts";
 import { loadWorkerEnv } from "../../apps/worker/src/env.ts";
 import {
   GENERATED_HEADER,
+  LOCAL_CONTACT_EMAIL,
   newRolePassword,
   roleDatabaseUrl,
   webEnv,
@@ -28,9 +29,11 @@ const stack = {
   publishableKey: "sb_publishable_localdevelopmentkey",
 };
 
+const webDbUrl = roleDatabaseUrl(localDbUrl, "souq_web", newRolePassword());
+
 describe("pnpm env:local", () => {
   it("writes a web env that passes the app's own validation", () => {
-    const text = webEnv(stack, false);
+    const text = webEnv(stack, false, webDbUrl);
     expect(text.startsWith(GENERATED_HEADER)).toBe(true);
     const env = loadServerEnv(parseDotenv(text));
     expect(env).toMatchObject({
@@ -40,9 +43,17 @@ describe("pnpm env:local", () => {
     });
   });
 
+  it("task 3.1: the web app connects as souq_web, with the FR78 fixture contact address", () => {
+    const env = loadServerEnv(parseDotenv(webEnv(stack, false, webDbUrl)));
+    expect(new URL(env.DATABASE_URL).username).toBe("souq_web");
+    expect(env.DATABASE_URL).toBe(webDbUrl);
+    expect(env.CONTACT_EMAIL).toBe(LOCAL_CONTACT_EMAIL);
+    expect(LOCAL_CONTACT_EMAIL.endsWith("@example.test")).toBe(true);
+  });
+
   it("task 1.6: new random server secrets on every run, no proxy locally", () => {
-    const first = parseDotenv(webEnv(stack, false));
-    const second = parseDotenv(webEnv(stack, false));
+    const first = parseDotenv(webEnv(stack, false, webDbUrl));
+    const second = parseDotenv(webEnv(stack, false, webDbUrl));
     expect(first.APP_SECRET).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(first.PROBE_TOKEN).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(first.APP_SECRET).not.toBe(second.APP_SECRET);
@@ -51,7 +62,7 @@ describe("pnpm env:local", () => {
   });
 
   it("copies the DEC63 flag it is given", () => {
-    expect(parseDotenv(webEnv(stack, true)).EMAIL_CONFIRMATION_REQUIRED).toBe("true");
+    expect(parseDotenv(webEnv(stack, true, webDbUrl)).EMAIL_CONFIRMATION_REQUIRED).toBe("true");
   });
 
   it("task 2.5: writes a worker env for souq_worker that passes the worker's validation", () => {

@@ -1,9 +1,11 @@
 // Task 1.6, owner condition 2: every server key is derived from APP_SECRET with HKDF-SHA256,
 // one purpose name per key, so a key for one job can never be used for another.
-// Changing APP_SECRET invalidates CSRF tokens and open cursors (ops/runbooks/secrets.md).
+// Changing APP_SECRET invalidates CSRF tokens and open cursors, and starts every failure
+// counter again (ops/runbooks/secrets.md).
 import { hkdfSync } from "node:crypto";
 
-export type KeyPurpose = "csrf" | "cursor";
+// rate-limit (task 3.1, DEC70): fingerprints of addresses, emails and guest ids for counters.
+export type KeyPurpose = "csrf" | "cursor" | "rate-limit";
 
 /** Fixed per application and format version; changing it is the same as changing APP_SECRET. */
 export const HKDF_SALT = "souqjamia1/keys/v1";

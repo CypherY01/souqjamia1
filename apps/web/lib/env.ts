@@ -10,6 +10,16 @@ const origin = z.url().refine((value) => new URL(value).origin === value, {
   message: "must be an origin only: scheme, host and optional port, without a path",
 });
 
+/** A postgres:// or postgresql:// connection string with a host, as for the worker (task 2.5). */
+function isPostgresUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (url.protocol === "postgres:" || url.protocol === "postgresql:") && url.hostname !== "";
+  } catch {
+    return false;
+  }
+}
+
 /** Inlined into the browser bundle at build time, so they must be public values. */
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
@@ -33,6 +43,12 @@ export const serverEnvSchema = publicEnvSchema.extend({
     .string()
     .regex(/^[0-9]$/)
     .transform(Number),
+  // Task 3.1, DEC36: direct Postgres connection for the souq_web role. lib/db/app-client.ts
+  // refuses any other role.
+  DATABASE_URL: z.string().refine(isPostgresUrl),
+  // Task 3.1, FR78: the contact address shown to restricted accounts for objections (section 3
+  // of the addendum). The real address comes with G05; locally a fixture.
+  CONTACT_EMAIL: z.email(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

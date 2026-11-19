@@ -46,6 +46,10 @@ export default defineConfig({
       APP_SECRET: process.env.E2E_APP_SECRET,
       PROBE_TOKEN: process.env.E2E_PROBE_TOKEN,
       TRUSTED_PROXY_HOPS: "0",
+      // Task 3.1: nothing listens on port 1, so the database is down for these tests (the
+      // E2E job has no Supabase until task 3.2) and /readyz reports it.
+      DATABASE_URL: "postgresql://souq_web@127.0.0.1:1/postgres",
+      CONTACT_EMAIL: "contact@example.test",
       NEXT_TELEMETRY_DISABLED: "1",
     },
   },

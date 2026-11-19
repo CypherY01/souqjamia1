@@ -13,6 +13,9 @@ const validWeb = {
   APP_SECRET: "a".repeat(43),
   PROBE_TOKEN: "b".repeat(43),
   TRUSTED_PROXY_HOPS: "0",
+  // Task 3.1. No password: nothing connects in these tests.
+  DATABASE_URL: "postgresql://souq_web@127.0.0.1:54322/postgres",
+  CONTACT_EMAIL: "contact@example.test",
 };
 
 function errorOf(fn: () => unknown): EnvError {
@@ -66,6 +69,9 @@ describe("OPS05 web environment", () => {
     ["PROBE_TOKEN", ""],
     ["TRUSTED_PROXY_HOPS", "-1"],
     ["TRUSTED_PROXY_HOPS", "two"],
+    ["DATABASE_URL", "https://127.0.0.1:54322/postgres"],
+    ["DATABASE_URL", "postgres://"],
+    ["CONTACT_EMAIL", "not an address"],
   ])("rejects %s", (name, value) => {
     expect(errorOf(() => loadServerEnv({ ...validWeb, [name]: value })).message).toContain(name);
   });
