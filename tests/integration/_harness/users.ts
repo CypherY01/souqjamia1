@@ -12,6 +12,8 @@ export interface TestMember {
   id: string;
   email: string;
   accessToken: string;
+  /** Task 3.1: for the session cookies of the server tests. */
+  refreshToken: string;
   sessionId: string;
 }
 
@@ -39,11 +41,17 @@ export async function signUpMember(displayName: string = TEST_NAME): Promise<Tes
   const email = testEmail();
   const res = await authSignup(email, displayName);
   if (res.status !== 200) throw new Error(`signup failed with ${String(res.status)}`);
-  const body = (await res.json()) as { access_token: string };
+  const body = (await res.json()) as { access_token: string; refresh_token: string };
   const claims = JSON.parse(
     Buffer.from(body.access_token.split(".")[1] ?? "", "base64url").toString(),
   ) as { sub: string; session_id: string };
-  return { id: claims.sub, email, accessToken: body.access_token, sessionId: claims.session_id };
+  return {
+    id: claims.sub,
+    email,
+    accessToken: body.access_token,
+    refreshToken: body.refresh_token,
+    sessionId: claims.session_id,
+  };
 }
 
 /** Deletes the login identity through the Auth admin API (local secret key only). */

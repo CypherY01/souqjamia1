@@ -95,6 +95,37 @@ describe("SEC05 CSRF token bound to the session", () => {
     );
   });
 
+  describe("task 3.1, item 5: a member binds to the verified session_id", () => {
+    const sessionA = "11111111-2222-4333-8444-555555555555";
+    const sessionB = "66666666-7777-4888-8999-aaaaaaaaaaaa";
+
+    it("prefers the member session over the guest cookie, and refuses a malformed id", () => {
+      expect(resolveBinding(post(guestId, null), sessionA)).toEqual({
+        kind: "member",
+        id: sessionA,
+      });
+      expect(resolveBinding(post(guestId, null), "not-a-session-id")).toBeNull();
+    });
+
+    it("a guest token does not pass for a member, nor a member token for a guest", () => {
+      const guestToken = csrfToken(SECRET, guest.binding);
+      const memberToken = csrfToken(SECRET, { kind: "member", id: sessionA });
+      expect(guardRequest("POST", post(guestId, guestToken), config, sessionA)).toBe("CSRF_FAILED");
+      expect(guardRequest("POST", post(guestId, memberToken), config, sessionA)).toBeNull();
+      expect(guardRequest("POST", post(guestId, memberToken), config)).toBe("CSRF_FAILED");
+    });
+
+    it("owner condition 1: a new login (new session_id) and a logout make the member token fail", () => {
+      const memberToken = csrfToken(SECRET, { kind: "member", id: sessionA });
+      expect(guardRequest("POST", post(guestId, memberToken), config, sessionB)).toBe(
+        "CSRF_FAILED",
+      );
+      // After logout the request has no session, so it binds to the (rotated) guest cookie.
+      const rotatedId = cookieValue(rotateGuestBinding().setCookie);
+      expect(guardRequest("POST", post(rotatedId, memberToken), config)).toBe("CSRF_FAILED");
+    });
+  });
+
   it("owner condition 1: a rotation (login, logout, account switch) makes the old token fail", () => {
     const before = csrfToken(SECRET, guest.binding);
     const rotated = rotateGuestBinding();

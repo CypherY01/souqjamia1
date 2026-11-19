@@ -7,7 +7,14 @@ import {
   parseLimit,
 } from "../../apps/web/lib/http/cursor.ts";
 import { ApiError } from "../../apps/web/lib/http/errors.ts";
-import { checkReadiness, probeTokenMatches } from "../../apps/web/lib/http/readiness.ts";
+import {
+  checkReadiness,
+  JOB_QUEUE_MAX_DUE_SECONDS,
+  probeTokenMatches,
+  queueHealthy,
+} from "../../apps/web/lib/http/readiness.ts";
+import type { AppDb } from "../../apps/web/lib/db/app-client.ts";
+import type pg from "pg";
 
 // Built at run time: the repository never contains a secret-like string.
 const SECRET = ["cursor", "test", "secret", "q".repeat(32)].join("-");
@@ -97,6 +104,20 @@ describe("API106 readiness", () => {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "test"].join("_"),
   };
 
+  // Task 3.1: a fake database answering app.job_queue_health(), or failing.
+  function fakeDb(health: { oldest_due_seconds: number; dead_last_24h: number } | Error): AppDb {
+    return {
+      withActor: () => Promise.reject(new Error("not used")),
+      query: <R extends pg.QueryResultRow>() =>
+        health instanceof Error
+          ? Promise.reject(health)
+          : Promise.resolve({ rows: [health] } as unknown as pg.QueryResult<R>),
+      end: () => Promise.resolve(),
+    };
+  }
+  const healthyDb = fakeDb({ oldest_due_seconds: 0, dead_last_24h: 0 });
+  const authUp = (() => Promise.resolve(new Response("{}", { status: 200 }))) as typeof fetch;
+
   it("compares the probe token exactly", () => {
     const token = "p".repeat(40);
     expect(probeTokenMatches(token, token)).toBe(true);
@@ -113,9 +134,9 @@ describe("API106 readiness", () => {
       apikey = new Headers(init?.headers).get("apikey");
       return Promise.resolve(new Response("{}", { status: 200 }));
     }) as typeof fetch;
-    await expect(checkReadiness(config, fetcher)).resolves.toEqual({
+    await expect(checkReadiness(config, healthyDb, "t", fetcher)).resolves.toEqual({
       status: "ready",
-      checks: { supabase_auth: true },
+      checks: { supabase_auth: true, database: true, job_queue: true },
     });
     expect(called).toBe("http://127.0.0.1:54321/auth/v1/health");
     expect(apikey).toBe(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
@@ -125,7 +146,35 @@ describe("API106 readiness", () => {
     ["an error status", () => Promise.resolve(new Response("", { status: 500 }))],
     ["a network failure", () => Promise.reject(new TypeError("fetch failed"))],
   ])("is not ready on %s, without the error details", async (_name, impl) => {
-    const result = await checkReadiness(config, impl);
-    expect(result).toEqual({ status: "not_ready", checks: { supabase_auth: false } });
+    const result = await checkReadiness(config, healthyDb, "t", impl);
+    expect(result).toEqual({
+      status: "not_ready",
+      checks: { supabase_auth: false, database: true, job_queue: true },
+    });
+  });
+
+  it("task 3.1: not ready without the database, and the queue is down with it", async () => {
+    const result = await checkReadiness(config, fakeDb(new Error("down")), "t", authUp);
+    expect(result).toEqual({
+      status: "not_ready",
+      checks: { supabase_auth: true, database: false, job_queue: false },
+    });
+  });
+
+  it.each([
+    ["a due job waiting over 10 minutes", { oldest_due_seconds: 601, dead_last_24h: 0 }],
+    ["a dead job in the last 24 hours", { oldest_due_seconds: 0, dead_last_24h: 1 }],
+  ])("task 3.1, item 13: %s marks the queue, and the site stays ready", async (_name, health) => {
+    const result = await checkReadiness(config, fakeDb(health), "t", authUp);
+    expect(result).toEqual({
+      status: "ready",
+      checks: { supabase_auth: true, database: true, job_queue: false },
+    });
+  });
+
+  it("task 3.1, item 13: a due job of exactly 10 minutes is still on time", () => {
+    expect(queueHealthy({ oldest_due_seconds: JOB_QUEUE_MAX_DUE_SECONDS, dead_last_24h: 0 })).toBe(
+      true,
+    );
   });
 });
