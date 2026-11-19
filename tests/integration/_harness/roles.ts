@@ -21,11 +21,18 @@ export interface Claims {
   role: "authenticated";
   session_id: string;
   aal: "aal1" | "aal2";
+  /** DEC73: an ordinary session has the password method; without it the session is limited. */
+  amr?: { method: string; timestamp: number }[];
+}
+
+/** amr of a password sign-in, as Supabase Auth writes it (DEC73). */
+export function passwordAmr(): { method: string; timestamp: number }[] {
+  return [{ method: "password", timestamp: Math.floor(Date.now() / 1000) }];
 }
 
 /** Claims as the server would set them after verifying a member's JWT (owner condition 2). */
 export function memberClaims(sub: string = randomUUID()): Claims {
-  return { sub, role: "authenticated", session_id: randomUUID(), aal: "aal1" };
+  return { sub, role: "authenticated", session_id: randomUUID(), aal: "aal1", amr: passwordAmr() };
 }
 
 /**

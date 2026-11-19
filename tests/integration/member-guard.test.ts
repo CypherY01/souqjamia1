@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setClock } from "./_harness/clock.ts";
 import { closeDb, dbError, rolledBack, scalar } from "./_harness/db.ts";
 import { withTwoConnections } from "./_harness/parallel.ts";
-import { actAs, type Claims } from "./_harness/roles.ts";
+import { actAs, passwordAmr, type Claims } from "./_harness/roles.ts";
 import { signUpMember, type TestMember } from "./_harness/users.ts";
 
 afterAll(closeDb);
@@ -18,7 +18,13 @@ beforeAll(async () => {
 });
 
 function claimsOf(m: TestMember, sessionId = m.sessionId): Claims {
-  return { sub: m.id, role: "authenticated", session_id: sessionId, aal: "aal1" };
+  return {
+    sub: m.id,
+    role: "authenticated",
+    session_id: sessionId,
+    aal: "aal1",
+    amr: passwordAmr(),
+  };
 }
 
 /**
@@ -95,6 +101,37 @@ describe("FR04 and BR01: app.assert_active_member()", () => {
       await change(client, "update public.profile set auth_user_id = null where id = $1");
       expect(await guard(client, claimsOf(member))).toBe("UNAUTHENTICATED");
       await client.query("rollback to savepoint unlinked");
+    });
+  });
+
+  it("DEC73 (task 3.1, item 7): RECOVERY_SESSION_ONLY without the password method in amr, before deletion and restriction", async () => {
+    await rolledBack(async (client) => {
+      await prepare(client);
+      const now = Math.floor(Date.now() / 1000);
+      // A recovery link signs in with amr = otp only (checked on local Supabase, task 3.1).
+      const recovery = { ...claimsOf(member), amr: [{ method: "otp", timestamp: now }] };
+      expect(await guard(client, recovery)).toBe("RECOVERY_SESSION_ONLY");
+      expect(await guard(client, { ...claimsOf(member), amr: [] })).toBe("RECOVERY_SESSION_ONLY");
+      const withoutAmr = JSON.stringify({ ...claimsOf(member), amr: undefined });
+      expect(await guard(client, withoutAmr)).toBe("RECOVERY_SESSION_ONLY");
+      const notAList = JSON.stringify({ ...claimsOf(member), amr: "password" });
+      expect(await guard(client, notAList)).toBe("RECOVERY_SESSION_ONLY");
+
+      await change(
+        client,
+        "update public.account_control set deletion_requested_at = now(), status = 'banned' where user_id = $1",
+      );
+      expect(await guard(client, recovery)).toBe("RECOVERY_SESSION_ONLY");
+      // An MFA session keeps password next to totp, so it is an ordinary session.
+      const mfa = {
+        ...claimsOf(member),
+        aal: "aal2" as const,
+        amr: [
+          { method: "totp", timestamp: now },
+          { method: "password", timestamp: now - 60 },
+        ],
+      };
+      expect(await guard(client, mfa)).toBe("DELETION_PENDING");
     });
   });
 
