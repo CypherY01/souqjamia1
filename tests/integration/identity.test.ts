@@ -20,9 +20,10 @@ const cp = (...codes: number[]): string => String.fromCodePoint(...codes);
 
 /** The only columns anon and authenticated may read (item 3). Everything else is private. */
 const READABLE: Record<string, { anon: string[]; authenticated: string[] }> = {
+  // college_id since task 2.3 (public like the name, FR14).
   profile: {
-    anon: ["display_name", "id", "joined_at", "locale", "version"],
-    authenticated: ["display_name", "id", "joined_at", "locale", "version"],
+    anon: ["college_id", "display_name", "id", "joined_at", "locale", "version"],
+    authenticated: ["college_id", "display_name", "id", "joined_at", "locale", "version"],
   },
   account_control: {
     anon: [],
