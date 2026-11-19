@@ -4,6 +4,7 @@
 
 - إعداد Supabase المحلي في المهمة 1.4: `supabase/config.toml` وقوالب البريد العربية.
 - خط الأساس الأمني في المهمة 2.1 (SEC02، DEC36): `supabase/migrations/` وتفاصيله في `plan/task-2.1.md`.
+- جداول الهوية والحارس في المهمة 2.2: تفاصيلها في `plan/task-2.2.md`.
 
 ## قواعد كتابة الهجرات
 
@@ -32,6 +33,20 @@
 - **الأخطاء:** `perform app.raise_api_error('STATE_CONFLICT')`، أو مع الحقل وقاعدته: `perform app.raise_api_error('VALIDATION_FAILED', 'title', 'too_small')`. الرمز من `ErrorCode` في العقد، والخطأ بـ SQLSTATE `SJ001`.
 - **الوقت:** `app.app_now()` فقط. الاختبارات تستبدلها محلياً بساعة اختبار.
 - **النص:** `app.normalize_text()` لحدود الطول (NFC والقص، مثل `normalizeText` في `packages/domain`). و`app.search_normalize()` لنسخة البحث فقط (DEC67).
+
+## الهوية (المهمة 2.2)
+
+- **`profile.id` = معرّف حساب الدخول عند الإنشاء.** سياسات RLS تكتب `owner_id = (select auth.uid())` مباشرة.
+- **لا CASCADE من `auth.users`:** المفتاح الوحيد إليه `profile.auth_user_id` بـ `ON DELETE SET NULL`، فيبقى الملف معرّفاً مستعاراً (RET06).
+- **`hidden_from_public` لا تكتبه أي دالة:** يُشتق بمُشغّل على `account_control` في نفس المعاملة، وفحص مؤجّل عند الالتزام يرفض أي اختلاف. دوال الإيقاف والحظر والحذف تغيّر `account_control` فقط.
+- **محتوى عام لحساب مقيّد:** سياسات الجداول القادمة تقرأ `profile` العام (الصف المخفي لا يظهر لغير صاحبه)، فلا تحتاج قراءة `account_control`.
+- **صلاحيات الأعمدة:** كل SELECT بقائمة أعمدة صريحة. عمود جديد لا يقرؤه أحد حتى يُمنح، واختبار `identity.test.ts` يحدد القائمة المسموحة لكل جدول.
+- **دالة كتابة للعضو تبدأ بـ `app.assert_active_member()`،** لا بـ `app.actor_id()` وحدها. ترجع معرّف العضو بعد فحص الجلسة والحذف والتقييد والبريد والإقرار، وتقفل صف `account_control` بـ FOR SHARE.
+
+## schema `rls`
+
+- دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.
+- تقرأ ما تسمح به RLS للمتصل فقط (شرط المالك 3 على 2.1). مثال: `rls.has_role('moderator')`.
 
 ## القوائم الثابتة (enum)
 
