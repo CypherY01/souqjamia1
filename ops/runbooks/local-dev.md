@@ -213,6 +213,38 @@
 
 6. **إضافة فئة مستقبلاً:** الخطوات في [reference-data.md](reference-data.md).
 
+## مراجعة البنية التحتية في القاعدة (المهمة 2.4)
+
+لا واجهة جديدة. Supabase المحلي يعمل.
+
+1. **الهجرة:** `pnpm db:reset`. يظهر `20261119120000_infrastructure.sql`.
+2. **الاختبارات:** `pnpm test:integration`. تنجح كلها، ومنها `idempotency` و`rate-limit` و`audit-jobs` و`notifications`.
+3. **في Studio، SQL Editor:** الجداول الداخلية في `app`، لا في `public`:
+
+   ```sql
+   select table_name from information_schema.tables where table_schema = 'app' order by 1;
+   ```
+
+   تظهر `audit_event` و`idempotency_record` و`job` و`rate_limit_bucket`.
+4. **عدّاد المحاولات (DEC70):** نفّذ السطر ثلاث مرات. الأولى والثانية ترجعان `0`، والثالثة عدد الثواني الباقية حتى نهاية الدقيقة:
+
+   ```sql
+   select app.rate_limit_hit('review:demo', sha256('demo'::bytea), 2, '1 minute');
+   ```
+
+5. **التدقيق لا يُعدَّل:** يُرفض التعديل بالرسالة «app.audit_event is append-only (RET08)». الصف التجريبي يبقى في القاعدة المحلية حتى `pnpm db:reset`:
+
+   ```sql
+   select app.audit('review.check');
+   update app.audit_event set action = 'review.changed' where action = 'review.check';
+   ```
+
+6. **التفضيلات:** بعد تسجيل عضو كما في مراجعة 2.2، تظهر له المجموعات الخمس مطفأة:
+
+   ```sql
+   select * from public.notification_preference;
+   ```
+
 ## الاختبارات
 
 - `pnpm test`: اختبارات الوحدة، بلا أي خدمة.

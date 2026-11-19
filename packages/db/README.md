@@ -6,6 +6,7 @@
 - خط الأساس الأمني في المهمة 2.1 (SEC02، DEC36): `supabase/migrations/` وتفاصيله في `plan/task-2.1.md`.
 - جداول الهوية والحارس في المهمة 2.2: تفاصيلها في `plan/task-2.2.md`.
 - البيانات المرجعية في المهمة 2.3: `plan/task-2.3.md`، وطريقة إضافة فئة في `ops/runbooks/reference-data.md`.
+- البنية التحتية في المهمة 2.4: `plan/task-2.4.md`، وDEC70.
 
 ## قواعد كتابة الهجرات
 
@@ -50,6 +51,28 @@
 - **قيمة مستخدمة لا تُحذف:** كل جدول يشير إلى قائمة مرجعية يضع مفتاحاً أجنبياً عادياً (بلا CASCADE)، والتعطيل بـ `is_active`.
 - **التسميات فريدة بعد `app.search_normalize`** (DEC67)، بفهرس فريد على التعبير نفسه.
 - **الصفوف المعطّلة تُقرأ،** وقوائم الاختيار تصفّي `is_active`.
+
+## أدوات دوال الكتابة (المهمة 2.4)
+
+الجداول الداخلية (`idempotency_record` و`rate_limit_bucket` و`audit_event` و`job`) في `app`، فلا تنكشف عبر REST أبداً. دالة مدخل للعضو تستعمل الأدوات بهذا الترتيب داخل معاملتها:
+
+```sql
+v_member := app.assert_active_member();
+v_prior := app.idempotency_claim('POST /api/listings', p_key, p_input);
+if v_prior is not null then return v_prior; end if;
+perform app.rate_limit_take('RL05:hour', pg_catalog.sha256(pg_catalog.convert_to(v_member::text, 'UTF8')), 5, '1 hour');
+-- ... العمل نفسه ...
+perform app.enqueue_job('email.send', pg_catalog.jsonb_build_object('notification_id', v_id), 'email:notification:' || v_id);
+perform app.audit('listing.publish', 'listing', v_listing_id);
+perform app.idempotency_complete('POST /api/listings', p_key, v_result);
+```
+
+- **حدود النجاح** بـ `app.rate_limit_take` داخل المعاملة: تُلغى زيادتها إن فشلت العملية.
+- **حدود الفشل والمحاولات** (DEC70) بـ `app.rate_limit_hit` من الخادم، على اتصال منفصل وفي معاملة خاصة بها، بعد المحاولة. و`app.rate_limit_check` للفحص قبلها بلا زيادة. كلتاهما لـ `souq_web` فقط.
+- **النافذة** يجب أن تقسم اليوم (دقيقة، 10 دقائق، ساعة، يوم...)، فتبدأ النوافذ عند منتصف الليل UTC.
+- **التدقيق** لا يُعدَّل ولا يُحذف. الحذف فقط عبر `app.purge_audit_events` لـ `souq_worker`، للصفوف الأقدم من 730 يوماً.
+- **المهام والإشعارات** تُنشأ في نفس المعاملة، فإن أُلغيت لم يبقَ منها شيء. ونفس `dedupe_key` يرجع الموجود.
+- **الإشعار بلا رابط مخزّن:** الخادم يحسبه من `context_type` و`context_id`.
 
 ## schema `rls`
 
