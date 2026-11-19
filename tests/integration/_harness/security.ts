@@ -5,8 +5,11 @@
 import type pg from "pg";
 import { CALLER_ROLES, SERVER_ROLES } from "./roles.ts";
 
-/** Schemas our migrations own. Supabase's own schemas (auth, storage, realtime...) are not ours. */
-export const OUR_SCHEMAS = ["public", "app"] as const;
+/**
+ * Schemas our migrations own. Supabase's own schemas (auth, storage, realtime...) are not ours.
+ * rls (task 2.2): SECURITY INVOKER, read-only helpers that RLS policies call.
+ */
+export const OUR_SCHEMAS = ["public", "app", "rls"] as const;
 
 /**
  * Functions allowed in `public`. Every function there is a Data API (RPC) endpoint, so each
@@ -38,7 +41,9 @@ export type Rule =
   | "server_role_create"
   | "owner_not_postgres"
   | "time_source"
-  | "default_privileges";
+  | "default_privileges"
+  | "rls_function_definer"
+  | "rls_function_volatile";
 
 export interface Violation {
   rule: Rule;
@@ -160,6 +165,7 @@ interface FunctionRow {
   public_execute: boolean;
   executors: string[];
   grantees: string[];
+  volatility: string;
 }
 
 async function functionRules(
@@ -171,6 +177,7 @@ async function functionRules(
     client,
     `select (n.nspname || '.' || p.proname || '(' || pg_catalog.oidvectortypes(p.proargtypes) || ')') as fn, n.nspname as schema, p.prosecdef as definer,
             p.proconfig as config, p.prosrc as source, l.lanname as language,
+            p.provolatile::text as volatility,
             exists (select 1 from pg_catalog.aclexplode(
                       coalesce(p.proacl, pg_catalog.acldefault('f', p.proowner))) a
                      where a.grantee = 0 and a.privilege_type = 'EXECUTE') as public_execute,
@@ -248,6 +255,21 @@ async function functionRules(
         detail: "granted to both souq_web and souq_worker (owner condition 4)",
       });
     }
+    // Owner condition 3 on task 2.1 for the RLS helpers of task 2.2: invoker, read only.
+    if (f.schema === "rls" && f.definer) {
+      out.push({
+        rule: "rls_function_definer",
+        object: f.fn,
+        detail: "RLS helpers must be SECURITY INVOKER",
+      });
+    }
+    if (f.schema === "rls" && f.volatility === "v") {
+      out.push({
+        rule: "rls_function_volatile",
+        object: f.fn,
+        detail: "RLS helpers must be STABLE or IMMUTABLE (read only)",
+      });
+    }
     if (f.schema === "public" && !PUBLIC_FUNCTION_ALLOWLIST.includes(f.fn)) {
       out.push({
         rule: "function_in_public",
@@ -306,7 +328,7 @@ async function schemaRules(
      select n.nspname, 'PUBLIC', a.privilege_type
        from pg_catalog.pg_namespace n,
             pg_catalog.aclexplode(coalesce(n.nspacl, pg_catalog.acldefault('n', n.nspowner))) a
-      where n.nspname = 'app' and a.grantee = 0
+      where n.nspname in ('app', 'rls') and a.grantee = 0
       order by 1, 2, 3`,
     [schemas, callers],
   );
@@ -314,7 +336,8 @@ async function schemaRules(
     const allowed =
       p.privilege === "USAGE" &&
       (p.schema === "public" ||
-        (p.schema === "app" && (SERVER_ROLES as readonly string[]).includes(p.role)));
+        (p.schema === "app" && (SERVER_ROLES as readonly string[]).includes(p.role)) ||
+        (p.schema === "rls" && RLS_READERS.includes(p.role)));
     if (!allowed) {
       out.push({ rule: "schema_privilege", object: p.schema, detail: `${p.role} ${p.privilege}` });
     }
@@ -418,7 +441,7 @@ async function ownerRules(client: pg.ClientBase, out: Violation[]): Promise<void
      union all
      select 'schema ' || n.nspname, pg_catalog.pg_get_userbyid(n.nspowner)
        from pg_catalog.pg_namespace n
-      where n.nspname = 'app' and n.nspowner <> $2::regrole`,
+      where n.nspname in ('app', 'rls') and n.nspowner <> $2::regrole`,
     [schemas, OWNER],
   );
   for (const f of foreign) {

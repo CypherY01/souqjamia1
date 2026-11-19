@@ -8,6 +8,8 @@ import { readLocalStack, type LocalStack } from "../../scripts/local-supabase.ts
 // Cloudflare's dummy token: accepted only by the public test secret in config.toml.
 const TURNSTILE_DUMMY_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
 const PASSWORD = "كلمة-مرور-تجريبية-1";
+// Task 2.2: a signup without a valid display name is refused (item 5 of plan/task-2.2.md).
+const DISPLAY_NAME = "عضو تجريبي";
 
 let stack: LocalStack;
 
@@ -66,6 +68,7 @@ describe("local Supabase Auth (task 1.4)", () => {
     const res = await auth("/signup", {
       email: address,
       password: PASSWORD,
+      data: { display_name: DISPLAY_NAME },
       gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
     });
     expect(res.status).toBe(200);
@@ -87,6 +90,7 @@ describe("local Supabase Auth (task 1.4)", () => {
     const res = await auth("/signup", {
       email: email(),
       password: "abc1234",
+      data: { display_name: DISPLAY_NAME },
       gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
     });
     expect(res.status).toBe(422);
@@ -97,6 +101,7 @@ describe("local Supabase Auth (task 1.4)", () => {
     const signup = await auth("/signup", {
       email: address,
       password: PASSWORD,
+      data: { display_name: DISPLAY_NAME },
       gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
     });
     expect(signup.status).toBe(200);
@@ -122,6 +127,7 @@ describe("local Supabase Auth (task 1.4)", () => {
     const body = {
       email: address,
       password: PASSWORD,
+      data: { display_name: DISPLAY_NAME },
       gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
     };
     expect((await auth("/signup", body)).status).toBe(200);

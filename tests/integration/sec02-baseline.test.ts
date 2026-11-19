@@ -65,6 +65,14 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
         "create function public.planted_server() returns int language sql security definer set search_path = '' as 'select 1'",
       );
       await plant("grant execute on function public.planted_server() to souq_worker");
+      // RLS helpers (task 2.2): invoker and read only
+      await plant(
+        "create function rls.planted_definer() returns boolean language sql stable security definer set search_path = '' as 'select true'",
+      );
+      await plant(
+        "create function rls.planted_volatile() returns boolean language sql volatile set search_path = '' as 'select true'",
+      );
+      await plant("grant usage on schema rls to souq_web");
       // Time: built-in clock in a body and in a column default
       await plant(
         "create function app.planted_clock() returns timestamptz language sql set search_path = '' as 'select pg_catalog.now()'",
@@ -115,6 +123,9 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
     expect(has(violations, "function_for_web_and_worker", "app.planted_both()")).toBe(true);
     expect(has(violations, "function_in_public", "public.planted_rpc()")).toBe(true);
     expect(has(violations, "server_function_outside_app", "public.planted_server()")).toBe(true);
+    expect(has(violations, "rls_function_definer", "rls.planted_definer()")).toBe(true);
+    expect(has(violations, "rls_function_volatile", "rls.planted_volatile()")).toBe(true);
+    expect(has(violations, "schema_privilege", "rls", "souq_web USAGE")).toBe(true);
     expect(has(violations, "time_source", "app.planted_clock()")).toBe(true);
     expect(has(violations, "time_source", "app.planted_default.at")).toBe(true);
     expect(has(violations, "schema_privilege", "app", "authenticated USAGE")).toBe(true);
@@ -158,6 +169,8 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
       "owner_not_postgres",
       "time_source",
       "default_privileges",
+      "rls_function_definer",
+      "rls_function_volatile",
     ];
     expect([...fired].sort()).toEqual([...expected].sort());
   });
