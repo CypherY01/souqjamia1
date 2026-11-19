@@ -27,16 +27,21 @@ export interface GuardConfig {
   APP_SECRET: string;
 }
 
-/** null when the request may continue, otherwise the error code to answer with (403). */
+/**
+ * null when the request may continue, otherwise the error code to answer with (403).
+ * `memberSessionId` is the session_id of the verified identity (task 3.1), or null for a guest.
+ */
 export function guardRequest(
   method: string,
   headers: Headers,
   config: GuardConfig,
+  memberSessionId: string | null = null,
 ): ErrorCode | null {
   if (isSafeMethod(method)) return null;
   const source = checkRequestSource(headers, config.APP_ORIGIN);
   if (source !== null) return source;
-  return verifyCsrfToken(config.APP_SECRET, resolveBinding(headers), headers.get(CSRF_HEADER))
+  const binding = resolveBinding(headers, memberSessionId);
+  return verifyCsrfToken(config.APP_SECRET, binding, headers.get(CSRF_HEADER))
     ? null
     : "CSRF_FAILED";
 }

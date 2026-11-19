@@ -47,11 +47,21 @@ export function verifyCsrfToken(
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
+const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 /**
- * The binding of the current request. Task 3.1 adds the member binding first: the session_id
- * of a verified Supabase session. Until then every request is a guest.
+ * The binding of the current request (task 3.1, item 5). A member binds to the session_id of
+ * the verified Supabase session (lib/auth/identity.ts): it is new on every login and unchanged
+ * by a token refresh. Anyone else binds to the guest cookie. `memberSessionId` must come from
+ * verified claims, never from the request.
  */
-export function resolveBinding(headers: Headers): CsrfBinding | null {
+export function resolveBinding(
+  headers: Headers,
+  memberSessionId: string | null = null,
+): CsrfBinding | null {
+  if (memberSessionId !== null) {
+    return SESSION_ID.test(memberSessionId) ? { kind: "member", id: memberSessionId } : null;
+  }
   const guest = readCookie(headers, GUEST_COOKIE);
   return guest !== undefined && GUEST_ID.test(guest) ? { kind: "guest", id: guest } : null;
 }
@@ -73,7 +83,7 @@ export function issueGuestBinding(): IssuedGuestBinding {
 
 /**
  * Owner condition 1 on task 1.6: the token changes on login, logout and account switch.
- * A member's token follows its session_id, which is new on every login. The signup, login and
+ * A member's token follows its session_id, which is new on every login (task 3.1). The signup, login and
  * logout handlers (tasks 3.2 and 3.3) also call this, so the guest token from before a login is
  * not valid again after the logout.
  */
