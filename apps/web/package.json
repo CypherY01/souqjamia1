@@ -12,6 +12,7 @@
   "dependencies": {
     "@souq/domain": "workspace:*",
     "@souq/i18n": "workspace:*",
+    "@souq/log": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

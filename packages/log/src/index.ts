@@ -1,7 +1,8 @@
-// Structured logs, one JSON line per event (NFR13, SEC06). Never log request bodies, cookies or
-// the Authorization header. Passwords, tokens, auth links, chat text and card images must never
-// reach a log: fields with sensitive names are dropped, and values that look like tokens, JWTs,
-// keys or links carrying a token are masked.
+// @souq/log: structured logs, one JSON line per event (NFR13, SEC06), shared by the web app and
+// the worker (task 2.5; written in task 1.6 as apps/web/lib/log.ts). Never log request bodies,
+// cookies, the Authorization header, job payloads or member content. Passwords, tokens, auth
+// links, chat text and card images must never reach a log: fields with sensitive names are
+// dropped, and values that look like tokens, JWTs, keys or links carrying a token are masked.
 const REDACTED = "[REDACTED]";
 
 /** Fields this logger writes itself; their names are safe, their values are still scanned. */

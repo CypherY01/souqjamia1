@@ -14,6 +14,7 @@
     "@playwright/test": "catalog:",
     "@souq/domain": "workspace:*",
     "@souq/i18n": "workspace:*",
+    "@souq/log": "workspace:*",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "@types/react": "catalog:",

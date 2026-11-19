@@ -6,7 +6,7 @@ import { MAX_JSON_BYTES, readJson } from "../../apps/web/lib/http/body.ts";
 import { ApiError, ERROR_STATUS, type ErrorCode } from "../../apps/web/lib/http/errors.ts";
 import { apiHandler } from "../../apps/web/lib/http/handler.ts";
 import { ok } from "../../apps/web/lib/http/respond.ts";
-import { log, redactFields, redactText } from "../../apps/web/lib/log.ts";
+import { log, redactFields, redactText } from "@souq/log";
 
 const root = join(import.meta.dirname, "../..");
 const read = (path: string) => readFileSync(join(root, path), "utf8");

@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Workspace packages ship TypeScript source; Next compiles them.
-  transpilePackages: ["@souq/domain", "@souq/i18n"],
+  transpilePackages: ["@souq/domain", "@souq/i18n", "@souq/log"],
   // SEC06: static files skip proxy.ts, so they get the fixed security headers here. Every other
   // response gets them, with the CSP nonce, from proxy.ts.
   headers() {

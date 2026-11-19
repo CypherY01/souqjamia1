@@ -2,7 +2,7 @@
 //   export const GET = apiHandler("/api/example", async (request, context, api) => ok(data));
 // It turns thrown ApiErrors into the contract's error body, hides unexpected errors behind
 // INTERNAL_ERROR with the trace id, sets X-Trace-Id, and writes one log line per request.
-import { log } from "../log.ts";
+import { log } from "@souq/log";
 import { ApiError } from "./errors.ts";
 import { errorResponse } from "./respond.ts";
 import { TRACE_HEADER, traceIdOf } from "./trace.ts";

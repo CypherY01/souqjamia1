@@ -4,6 +4,7 @@
 //  2. State-changing requests: exact Origin, Fetch Metadata and the CSRF token (SEC05, TC64).
 //  3. A nonce-based Content Security Policy and the other security headers (SEC06). Next.js reads
 //     the nonce from the request's CSP header and adds it to its own scripts and styles.
+import { log } from "@souq/log";
 import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "./lib/env";
 import { ApiError } from "./lib/http/errors";
@@ -11,7 +12,6 @@ import { guardRequest } from "./lib/http/guard";
 import { errorResponse } from "./lib/http/respond";
 import { buildCsp, newNonce, securityHeaders } from "./lib/http/security-headers";
 import { newTraceId, TRACE_HEADER } from "./lib/http/trace";
-import { log } from "./lib/log";
 
 export function proxy(request: NextRequest): NextResponse | Response {
   const env = serverEnv();

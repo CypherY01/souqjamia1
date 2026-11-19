@@ -265,6 +265,9 @@ importers:
       '@souq/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@souq/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       next:
         specifier: 'catalog:'
         version: 16.4.5(@babel/core@7.29.7(supports-color@7.2.0))(@playwright/test@1.64.1)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -293,6 +296,12 @@ importers:
 
   apps/worker:
     dependencies:
+      '@souq/log':
+        specifier: workspace:*
+        version: link:../../packages/log
+      pg:
+        specifier: 'catalog:'
+        version: 8.23.1
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -300,6 +309,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.23.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -332,8 +344,20 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  packages/log:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   scripts:
     dependencies:
+      pg:
+        specifier: 'catalog:'
+        version: 8.23.1
       smol-toml:
         specifier: 'catalog:'
         version: 1.9.1
@@ -341,6 +365,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.23.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -359,6 +386,9 @@ importers:
       '@souq/i18n':
         specifier: workspace:*
         version: link:../packages/i18n
+      '@souq/log':
+        specifier: workspace:*
+        version: link:../packages/log
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
