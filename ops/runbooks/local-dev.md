@@ -181,6 +181,38 @@
    try { Invoke-RestMethod -Uri "http://127.0.0.1:54321/rest/v1/profile?select=auth_user_id" -Headers @{ apikey = $k } } catch { $_.Exception.Response.StatusCode.value__; $_.ErrorDetails.Message }
    ```
 
+## مراجعة البيانات المرجعية (المهمة 2.3)
+
+لا واجهة جديدة. Supabase المحلي يعمل.
+
+1. **الهجرة والبيانات التجريبية:** `pnpm db:reset`. يظهر `20261119110000_reference_data.sql`، ثم «Seeding data from supabase/seed.sql».
+2. **الاختبارات:** `pnpm test:integration`. تنجح كلها، ومنها `reference-data.test.ts`.
+3. **في Studio،** افتح SQL Editor ونفّذ:
+
+   ```sql
+   select key, label_ar, label_en from public.category order by display_order;
+   select key, kind, label_ar from public.meeting_point order by display_order;
+   select key, label_ar from public.college order by display_order;
+   ```
+
+   - سبع فئات بتسميات المواصفات، من «الكتب والدراسة» إلى «أخرى».
+   - أربع نقاط لقاء تجريبية: اثنتان `campus` واثنتان `city`.
+   - ثلاث كليات تجريبية.
+4. **كشف التكرار:** يُرفض هذا الإدخال بخطأ `duplicate key`، لأنه يختلف عن «كلية تجريبية 1» بالتاء المربوطة فقط:
+
+   ```sql
+   insert into public.college (key, label_ar) values ('dup_review', 'كليه تجريبيه 1');
+   ```
+
+5. **الزائر يقرأ القوائم:** يطبع الفئات السبع بالعربية:
+
+   ```powershell
+   $k = (pnpm --silent db:status -o json | ConvertFrom-Json).PUBLISHABLE_KEY
+   Invoke-RestMethod -Uri "http://127.0.0.1:54321/rest/v1/category?select=key,label_ar&order=display_order" -Headers @{ apikey = $k }
+   ```
+
+6. **إضافة فئة مستقبلاً:** الخطوات في [reference-data.md](reference-data.md).
+
 ## الاختبارات
 
 - `pnpm test`: اختبارات الوحدة، بلا أي خدمة.
