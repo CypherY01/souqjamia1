@@ -3,6 +3,12 @@
 // task 1.6, item 4); task 8.4 measures the cost under load.
 import { randomBytes } from "node:crypto";
 
+/**
+ * Task 3.2, DEC36: Cloudflare Turnstile. Its script is added by our own (nonce-trusted) code, so
+ * 'strict-dynamic' lets it run; the challenge itself is a frame from this origin.
+ */
+export const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+
 export function newNonce(): string {
   return randomBytes(16).toString("base64");
 }
@@ -27,6 +33,7 @@ export function buildCsp({ nonce, dev, supabaseUrl, https }: CspOptions): string
     `img-src 'self' blob: data: ${supabase.origin}`,
     "font-src 'self'",
     `connect-src 'self' ${supabase.origin} ${supabaseWs}`,
+    `frame-src ${TURNSTILE_ORIGIN}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -42,6 +49,19 @@ export const STATIC_SECURITY_HEADERS: readonly [string, string][] = [
   ["X-Frame-Options", "DENY"],
   ["Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"],
   ["Cross-Origin-Opener-Policy", "same-origin"],
+];
+
+/**
+ * SEC03, task 3.2 item 5: pages under /auth/ carry a token in their address (the email links), so
+ * they send no Referer and are never stored. They load nothing from outside the site either.
+ */
+export function isAuthLinkPath(pathname: string): boolean {
+  return pathname === "/auth" || pathname.startsWith("/auth/");
+}
+
+export const AUTH_LINK_HEADERS: readonly [string, string][] = [
+  ["Referrer-Policy", "no-referrer"],
+  ["Cache-Control", "no-store"],
 ];
 
 export interface SecurityHeaderOptions {

@@ -54,21 +54,34 @@ export function sessionSetCookie(name: string, value: string, remove: boolean): 
 }
 
 /**
- * A Supabase client for one request. `cookies` are the request's cookies; every cookie the
- * client writes (a refresh, a sign-out) is passed to `onWrite`. Server pages cannot write
- * cookies, so they ignore it: the proxy has refreshed the session before they run.
+ * Task 3.2: a call to Supabase Auth that does not answer within 10 seconds fails, so a request
+ * never hangs on it. supabase-js reports it as a retryable fetch error, answered with 503.
  */
-export function createSessionClient(
+export const AUTH_TIMEOUT_MS = 10_000;
+
+function timedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const timeout = AbortSignal.timeout(AUTH_TIMEOUT_MS);
+  const own = init?.signal ?? null;
+  return fetch(input, {
+    ...init,
+    signal: own === null ? timeout : AbortSignal.any([own, timeout]),
+  });
+}
+
+type CookieRead = () => { name: string; value: string }[];
+
+function serverClient(
   config: SupabaseConfig,
-  cookies: readonly RequestCookie[],
-  onWrite: (written: WrittenCookie[]) => void = () => undefined,
-): SessionClient {
+  getAll: CookieRead,
+  onWrite: (written: WrittenCookie[]) => void,
+) {
   return createServerClient(
     config.NEXT_PUBLIC_SUPABASE_URL,
     config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      global: { fetch: timedFetch },
       cookies: {
-        getAll: () => cookies.map(({ name, value }) => ({ name, value })),
+        getAll,
         setAll: (toSet) => {
           onWrite(
             toSet.map(({ name, value, options }) => {
@@ -84,4 +97,54 @@ export function createSessionClient(
       },
     },
   );
+}
+
+/**
+ * A Supabase client for one request. `cookies` are the request's cookies; every cookie the
+ * client writes (a refresh, a sign-out) is passed to `onWrite`. Server pages cannot write
+ * cookies, so they ignore it: the proxy has refreshed the session before they run.
+ */
+export function createSessionClient(
+  config: SupabaseConfig,
+  cookies: readonly RequestCookie[],
+  onWrite: (written: WrittenCookie[]) => void = () => undefined,
+): SessionClient {
+  return serverClient(config, () => cookies.map(({ name, value }) => ({ name, value })), onWrite);
+}
+
+/** What the auth flows of task 3.2 use: signup, the confirmation link, resend, sign-out. */
+export interface AuthFlowClient {
+  auth: Pick<SupabaseClient["auth"], "signUp" | "verifyOtp" | "resend" | "signOut">;
+}
+
+export interface RequestAuthClient {
+  client: AuthFlowClient;
+  /** Every cookie the client wrote, in order: a later write of the same name wins. */
+  written: WrittenCookie[];
+}
+
+/**
+ * Task 3.2: a client whose cookie reads see its own writes, like a browser's cookie jar for one
+ * request. A session it has just opened can then be signed out in the same request (the
+ * confirmation link, a signup while confirmation is on). Nothing reaches the response unless the
+ * caller adds `written` to it.
+ */
+export function createRequestAuthClient(
+  config: SupabaseConfig,
+  cookies: readonly RequestCookie[],
+): RequestAuthClient {
+  const jar = new Map(cookies.map(({ name, value }) => [name, value]));
+  const written: WrittenCookie[] = [];
+  const client = serverClient(
+    config,
+    () => [...jar].map(([name, value]) => ({ name, value })),
+    (batch) => {
+      for (const cookie of batch) {
+        if (cookie.value === null) jar.delete(cookie.name);
+        else jar.set(cookie.name, cookie.value);
+        written.push(cookie);
+      }
+    },
+  );
+  return { client, written };
 }

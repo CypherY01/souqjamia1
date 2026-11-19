@@ -19,8 +19,13 @@ export interface Authentication {
   updates: Map<string, string | null>;
 }
 
+/** A cookie that holds the session (not, for example, the PKCE code verifier of @supabase/ssr). */
+export function isSessionCookieName(name: string): boolean {
+  return SESSION_COOKIE.test(name);
+}
+
 export function hasSessionCookie(cookies: readonly RequestCookie[]): boolean {
-  return cookies.some(({ name }) => SESSION_COOKIE.test(name));
+  return cookies.some(({ name }) => isSessionCookieName(name));
 }
 
 export async function authenticateCookies(

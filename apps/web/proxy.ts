@@ -8,6 +8,7 @@
 //     bound to the verified session_id for members and to the guest cookie otherwise.
 //  4. A nonce-based Content Security Policy and the other security headers (SEC06). Next.js reads
 //     the nonce from the request's CSP header and adds it to its own scripts and styles.
+//  5. Email link pages under /auth/ send no Referer and are never stored (SEC03, task 3.2).
 import { log } from "@souq/log";
 import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "./lib/env";
@@ -15,7 +16,13 @@ import { cookieHeaderWith } from "./lib/http/cookies";
 import { ApiError } from "./lib/http/errors";
 import { guardRequest } from "./lib/http/guard";
 import { errorResponse } from "./lib/http/respond";
-import { buildCsp, newNonce, securityHeaders } from "./lib/http/security-headers";
+import {
+  AUTH_LINK_HEADERS,
+  buildCsp,
+  isAuthLinkPath,
+  newNonce,
+  securityHeaders,
+} from "./lib/http/security-headers";
 import { newTraceId, TRACE_HEADER } from "./lib/http/trace";
 import { authenticateRequest } from "./lib/supabase/session";
 
@@ -70,6 +77,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse | Respon
   response.headers.set("content-security-policy", csp);
   response.headers.set(TRACE_HEADER, traceId);
   for (const [name, value] of securityHeaders(headerOptions)) response.headers.set(name, value);
+  if (isAuthLinkPath(request.nextUrl.pathname)) {
+    for (const [name, value] of AUTH_LINK_HEADERS) response.headers.set(name, value);
+  }
   withSessionCookies(response);
   return response;
 }
