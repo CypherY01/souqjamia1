@@ -207,3 +207,7 @@ export const NotificationContextType = [
   "student_verification",
 ] as const;
 export type NotificationContextType = (typeof NotificationContextType)[number];
+
+/** Background job states (task 2.4). Not in the contract. */
+export const JobStatus = ["queued", "running", "done", "dead"] as const;
+export type JobStatus = (typeof JobStatus)[number];
