@@ -16,6 +16,8 @@
    - يشغّل Supabase المحلي. أول مرة يأخذ دقائق لتنزيل الصور.
 3. `pnpm env:local`
    - يكتب `apps/web/.env.local` و`apps/worker/.env.local` من Supabase المحلي.
+   - يضع كلمة مرور عشوائية جديدة لدور العامل `souq_worker` على القاعدة المحلية، ورابطها في `apps/worker/.env.local` (المهمة 2.5).
+   - **أعد تشغيله بعد كل `pnpm db:reset`،** لأن إعادة القاعدة تمسح كلمة مرور الدور. بدونه يرفض العامل البدء بالسطر `worker.db_unavailable`.
    - لا يكتب فوق ملف لم يولّده هو.
 4. `pnpm dev`
    - الموقع على `http://localhost:3000`.
@@ -244,6 +246,59 @@
    ```sql
    select * from public.notification_preference;
    ```
+
+## مراجعة العامل الخلفي (المهمة 2.5)
+
+لا واجهة جديدة. Supabase المحلي يعمل. كل سطر من العامل كائن JSON واحد.
+
+1. **الهجرة:** `pnpm db:reset`. يظهر `20261119130000_worker_jobs.sql`.
+2. **كلمة مرور الدور:** `pnpm env:local`، لأن `db:reset` مسحها.
+3. **الاختبارات:** `pnpm test:integration`. تنجح كلها، ومنها `worker-queue` و`worker-loop`.
+4. **تشغيل العامل:** `pnpm dev:worker` في نافذة ثانية. يظهر سطران:
+   - `worker.started`، وفيه `"kinds":["audit.purge"]`.
+   - `job.done` لـ `audit.purge` مع `"result":{"deleted":0}`. هذه مهمة اليوم الدورية (البند 7)، وتعمل مرة واحدة في اليوم مهما أعدت التشغيل.
+5. **في Studio، SQL Editor،** أنشئ ثلاث مهام:
+
+   ```sql
+   select app.enqueue_job('audit.purge', '{}', 'review:1') as purge,
+          app.enqueue_job('review.unknown') as unknown_kind,
+          app.enqueue_job('audit.purge', '{"x": 1}', 'review:2') as bad_payload;
+   ```
+
+   خلال 5 ثوانٍ يظهر في نافذة العامل:
+   - `job.done` للمهمة الأولى.
+   - `job.dead` بمستوى `error` والرمز `INVALID_PAYLOAD` للثالثة، لأن حمولتها لا تطابق مخطط النوع (البند 3).
+   - لا شيء للثانية، لأن العامل لا يعرف نوعها (البند 4).
+6. **حالة المهام:**
+
+   ```sql
+   select id, kind, status, attempts, last_error_code from app.job order by id;
+   ```
+
+   المهمة `review.unknown` حالتها `queued` و`attempts` صفر، والثالثة `dead`.
+7. **فحص الطابور كما يراه الخادم:** يظهر `oldest_due_seconds` أكبر من صفر بسبب `review.unknown`، و`dead_last_24h` يساوي 1:
+
+   ```sql
+   set role souq_web;
+   select * from app.job_queue_health();
+   reset role;
+   ```
+
+8. **الإيقاف:** أوقف `pnpm dev:worker` بـ `Ctrl+C`، ثم شغّل العامل مباشرة بلا pnpm:
+
+   ```bash
+   node --env-file=apps/worker/.env.local apps/worker/src/main.ts
+   ```
+
+   اضغط `Ctrl+C` فيظهر `worker.stopping` ثم `worker.stopped`. على Windows، `pnpm dev:worker` (pnpm مع `--watch`) ينهي العملية بعد `worker.stopping`، ويسأل «Terminate batch job (Y/N)?». أجب Y. الإيقاف الكامل بإشارة SIGTERM جُرّب أيضاً في حاوية Linux، كما يفعل Railway.
+9. **رفض الدور الخطأ:** في نافذة PowerShell جديدة، شغّل العامل برابط دور `postgres` المحلي، وهو `DB_URL` في ناتج `pnpm db:status`. ضعه مكان `<DB_URL>`:
+
+   ```powershell
+   $env:APP_ENV = 'development'; $env:DATABASE_URL = '<DB_URL>'; node apps/worker/src/main.ts
+   ```
+
+   يرفض البدء بالسطر `worker.config_invalid` ورسالة «DATABASE_URL must use the souq_worker role.». ثم أغلق النافذة، لأن المتغير فيها يتقدم على `apps/worker/.env.local`.
+10. **التنظيف:** المهام التجريبية تبقى حتى `pnpm db:reset`، ثم `pnpm env:local`.
 
 ## الاختبارات
 
