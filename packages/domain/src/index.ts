@@ -11,3 +11,13 @@ export {
   type DisplayNameError,
   type DisplayNameResult,
 } from "./account/display-name.ts";
+export { EMAIL_MAX, parseEmail, type EmailError, type EmailResult } from "./account/email.ts";
+export {
+  checkPassword,
+  passwordBytes,
+  passwordLength,
+  PASSWORD_MAX,
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MIN,
+  type PasswordError,
+} from "./account/password.ts";

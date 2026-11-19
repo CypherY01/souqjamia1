@@ -25,7 +25,13 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   // The new publishable key format, not the legacy anon JWT.
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().startsWith("sb_publishable_"),
+  // Task 3.2, DEC36, DEC52: the Cloudflare Turnstile site key (public by design). Locally and in
+  // CI the official test key that always passes; the real site from cost stage 1.
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().regex(/^[0-9]x[A-Za-z0-9_-]{8,64}$/),
 });
+
+/** DEC74: RL02 signups per client address and hour, when SIGNUP_IP_LIMIT_PER_HOUR is not set. */
+export const DEFAULT_SIGNUP_IP_LIMIT_PER_HOUR = 300;
 
 export const serverEnvSchema = publicEnvSchema.extend({
   APP_ENV: z.enum(["development", "staging", "production"]),
@@ -49,6 +55,15 @@ export const serverEnvSchema = publicEnvSchema.extend({
   // Task 3.1, FR78: the contact address shown to restricted accounts for objections (section 3
   // of the addendum). The real address comes with G05; locally a fixture.
   CONTACT_EMAIL: z.email(),
+  // DEC74: RL02 signups per client address and hour (a shared campus network counts as one
+  // address). Optional: unset or empty means 300. Reviewed after the load test (task 8.4).
+  SIGNUP_IP_LIMIT_PER_HOUR: z
+    .string()
+    .regex(/^([1-9][0-9]{0,5})?$/)
+    .optional()
+    .transform((value) =>
+      value === undefined || value === "" ? DEFAULT_SIGNUP_IP_LIMIT_PER_HOUR : Number(value),
+    ),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

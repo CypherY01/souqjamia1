@@ -2,6 +2,7 @@
 // Data API (PostgREST) requests as anon or as one of them.
 import { randomUUID } from "node:crypto";
 import { inject } from "vitest";
+import { dbPool } from "./db.ts";
 
 /** Cloudflare's dummy token: accepted only by the public test secret in config.toml. */
 const TURNSTILE_DUMMY_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
@@ -21,8 +22,46 @@ export function testEmail(prefix = "it"): string {
   return `${prefix}-${randomUUID()}@example.test`;
 }
 
-/** Supabase Auth signup with the name our server sends (task 3.2: data.display_name). */
-export function authSignup(email: string, displayName?: string): Promise<Response> {
+export interface PolicyVersions {
+  terms: string;
+  privacy: string;
+}
+
+/** DEC36: the versions in force, which every signup acknowledges (task 3.2, item 2). */
+export async function currentPolicyVersions(): Promise<PolicyVersions> {
+  const result = await dbPool().query<{ terms: string | null; privacy: string | null }>(
+    `select app.current_policy_version('terms') as terms,
+            app.current_policy_version('privacy') as privacy`,
+  );
+  const row = result.rows[0];
+  if (row?.terms == null || row.privacy == null) throw new Error("no published policy versions");
+  return { terms: row.terms, privacy: row.privacy };
+}
+
+/**
+ * The signup data our server sends (task 3.2): the name, the versions in force and the optional
+ * college. `data` replaces or adds keys; a key set to undefined is left out.
+ */
+export async function signupData(
+  displayName?: string,
+  data: Record<string, unknown> = {},
+): Promise<Record<string, unknown>> {
+  const versions = await currentPolicyVersions();
+  const merged: Record<string, unknown> = {
+    display_name: displayName,
+    terms_version: versions.terms,
+    privacy_version: versions.privacy,
+    ...data,
+  };
+  return Object.fromEntries(Object.entries(merged).filter(([, value]) => value !== undefined));
+}
+
+/** Supabase Auth signup, directly, with the data our server sends (see signupData). */
+export async function authSignup(
+  email: string,
+  displayName?: string,
+  data: Record<string, unknown> = {},
+): Promise<Response> {
   const stack = inject("stack");
   return fetch(`${stack.apiUrl}/auth/v1/signup`, {
     method: "POST",
@@ -30,7 +69,7 @@ export function authSignup(email: string, displayName?: string): Promise<Respons
     body: JSON.stringify({
       email,
       password: TEST_PASSWORD,
-      ...(displayName === undefined ? {} : { data: { display_name: displayName } }),
+      data: await signupData(displayName, data),
       gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
     }),
   });

@@ -35,6 +35,12 @@ export function newLocalSecrets(): LocalSecrets {
   };
 }
 
+/**
+ * Task 3.2: Cloudflare's official Turnstile test site key that always passes (a visible widget
+ * marked for testing only). The matching test secret is in config.toml.
+ */
+export const LOCAL_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+
 /** FR78 fixture until G05: an address in the reserved .test domain, never a real mailbox. */
 export const LOCAL_CONTACT_EMAIL = "contact@example.test";
 
@@ -50,6 +56,7 @@ export function webEnv(
     "APP_ORIGIN=http://localhost:3000",
     `NEXT_PUBLIC_SUPABASE_URL=${stack.apiUrl}`,
     `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${stack.publishableKey}`,
+    `NEXT_PUBLIC_TURNSTILE_SITE_KEY=${LOCAL_TURNSTILE_SITE_KEY}`,
     `EMAIL_CONFIRMATION_REQUIRED=${String(confirmation)}`,
     `APP_SECRET=${secrets.appSecret}`,
     `PROBE_TOKEN=${secrets.probeToken}`,

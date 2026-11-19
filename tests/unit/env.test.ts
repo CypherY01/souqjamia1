@@ -8,6 +8,8 @@ const validWeb = {
   APP_ORIGIN: "http://localhost:3000",
   NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_localdevelopmentkey",
+  // Task 3.2: Cloudflare's public Turnstile test site key.
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
   EMAIL_CONFIRMATION_REQUIRED: "false",
   // Task 1.6. Built at run time: the repository never contains a secret-like string.
   APP_SECRET: "a".repeat(43),
@@ -72,14 +74,31 @@ describe("OPS05 web environment", () => {
     ["DATABASE_URL", "https://127.0.0.1:54322/postgres"],
     ["DATABASE_URL", "postgres://"],
     ["CONTACT_EMAIL", "not an address"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "not-a-site-key"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", ""],
+    ["SIGNUP_IP_LIMIT_PER_HOUR", "0"],
+    ["SIGNUP_IP_LIMIT_PER_HOUR", "-5"],
+    ["SIGNUP_IP_LIMIT_PER_HOUR", "300.5"],
+    ["SIGNUP_IP_LIMIT_PER_HOUR", "many"],
   ])("rejects %s", (name, value) => {
     expect(errorOf(() => loadServerEnv({ ...validWeb, [name]: value })).message).toContain(name);
+  });
+
+  it("DEC74: SIGNUP_IP_LIMIT_PER_HOUR is optional, 300 when unset or empty", () => {
+    expect(loadServerEnv(validWeb).SIGNUP_IP_LIMIT_PER_HOUR).toBe(300);
+    expect(
+      loadServerEnv({ ...validWeb, SIGNUP_IP_LIMIT_PER_HOUR: "" }).SIGNUP_IP_LIMIT_PER_HOUR,
+    ).toBe(300);
+    expect(
+      loadServerEnv({ ...validWeb, SIGNUP_IP_LIMIT_PER_HOUR: "1200" }).SIGNUP_IP_LIMIT_PER_HOUR,
+    ).toBe(1200);
   });
 
   it("checks only public variables for the build", () => {
     expect(loadPublicEnv(validWeb)).toEqual({
       NEXT_PUBLIC_SUPABASE_URL: validWeb.NEXT_PUBLIC_SUPABASE_URL,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: validWeb.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: validWeb.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     });
   });
 });

@@ -98,6 +98,11 @@ export async function signOutSession(accessToken: string): Promise<void> {
   if (res.status !== 204) throw new Error(`logout failed with ${String(res.status)}`);
 }
 
+/** Removes every acknowledgment of the member: signup records them from task 3.2 (DEC36). */
+export async function withdrawAcknowledgments(userId: string): Promise<void> {
+  await dbPool().query("delete from public.policy_acknowledgment where user_id = $1", [userId]);
+}
+
 /** Acknowledges the policy versions in force (DEC36), as signup does from task 3.2. */
 export async function acknowledgeCurrentPolicies(userId: string): Promise<void> {
   await dbPool().query(

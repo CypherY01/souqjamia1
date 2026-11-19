@@ -25,6 +25,7 @@ import {
   signOutSession,
   stackConfig,
   webDb,
+  withdrawAcknowledgments,
 } from "./_harness/web.ts";
 
 const db = webDb();
@@ -249,7 +250,9 @@ describe("item 8: the permission matrix (basis of TC25)", () => {
 
   it.each(states)("$name: session $session, member $member", async (state) => {
     const member = await signUpMember();
+    // Task 3.2: signup acknowledges the versions in force, so the other case takes them back.
     if (state.acknowledge) await acknowledgeCurrentPolicies(member.id);
+    else await withdrawAcknowledgments(member.id);
     if (state.change !== undefined) await changeMember(member.id, state.change);
     const identity = await identityOf(member);
 
