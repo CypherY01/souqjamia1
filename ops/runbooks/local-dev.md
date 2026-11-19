@@ -106,7 +106,7 @@
    - الهوية لا تنتقل لمعاملة تالية على نفس الاتصال (شرطك 2).
 3. **فحص دوال PL/pgSQL:** `pnpm db:lint`، ويجب أن يطبع `No schema errors found`.
 4. **Studio** (`http://127.0.0.1:54323`)، في Database:
-   - **Schemas:** تظهر `app` وفيها خمس دوال: `actor_id` و`app_now` و`normalize_text` و`raise_api_error` و`search_normalize`.
+   - **Schemas:** تظهر `app`، ومن دوالها `actor_id` و`app_now` و`normalize_text` و`raise_api_error` و`search_normalize`.
    - **Enumerated Types:** 33 نوعاً في `public`.
    - **Roles:** يظهر `souq_web` و`souq_worker`.
 5. **`app` غير مكشوفة عبر REST**، يرجع 406 و`PGRST106`:
@@ -126,6 +126,60 @@
 7. **الفحوص الأخرى:**
    - `pnpm check:migrations`: الهجرات المدموجة لم تتغير. يقارن بـ `origin/main`، فحدّثه أولاً بـ `git fetch origin main`.
    - `pnpm check:supabase-images`: صور Supabase العاملة تطابق البصمات في `packages/db/supabase/images.lock.json`.
+
+## مراجعة جداول الهوية (المهمة 2.2)
+
+لا واجهة جديدة أيضاً. نفّذ في PowerShell من مجلد المستودع، وSupabase المحلي يعمل.
+
+1. **الهجرات:** `pnpm db:reset`. تظهر الهجرتان الجديدتان بعد هجرات 2.1:
+   - `20261119100000_identity.sql`
+   - `20261119100100_member_guard.sql`
+2. **الاختبارات:** `pnpm test:integration`. تنجح كلها، ومنها `identity.test.ts` و`member-guard.test.ts`.
+3. **تسجيل بلا اسم يُرفض،** ويطبع 500 ورسالة عامة بلا تفاصيل القاعدة. الأوامر بـ `Invoke-RestMethod`، لأن Windows PowerShell يحذف علامات التنصيص من JSON الممرر إلى `curl.exe`:
+
+   ```powershell
+   $k = (pnpm --silent db:status -o json | ConvertFrom-Json).PUBLISHABLE_KEY
+   $noName = @{ email = "review-no-name@example.test"; password = "review-password-1"; gotrue_meta_security = @{ captcha_token = "XXXX.DUMMY.TOKEN.XXXX" } } | ConvertTo-Json
+   try { Invoke-RestMethod -Method Post -Uri http://127.0.0.1:54321/auth/v1/signup -Headers @{ apikey = $k } -ContentType "application/json" -Body $noName } catch { $_.Exception.Response.StatusCode.value__; $_.ErrorDetails.Message }
+   ```
+
+4. **تسجيل باسم ينشئ الملف.** الاسم بالإنجليزية هنا لأن PowerShell قد يغيّر ترميز العربية في الطلب، والاختبارات تغطي العربية:
+
+   ```powershell
+   $withName = @{ email = "review-1@example.test"; password = "review-password-1"; data = @{ display_name = "  Review Member  " }; gotrue_meta_security = @{ captcha_token = "XXXX.DUMMY.TOKEN.XXXX" } } | ConvertTo-Json
+   Invoke-RestMethod -Method Post -Uri http://127.0.0.1:54321/auth/v1/signup -Headers @{ apikey = $k } -ContentType "application/json" -Body $withName
+   ```
+
+   في Studio افتح SQL Editor ونفّذ:
+
+   ```sql
+   select p.id, p.display_name, p.hidden_from_public, c.status
+     from public.profile p join public.account_control c on c.user_id = p.id;
+   ```
+
+   يظهر `Review Member` بلا المسافات، و`hidden_from_public` بالقيمة `false`.
+5. **الإخفاء يتبع حالة الحساب في نفس المعاملة.** في SQL Editor:
+
+   ```sql
+   update public.account_control
+      set status = 'suspended', suspended_until = now() + interval '7 days'
+    where user_id = (select id from public.profile where display_name = 'Review Member');
+   select hidden_from_public from public.profile where display_name = 'Review Member';
+   ```
+
+   النتيجة `true`. وأعده بعدها:
+
+   ```sql
+   update public.account_control set status = 'active', suspended_until = null
+    where user_id = (select id from public.profile where display_name = 'Review Member');
+   ```
+
+6. **الأعمدة الخاصة لا يقرؤها الزائر:** الأول يرجع الأسماء، والثاني يطبع 401 والرمز `42501`:
+
+   ```powershell
+   Invoke-RestMethod -Uri "http://127.0.0.1:54321/rest/v1/profile?select=display_name" -Headers @{ apikey = $k }
+   try { Invoke-RestMethod -Uri "http://127.0.0.1:54321/rest/v1/profile?select=auth_user_id" -Headers @{ apikey = $k } } catch { $_.Exception.Response.StatusCode.value__; $_.ErrorDetails.Message }
+   ```
 
 ## الاختبارات
 
