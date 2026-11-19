@@ -4,6 +4,9 @@
 
 | المسار | المحتوى | المهمة |
 | --- | --- | --- |
+| `ops/runbooks/local-dev.md` | التشغيل المحلي وخطوات المراجعة لكل مهمة | 1.4 وما بعدها |
+| `ops/runbooks/secrets.md` | أسرار الخادم وأثر تغييرها | 1.6 |
+| `ops/runbooks/reference-data.md` | البيانات المرجعية، وإضافة فئة ثامنة أو أكثر | 2.3 |
 | `ops/backup-public-media.mjs` | النسخ اليومي للصور العامة (DEC42) | 8.2 |
 | `ops/runbooks/restore.md` | تجربة الاسترجاع ومعيار نجاح TC60 (DEC42) | 8.2 |
 
