@@ -327,3 +327,36 @@ policies:
         $ref: '../components/responses.yaml#/PolicyVersionsOk'
       '503':
         $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+policyAcknowledgments:
+  post:
+    operationId: api119AcknowledgePolicies
+    tags: [account]
+    summary: الإقرار بالنسخة الحالية من الشروط والخصوصية
+    description: >-
+      للعضو الذي تغيّرت عليه الشروط أو الخصوصية بعد تسجيله، ولكل حساب بلا إقرار بالنسخة
+      الحالية (DEC69). النسختان يجب أن تطابقا API114، وإلا يرجع 409 فتجلب الواجهة النسخ الحالية
+      من جديد. تكرار الإقرار بنفس النسختين ينجح بلا أثر جديد. بدون الإقرار لا كتابة في السوق
+      (DEC36).
+    x-spec-ids: [API119, DEC69, DEC36, FR46]
+    x-access: session
+    security:
+      - sessionCookie: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/PolicyAcknowledgmentInput'
+    responses:
+      '204':
+        $ref: '../components/responses.yaml#/NoContent'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../components/responses.yaml#/Conflict'

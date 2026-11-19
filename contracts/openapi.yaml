@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: سوق الجامعة — واجهة المرحلة الأولى
-  version: 0.4.0-phase1
+  version: 0.5.0-phase1
   summary: عقد REST للمرحلة الأولى حسب docs/addendum-v3.1.md وdocs/spec-v3-en.md.
   description: >-
     معتمد من المالك في 18 نوفمبر 2026، مع القرارات حتى DEC66 وإضافات المهمة 1.6. تغطي 98 عملية للمرحلة الأولى.
@@ -153,6 +153,8 @@ paths:
     $ref: paths/account.yaml#/deletionRecoveryConfirm
   /api/policies/current:
     $ref: paths/account.yaml#/policies
+  /api/me/policy-acknowledgments:
+    $ref: paths/account.yaml#/policyAcknowledgments
 
   # المراجع والإعلانات والمفضلة
   /api/catalog:

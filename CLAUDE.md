@@ -12,7 +12,7 @@ An Arabic-first, responsive web marketplace where university students **and othe
 
 ## Sources of truth (in order of precedence)
 
-1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC66, phase scope, new APIs (API107–API118), new tests (TC85–TC87), fixes. **Wins over everything below.**
+1. **`docs/addendum-v3.1.md`** (Arabic): owner decisions DEC25–DEC69, phase scope, new APIs (API107–API119), new tests (TC85–TC87), fixes. **Wins over everything below.**
 2. **`docs/spec-v3-en.md`** (English): full specification v3.0. Canonical for identifiers, field names, limits, error codes and tests.
 3. The Arabic edition of v3 is **not** in this repo on purpose. It contains hidden U+200E marks and six known translation errors. Never copy values from it.
 
@@ -147,7 +147,7 @@ pnpm build                   # production build of the web app
 pnpm test:e2e                # after build: Playwright + axe at 360, 768 and 1440 px
 pnpm format:check            # Prettier check (pnpm format to fix)
 pnpm contract:lint           # Redocly lint of contracts/openapi.yaml
-pnpm check:contract-ids      # API001-API118: each in paths once, or in x-phase1-excluded
+pnpm check:contract-ids      # API001-API119: each in paths once, or in x-phase1-excluded
 pnpm check:bundle            # after build: no secrets in browser-facing output (SEC06)
 pnpm secrets:scan            # gitleaks over the whole git history, via Docker (SEC06)
 pnpm db:start                # local Supabase in Docker (db:stop, db:status, db:reset)

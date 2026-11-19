@@ -1,10 +1,10 @@
-// Contract coverage check (task 1.3): every ID from API001 to API118 is either listed in
+// Contract coverage check (task 1.3): every ID from API001 to API119 is either listed in
 // x-phase1-excluded, or appears in paths exactly once with a matching operationId and x-spec-ids.
 // Usage (see package.json): redocly bundle contracts/openapi.yaml --ext json | node scripts/check-contract-ids.ts
 import { text } from "node:stream/consumers";
 
 export const API_ID_MIN = 1;
-export const API_ID_MAX = 118;
+export const API_ID_MAX = 119;
 
 const HTTP_METHODS = ["get", "put", "post", "delete", "patch", "options", "head", "trace"] as const;
 
@@ -46,7 +46,7 @@ export function checkContractIds(doc: unknown): ContractIdReport {
         errors.push("x-phase1-excluded: every entry needs an id and a non-empty reason");
         continue;
       }
-      if (!inRange(id)) errors.push(`x-phase1-excluded: ${id} is not between API001 and API118`);
+      if (!inRange(id)) errors.push(`x-phase1-excluded: ${id} is not between API001 and API119`);
       if (excluded.has(id)) errors.push(`x-phase1-excluded: ${id} is listed twice`);
       excluded.add(id);
     }
@@ -75,7 +75,7 @@ export function checkContractIds(doc: unknown): ContractIdReport {
       if (!Array.isArray(specIds) || specIds[0] !== id) {
         errors.push(`${where}: the first x-spec-ids entry must be ${id}`);
       }
-      if (!inRange(id)) errors.push(`${where}: ${id} is not between API001 and API118`);
+      if (!inRange(id)) errors.push(`${where}: ${id} is not between API001 and API119`);
       if (excluded.has(id)) errors.push(`${where}: ${id} is also listed in x-phase1-excluded`);
       const previous = seen.get(id);
       if (previous === undefined) seen.set(id, where);
@@ -112,7 +112,7 @@ if (import.meta.main) {
     } else {
       console.log(
         `check:contract-ids: ${String(report.operations)} operations and ` +
-          `${String(report.excluded)} excluded cover API001-API118, each exactly once.`,
+          `${String(report.excluded)} excluded cover API001-API119, each exactly once.`,
       );
     }
   }

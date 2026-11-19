@@ -6,7 +6,7 @@ interface Op {
   "x-spec-ids": string[];
 }
 
-/** A contract that covers API001-API118: the first `excludedCount` IDs excluded, the rest as operations. */
+/** A contract that covers API001-API119: the first `excludedCount` IDs excluded, the rest as operations. */
 function makeContract(excludedCount = 20) {
   const excluded: { id: string; reason: string }[] = [];
   const paths: Record<string, Record<string, Op>> = {};
@@ -28,9 +28,9 @@ function op(contract: ReturnType<typeof makeContract>, path: string): Op {
 }
 
 describe("check:contract-ids", () => {
-  it("passes a contract that covers API001-API118 exactly once", () => {
+  it("passes a contract that covers API001-API119 exactly once", () => {
     const report = checkContractIds(makeContract());
-    expect(report).toEqual({ errors: [], operations: 98, excluded: 20 });
+    expect(report).toEqual({ errors: [], operations: 99, excluded: 20 });
   });
 
   it("reports an ID that is neither an operation nor excluded", () => {
@@ -76,12 +76,12 @@ describe("check:contract-ids", () => {
     const contract = makeContract();
     contract["x-phase1-excluded"].push(
       { id: "API001", reason: "again" },
-      { id: "API119", reason: "out of range" },
+      { id: "API120", reason: "out of range" },
       { id: "API002", reason: " " },
     );
     expect(checkContractIds(contract).errors).toEqual([
       "x-phase1-excluded: API001 is listed twice",
-      "x-phase1-excluded: API119 is not between API001 and API118",
+      "x-phase1-excluded: API120 is not between API001 and API119",
       "x-phase1-excluded: every entry needs an id and a non-empty reason",
     ]);
   });

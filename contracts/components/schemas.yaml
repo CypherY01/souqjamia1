@@ -771,6 +771,21 @@ PolicyVersion:
     path:
       $ref: '#/LocalPath'
 
+PolicyAcknowledgmentInput:
+  type: object
+  additionalProperties: false
+  required: [terms_version, privacy_version, accept_terms, acknowledge_privacy]
+  description: النسختان الحاليتان من API114 (DEC69).
+  properties:
+    terms_version:
+      type: string
+    privacy_version:
+      type: string
+    accept_terms:
+      const: true
+    acknowledge_privacy:
+      const: true
+
 PolicyVersions:
   type: object
   required: [terms, privacy]
