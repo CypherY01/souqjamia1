@@ -20,6 +20,16 @@ export const EMAIL_TEMPLATES = {
 export type EmailTemplateName = keyof typeof EMAIL_TEMPLATES;
 
 /**
+ * Task 3.4, SEC11: security notices Supabase Auth sends after the change, with no link (a
+ * password reset now, a password change in task 3.6). Name -> the file name Supabase expects.
+ */
+export const NOTIFICATION_TEMPLATES = {
+  password_changed: "password_changed_notification",
+} as const;
+
+export type NotificationTemplateName = keyof typeof NOTIFICATION_TEMPLATES;
+
+/**
  * A notice specific to the template, shown above the DEC65 line. The confirmation template has
  * none: its notice was "ignore this if you did not sign up", which the DEC65 line already says.
  */
@@ -54,27 +64,18 @@ function escapeHtml(text: string): string {
     .replaceAll('"', "&quot;");
 }
 
-export function renderEmailTemplate(name: EmailTemplateName): string {
-  const text = {
-    subject: escapeHtml(t(`email.${name}.subject`)),
-    heading: escapeHtml(t(`email.${name}.heading`)),
-    body: escapeHtml(t(`email.${name}.body`)),
-    button: escapeHtml(t(`email.${name}.button`)),
-    validity: escapeHtml(t("email.common.validity")),
-    linkHint: escapeHtml(t("email.common.linkHint")),
-    appName: escapeHtml(t("common.app.name")),
-  };
-  // DEC65: every email ends with the line for people who did not sign up.
-  const ownNotice = OWN_NOTICE[name];
-  const notices = [...(ownNotice ? [t(ownNotice)] : []), t("email.common.notRegistered")]
+/** DEC65: every email ends with the line for people who did not sign up. */
+function noticeLines(ownNotice: MessageKey | null): string {
+  return [...(ownNotice ? [t(ownNotice)] : []), t("email.common.notRegistered")]
     .map(
       (notice) =>
         `                <p style="margin: 0 0 8px; font-size: 13px; color: ${color.muted}">${escapeHtml(notice)}</p>`,
     )
     .join("\n");
-  // Go template placeholders filled in by Supabase Auth. The page shows a button and only its
-  // POST consumes the link, so mail scanners cannot use it (section 5 of the addendum).
-  const link = `{{ .SiteURL }}${EMAIL_TEMPLATES[name]}?token_hash={{ .TokenHash }}`;
+}
+
+/** The page around the content: Arabic, RTL, inline styles only, no external resources. */
+function layout(subject: string, heading: string, body: string, rest: string): string {
   const font = "Tahoma, 'Segoe UI', Arial, sans-serif";
   return `<!doctype html>
 <html lang="ar" dir="rtl">
@@ -82,7 +83,7 @@ export function renderEmailTemplate(name: EmailTemplateName): string {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="referrer" content="no-referrer" />
-    <title>${text.subject}</title>
+    <title>${escapeHtml(subject)}</title>
   </head>
   <body style="margin: 0; padding: 0; background-color: ${color.page}">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: ${color.page}">
@@ -91,16 +92,10 @@ export function renderEmailTemplate(name: EmailTemplateName): string {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: ${color.card}; border: 1px solid ${color.border}; border-radius: 12px">
             <tr>
               <td dir="rtl" style="padding: 32px 24px; font-family: ${font}; color: ${color.text}; text-align: right; line-height: 1.7">
-                <p style="margin: 0 0 8px; font-size: 14px; font-weight: bold; color: ${color.primary}">${text.appName}</p>
-                <h1 style="margin: 0 0 16px; font-size: 22px">${text.heading}</h1>
-                <p style="margin: 0 0 24px; font-size: 16px">${text.body}</p>
-                <p style="margin: 0 0 24px">
-                  <a href="${link}" style="display: inline-block; padding: 12px 24px; border-radius: 8px; background-color: ${color.primary}; color: #FFFFFF; font-size: 16px; font-weight: bold; text-decoration: none">${text.button}</a>
-                </p>
-                <p style="margin: 0 0 8px; font-size: 14px">${text.validity}</p>
-                <p style="margin: 0 0 8px; font-size: 13px; color: ${color.muted}">${text.linkHint}</p>
-                <p dir="ltr" style="margin: 0 0 24px; font-size: 13px; text-align: left; word-break: break-all"><a href="${link}" style="color: ${color.primary}">${link}</a></p>
-${notices}
+                <p style="margin: 0 0 8px; font-size: 14px; font-weight: bold; color: ${color.primary}">${escapeHtml(t("common.app.name"))}</p>
+                <h1 style="margin: 0 0 16px; font-size: 22px">${escapeHtml(heading)}</h1>
+                <p style="margin: 0 0 24px; font-size: 16px">${escapeHtml(body)}</p>
+${rest}
               </td>
             </tr>
           </table>
@@ -112,12 +107,54 @@ ${notices}
 `;
 }
 
+export function renderEmailTemplate(name: EmailTemplateName): string {
+  const button = escapeHtml(t(`email.${name}.button`));
+  // Go template placeholders filled in by Supabase Auth. The page shows a button and only its
+  // POST consumes the link, so mail scanners cannot use it (section 5 of the addendum).
+  const link = `{{ .SiteURL }}${EMAIL_TEMPLATES[name]}?token_hash={{ .TokenHash }}`;
+  const rest = `                <p style="margin: 0 0 24px">
+                  <a href="${link}" style="display: inline-block; padding: 12px 24px; border-radius: 8px; background-color: ${color.primary}; color: #FFFFFF; font-size: 16px; font-weight: bold; text-decoration: none">${button}</a>
+                </p>
+                <p style="margin: 0 0 8px; font-size: 14px">${escapeHtml(t("email.common.validity"))}</p>
+                <p style="margin: 0 0 8px; font-size: 13px; color: ${color.muted}">${escapeHtml(t("email.common.linkHint"))}</p>
+                <p dir="ltr" style="margin: 0 0 24px; font-size: 13px; text-align: left; word-break: break-all"><a href="${link}" style="color: ${color.primary}">${link}</a></p>
+${noticeLines(OWN_NOTICE[name])}`;
+  return layout(
+    t(`email.${name}.subject`),
+    t(`email.${name}.heading`),
+    t(`email.${name}.body`),
+    rest,
+  );
+}
+
+/** SEC11: a security notice, with no link (a link in such an email teaches people to click). */
+export function renderNotificationTemplate(name: NotificationTemplateName): string {
+  return layout(
+    t(`email.${name}.subject`),
+    t(`email.${name}.heading`),
+    t(`email.${name}.body`),
+    noticeLines(`email.${name}.notRequested`),
+  );
+}
+
+/** Every generated file and its content. */
+export function generatedTemplates(): { file: string; html: string }[] {
+  return [
+    ...(Object.keys(EMAIL_TEMPLATES) as EmailTemplateName[]).map((name) => ({
+      file: join(TEMPLATES_DIR, `${name}.html`),
+      html: renderEmailTemplate(name),
+    })),
+    ...(Object.keys(NOTIFICATION_TEMPLATES) as NotificationTemplateName[]).map((name) => ({
+      file: join(TEMPLATES_DIR, `${NOTIFICATION_TEMPLATES[name]}.html`),
+      html: renderNotificationTemplate(name),
+    })),
+  ];
+}
+
 if (import.meta.main) {
   const check = process.argv.includes("--check");
   const stale: string[] = [];
-  for (const name of Object.keys(EMAIL_TEMPLATES) as EmailTemplateName[]) {
-    const file = join(TEMPLATES_DIR, `${name}.html`);
-    const html = renderEmailTemplate(name);
+  for (const { file, html } of generatedTemplates()) {
     if (check) {
       if (!existsSync(file) || readFileSync(file, "utf8") !== html) stale.push(file);
     } else {

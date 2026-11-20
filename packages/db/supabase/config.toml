@@ -202,7 +202,10 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Owner decision on item 8 of plan/task-3.4.md: 30 for local Supabase and CI only, because every
+# test run sends real recovery and notice emails to Mailpit. The hosted limit is decided at cost
+# stage 1 (plan/cost-plan.md).
+email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -273,11 +276,12 @@ content_path = "./supabase/templates/email_change.html"
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
+# SEC11, task 3.4 (item 7): the account owner is told by email after every password change (the
+# reset of task 3.4, the change of task 3.6). Generated from packages/i18n like the templates above.
+[auth.email.notification.password_changed]
+enabled = true
+subject = "تغيّرت كلمة مرورك في سوق الجامعة"
+content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow the phone provider. When false, users can't sign up or sign in with SMS.

@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 import { t } from "@souq/i18n";
 import {
   EMAIL_TEMPLATES,
+  NOTIFICATION_TEMPLATES,
   type EmailTemplateName,
+  type NotificationTemplateName,
 } from "../../packages/db/scripts/build-email-templates.ts";
 import { CONFIG_TOML, DB_DIR, emailConfirmationRequired } from "../../scripts/local-supabase.ts";
 
@@ -20,12 +22,14 @@ interface Config {
     password_requirements: string;
     captcha: { enabled: boolean; provider: string };
     sessions: { timebox: string; inactivity_timeout: string };
+    rate_limit: { email_sent: number };
     email: {
       enable_confirmations: boolean;
       double_confirm_changes: boolean;
       max_frequency: string;
       otp_expiry: number;
       template: Record<string, { subject: string; content_path: string }>;
+      notification: Record<string, { enabled: boolean; subject: string; content_path: string }>;
     };
     mfa: { totp: { enroll_enabled: boolean; verify_enabled: boolean } };
   };
@@ -78,6 +82,22 @@ describe("local Supabase config.toml (task 1.4)", () => {
     expect(config.auth.site_url).toBe("http://localhost:3000");
     expect(config.edge_runtime.enabled).toBe(false);
   });
+
+  it("task 3.4, item 8: 30 emails an hour, for local Supabase and CI only", () => {
+    expect(config.auth.rate_limit.email_sent).toBe(30);
+  });
+
+  it.each(Object.keys(NOTIFICATION_TEMPLATES) as NotificationTemplateName[])(
+    "SEC11, task 3.4: the %s notice is on, from @souq/i18n, and the file exists",
+    (name) => {
+      const notice = config.auth.email.notification[name];
+      expect(notice?.enabled).toBe(true);
+      expect(notice?.subject).toBe(t(`email.${name}.subject`));
+      const path = `./supabase/templates/${NOTIFICATION_TEMPLATES[name]}.html`;
+      expect(notice?.content_path).toBe(path);
+      expect(existsSync(join(DB_DIR, path))).toBe(true);
+    },
+  );
 
   it.each(Object.keys(EMAIL_TEMPLATES) as EmailTemplateName[])(
     "template %s: subject comes from @souq/i18n and the file exists",
