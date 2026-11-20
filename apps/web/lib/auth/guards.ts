@@ -147,7 +147,10 @@ export async function requireSession(
  * 5 minutes is UNAUTHENTICATED, an ordinary session FORBIDDEN (it changes its password from the
  * account page, task 3.6), and a limited session within its 5 minutes passes (null).
  */
-export function recoveryDenial(identity: Identity | null, nowSeconds: number): ErrorCode | null {
+export function recoveryDenial(
+  identity: Identity | null,
+  nowSeconds = Date.now() / 1000,
+): ErrorCode | null {
   if (identity === null) return "UNAUTHENTICATED";
   if (!identity.limited) return "FORBIDDEN";
   return limitedSessionExpired(identity, nowSeconds) ? "UNAUTHENTICATED" : null;
@@ -186,7 +189,7 @@ export function memberPageRedirect(
 }
 
 /** Task 3.4: a limited session belongs on the new-password page, until its 5 minutes are over. */
-export function limitedSessionPage(identity: Identity, nowSeconds: number): string {
+export function limitedSessionPage(identity: Identity, nowSeconds = Date.now() / 1000): string {
   return limitedSessionExpired(identity, nowSeconds) ? routes.login : routes.account.reset;
 }
 

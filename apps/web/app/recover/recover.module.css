@@ -1,0 +1,15 @@
+/* The recovery request page (task 3.4): one narrow column, mobile first. */
+.page {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.intro {
+  margin-block: 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.back {
+  margin-block-start: var(--space-5);
+  text-align: center;
+}

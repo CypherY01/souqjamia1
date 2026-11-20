@@ -1,0 +1,32 @@
+/* The new-password page of the recovery session (task 3.4): one narrow column, mobile first. */
+.page {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.intro {
+  margin-block: 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.feedback {
+  margin-block-end: var(--space-4);
+}
+
+.after {
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.closed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

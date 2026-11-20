@@ -2,7 +2,8 @@
 // return path (or /restricted for a restricted account, FR78); a limited session (a recovery
 // link, DEC73) sees the form. `next` from the address is kept only when it is a local path
 // (safeLocalPath, TC02): otherwise it is dropped, and the member lands on the home page.
-// `confirmed=1` comes from the confirmation link page (task 3.2). The MFA step joins in 7.1.
+// `confirmed=1` comes from the confirmation link page (task 3.2), `reset=1` from the new-password
+// page (task 3.4). The MFA step joins in 7.1.
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { safeLocalPath } from "@souq/domain";
@@ -29,6 +30,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const params = await searchParams;
   const next = safeLocalPath(single(params.next));
   const confirmed = single(params.confirmed) === "1";
+  const reset = single(params.reset) === "1";
 
   const auth = await pageSession();
   if (auth !== null && !auth.identity.limited) {
@@ -43,6 +45,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         <div className={styles.notice}>
           <Alert variant="success" title={t("auth.login.confirmed.title")}>
             {t("auth.login.confirmed.body")}
+          </Alert>
+        </div>
+      )}
+      {reset && (
+        <div className={styles.notice}>
+          <Alert variant="success" title={t("auth.login.reset.title")}>
+            {t("auth.login.reset.body")}
           </Alert>
         </div>
       )}

@@ -1,12 +1,13 @@
 // /restricted (plan/screens.md, FR78 without appeals, DEC41): the state of a suspended, banned or
-// deletion-pending account and the contact address for objections. A guest or a limited session
-// goes to the login page, an account that is not restricted to the home page.
+// deletion-pending account and the contact address for objections. A guest goes to the login
+// page, a limited session to the new-password page within its 5 minutes and to the login page
+// after them (task 3.4), an account that is not restricted to the home page.
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { t } from "@souq/i18n";
 import { AccountRestrictedNotice } from "../../components/account/AccountRestrictedNotice";
 import { SignOutButton } from "../../components/auth/SignOutButton";
-import { restrictionOf } from "../../lib/auth/guards";
+import { limitedSessionPage, restrictionOf } from "../../lib/auth/guards";
 import { pageSession } from "../../lib/auth/page";
 import { serverEnv } from "../../lib/env";
 import { routes } from "../../lib/routes";
@@ -18,7 +19,8 @@ export const metadata: Metadata = { title: t("account.restricted.pageTitle") };
 
 export default async function RestrictedPage() {
   const auth = await pageSession();
-  if (auth === null || auth.identity.limited) redirect(routes.login);
+  if (auth === null) redirect(routes.login);
+  if (auth.identity.limited) redirect(limitedSessionPage(auth.identity));
   const restriction = restrictionOf(auth.state);
   if (restriction === null) redirect(routes.home);
   return (
