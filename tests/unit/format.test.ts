@@ -6,6 +6,7 @@ import {
   formatNumber,
   formatPrice,
   formatRelative,
+  formatWait,
   t,
 } from "@souq/i18n";
 
@@ -53,6 +54,15 @@ describe("DEC50 and task 1.5 owner decisions: display formats", () => {
     expect(formatRelative(new Date(now.getTime() + 60_000), now)).toBe("18 نوفمبر 2026");
   });
 
+  it("task 3.3: a wait from Retry-After, in seconds then whole minutes rounded up", () => {
+    expect(formatWait(0.2)).toBe("خلال ثانية واحدة");
+    expect(formatWait(45)).toBe("خلال 45 ثانية");
+    expect(formatWait(60)).toBe("خلال دقيقة واحدة");
+    expect(formatWait(61)).toBe("خلال دقيقتين");
+    expect(formatWait(5 * 60)).toBe("خلال 5 دقائق");
+    expect(formatWait(14 * 60 + 1)).toBe("خلال 15 دقيقة");
+  });
+
   it("no output carries hidden direction marks", () => {
     const outputs = [
       formatNumber(1200350),
@@ -60,6 +70,7 @@ describe("DEC50 and task 1.5 owner decisions: display formats", () => {
       formatDate("2026-11-18T12:00:00Z"),
       formatDateTime("2026-11-18T13:30:00Z"),
       formatRelative(new Date("2026-11-18T09:00:00Z"), new Date("2026-11-18T12:00:00Z")),
+      formatWait(5 * 60),
     ];
     for (const output of outputs) expect(output).not.toMatch(HIDDEN_MARKS);
   });

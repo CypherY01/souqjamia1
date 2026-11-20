@@ -8,4 +8,5 @@ export {
   formatNumber,
   formatPrice,
   formatRelative,
+  formatWait,
 } from "./format.ts";

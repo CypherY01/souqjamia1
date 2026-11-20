@@ -92,3 +92,13 @@ export function formatRelative(value: Date | string, now: Date = new Date()): st
   if (seconds < DAY) return relativeFormat.format(-Math.floor(seconds / HOUR), "hour");
   return relativeFormat.format(-Math.floor(seconds / DAY), "day");
 }
+
+/**
+ * A wait before trying again, from Retry-After (task 3.3, RL01): "خلال 45 ثانية", "خلال دقيقتين",
+ * "خلال 5 دقائق", "خلال 15 دقيقة". Seconds below a minute, whole minutes rounded up after that.
+ */
+export function formatWait(seconds: number): string {
+  const whole = Math.max(1, Math.ceil(seconds));
+  if (whole < MINUTE) return relativeFormat.format(whole, "second");
+  return relativeFormat.format(Math.ceil(whole / MINUTE), "minute");
+}

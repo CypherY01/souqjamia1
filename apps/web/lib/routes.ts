@@ -28,7 +28,8 @@ export const routes = {
     favorites: "/account/favorites",
   },
   api: {
-    // API003. POST only: no state change on GET (SEC05). Wired in task 3.3.
+    // API002 and API003 (task 3.3). POST only: no state change on GET (SEC05).
+    login: "/api/auth/login",
     logout: "/api/auth/logout",
   },
 } as const;
