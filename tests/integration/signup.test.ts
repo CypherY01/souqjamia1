@@ -20,6 +20,13 @@ import {
   signupBody,
 } from "./_harness/auth-flow.ts";
 import { closeDb, dbPool, scalar } from "./_harness/db.ts";
+import {
+  cookiePairs,
+  identityFrom,
+  memberIdentity,
+  recoverySession,
+  sessionExists,
+} from "./_harness/sessions.ts";
 import { authSignup, signUpMember, testEmail } from "./_harness/users.ts";
 import { sessionCookies, stackConfig, webDb } from "./_harness/web.ts";
 
@@ -293,6 +300,25 @@ describe("item 3: who may sign up", () => {
     );
     expect(result.status).toBe(403);
     expect(result.code).toBe("FORBIDDEN");
+  });
+
+  it("task 3.4 (fix from 3.2): a recovery session is ended first, and the signup goes on", async () => {
+    const owner = await signUpMember();
+    const limited = await recoverySession(owner.email);
+    const { cookies, identity } = await memberIdentity(limited);
+    expect(identity.limited).toBe(true);
+    const body = await signupBody();
+    const result = await outcome(() =>
+      signup(
+        jsonRequest("/api/auth/signup", body, { guest: guestId(), cookies }),
+        flowContext(off, db, identity),
+      ),
+    );
+    expect(result.status).toBe(200);
+    expect(await sessionExists(limited.sessionId)).toBe(false);
+    const next = await identityFrom(cookiePairs(result.setCookies));
+    expect(next.limited).toBe(false);
+    expect(next.userId).not.toBe(owner.id);
   });
 
   it("a request without the guest binding is refused (the proxy checked CSRF against it)", async () => {

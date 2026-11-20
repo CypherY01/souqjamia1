@@ -25,8 +25,9 @@ import { accepted, ok } from "../http/respond.ts";
 import { routes } from "../routes.ts";
 import {
   createRequestAuthClient,
+  sessionSetCookie,
   type AuthFlowClient,
-  type WrittenCookie,
+  type RequestCookie,
 } from "../supabase/server.ts";
 import { isSessionCookieName } from "../supabase/session.ts";
 import {
@@ -99,22 +100,23 @@ async function isActiveCollege(db: AppDb, traceId: string, id: string): Promise<
  * stale), and a limited session (a recovery link, DEC73) is ended first with this client, so
  * the new session replaces it. Task 3.3 for login; task 3.4 shares it with signup (the page
  * shows its form to a limited session, and API001 refused it with 403) and the recovery link.
+ * Returns whether a limited session was ended.
  */
 export async function prepareSession(
   ctx: AuthFlowContext,
   client: AuthFlowClient,
   flow: string,
-): Promise<void> {
+): Promise<boolean> {
   const identity = await ctx.identity();
-  if (identity === null) return;
+  if (identity === null) return false;
   if (identity.limited) {
     await signOutQuietly(client, ctx.traceId, flow);
-    return;
+    return true;
   }
   try {
     await loadSessionState(identity, ctx.traceId, ctx.db);
   } catch (error) {
-    if (error instanceof ApiError && error.code === "UNAUTHENTICATED") return;
+    if (error instanceof ApiError && error.code === "UNAUTHENTICATED") return false;
     throw error;
   }
   throw new ApiError("FORBIDDEN");
@@ -168,8 +170,9 @@ function failure(
 
 export async function signup(request: Request, ctx: AuthFlowContext): Promise<Response> {
   const { env, db, traceId } = ctx;
-  const { client, written } = createRequestAuthClient(env, readAllCookies(request.headers));
-  await prepareSession(ctx, client, "signup");
+  const cookies = readAllCookies(request.headers);
+  const { client, written } = createRequestAuthClient(env, cookies);
+  const ended = (await prepareSession(ctx, client, "signup")) ? cookies : [];
   const input = await readJson(request, SignupBody);
 
   const fieldErrors = signupFieldErrors(input);
@@ -213,14 +216,14 @@ export async function signup(request: Request, ctx: AuthFlowContext): Promise<Re
   if (error !== null) {
     const answer = failure(classifyAuthError(error), confirmationOn, error, traceId);
     if (answer instanceof ApiError) throw answer;
-    return withRemovals(answer, written);
+    return withRemovals(answer, ended);
   }
 
   if (confirmationOn) {
     // Supabase Auth opens no session while confirmation is on. If it ever does (its setting
     // differs from ours), the session is ended here and no session cookie leaves the server.
     if (data.session !== null) await signOutQuietly(client, traceId);
-    return withRemovals(accepted({ status: "accepted" }), written);
+    return withRemovals(accepted({ status: "accepted" }), ended);
   }
 
   const response = ok({ state: "signed_in", next: routes.home });
@@ -234,15 +237,14 @@ export async function signup(request: Request, ctx: AuthFlowContext): Promise<Re
 }
 
 /**
- * Task 3.4: the removals of a limited session ended by prepareSession reach the browser even when
- * the answer opens no new session. Only removals: never a session cookie with a value.
+ * Task 3.4: when prepareSession ended a limited session, the session cookies the browser sent are
+ * removed even if the answer opens no new session. Nothing else: a session Supabase opened and
+ * this flow ended at once (confirmation on) must leave no trace, or a new address and one in use
+ * would answer differently (TC01).
  */
-function withRemovals(response: Response, written: readonly WrittenCookie[]): Response {
-  for (const cookie of written) {
-    if (cookie.value === null && isSessionCookieName(cookie.name)) {
-      response.headers.append("set-cookie", cookie.setCookie);
-    }
-  }
+function withRemovals(response: Response, sent: readonly RequestCookie[]): Response {
+  const names = new Set(sent.map(({ name }) => name).filter(isSessionCookieName));
+  for (const name of names) response.headers.append("set-cookie", sessionSetCookie(name, "", true));
   return response;
 }
 

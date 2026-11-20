@@ -71,6 +71,37 @@ export async function limitedSession(): Promise<TestMember> {
   return memberFrom(email, (await res.json()) as TokenBody);
 }
 
+/**
+ * Task 3.4: a recovery link for an existing address, through the Auth admin API (local secret key
+ * only), without sending an email. It sets recovery_sent_at, as a real request does.
+ */
+export async function generateRecoveryLink(email: string): Promise<string> {
+  const stack = inject("stack");
+  const res = await fetch(`${stack.apiUrl}/auth/v1/admin/generate_link`, {
+    method: "POST",
+    headers: {
+      apikey: stack.secretKey,
+      authorization: `Bearer ${stack.secretKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ type: "recovery", email }),
+  });
+  if (res.status !== 200) throw new Error(`generate_link failed with ${String(res.status)}`);
+  return ((await res.json()) as { hashed_token: string }).hashed_token;
+}
+
+/** Task 3.4: the recovery session of an existing member (amr otp only, DEC73), from its link. */
+export async function recoverySession(email: string): Promise<TestMember> {
+  const stack = inject("stack");
+  const res = await fetch(`${stack.apiUrl}/auth/v1/verify`, {
+    method: "POST",
+    headers: { apikey: stack.publishableKey, "content-type": "application/json" },
+    body: JSON.stringify({ type: "recovery", token_hash: await generateRecoveryLink(email) }),
+  });
+  if (res.status !== 200) throw new Error(`verify failed with ${String(res.status)}`);
+  return memberFrom(email, (await res.json()) as TokenBody);
+}
+
 /** The verified identity of a member's session, as the server sees it. */
 export async function identityFrom(cookies: readonly RequestCookie[]): Promise<Identity> {
   const client = createSessionClient(stackConfig(), cookies);
