@@ -112,9 +112,15 @@ export function createSessionClient(
   return serverClient(config, () => cookies.map(({ name, value }) => ({ name, value })), onWrite);
 }
 
-/** What the auth flows of task 3.2 use: signup, the confirmation link, resend, sign-out. */
+/**
+ * What the auth flows use: signup, the confirmation link, resend and sign-out (task 3.2), and
+ * login with the verification of the session it opens (task 3.3).
+ */
 export interface AuthFlowClient {
-  auth: Pick<SupabaseClient["auth"], "signUp" | "verifyOtp" | "resend" | "signOut">;
+  auth: Pick<
+    SupabaseClient["auth"],
+    "signUp" | "verifyOtp" | "resend" | "signOut" | "signInWithPassword" | "getClaims"
+  >;
 }
 
 export interface RequestAuthClient {

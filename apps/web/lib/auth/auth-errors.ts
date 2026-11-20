@@ -13,6 +13,10 @@ export type AuthFailure =
   | "link_invalid"
   | "weak_password"
   | "email_invalid"
+  /** Task 3.3: a wrong password and an unknown address get the same code (checked 20 November). */
+  | "invalid_credentials"
+  /** Task 3.3: only after the right password, so it reveals nothing to a guesser. */
+  | "email_not_confirmed"
   | "unavailable"
   | "unexpected";
 
@@ -25,6 +29,8 @@ const BY_CODE: Readonly<Record<string, AuthFailure>> = {
   otp_expired: "link_invalid",
   weak_password: "weak_password",
   email_address_invalid: "email_invalid",
+  invalid_credentials: "invalid_credentials",
+  email_not_confirmed: "email_not_confirmed",
 };
 
 /** Seconds a 429 from Supabase Auth asks to wait: it sends no Retry-After of its own. */

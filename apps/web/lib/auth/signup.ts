@@ -137,6 +137,8 @@ function failure(
       logAuthFailure("signup", traceId, error);
       return new ApiError("SERVICE_UNAVAILABLE", { retryAfter: 5 });
     case "link_invalid":
+    case "invalid_credentials":
+    case "email_not_confirmed":
     case "unexpected":
       logAuthFailure("signup", traceId, error);
       return new ApiError("INTERNAL_ERROR");
