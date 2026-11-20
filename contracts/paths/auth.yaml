@@ -196,8 +196,13 @@ recovery:
     operationId: api006RequestRecovery
     tags: [auth]
     summary: طلب رابط استعادة كلمة المرور
-    description: رد عام بلا كشف للحساب. الرابط صالح ساعة ويُستهلك مرة (DEC37).
-    x-spec-ids: [API006, FR03, BR21, DEC37, TC03]
+    description: >-
+      رد عام بلا كشف للحساب. الرابط صالح ساعة ويُستهلك مرة (DEC37)، وآخر رابط مطلوب وحده صالح.
+      الجلسة لا تُقرأ: أي زائر أو عضو يطلب رابطاً. حدود RL03 لكل بريد (واحد في الدقيقة، و3 في الساعة،
+      و10 في اليوم) تُعدّ قبل الاستدعاء، لأي بريد مسجّلاً كان أو لا، وهي نفس عدّادات API005.
+      البريد غير المسجّل، ومهلة Supabase لحساب موجود، يصلان كالرد العام 202.
+      البريد بصيغة خاطئة 422 للحقل email برمز required أو too_big أو invalid_format.
+    x-spec-ids: [API006, FR03, BR21, DEC37, DEC52, RL03, TC03]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
     security:
@@ -215,8 +220,12 @@ recovery:
         $ref: '../components/responses.yaml#/BadRequest'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 recoveryVerify:
   post:
@@ -224,9 +233,14 @@ recoveryVerify:
     tags: [auth]
     summary: استهلاك رابط الاستعادة
     description: >-
+      صفحة الرابط بطلب GET تعرض زراً فقط، وهذا الطلب POST هو الذي يستهلك الرابط مرة واحدة.
       ينشئ جلسة استعادة صالحة خمس دقائق لتغيير كلمة المرور فقط، بلا وصول للسوق أو المحادثات.
-      الخادم يفرض ذلك من مطالبة amr وتوقيتها (DEC38).
-    x-spec-ids: [API007, FR03, FR59, DEC37, DEC38, TC03]
+      الخادم يفرض ذلك من مطالبة amr (otp فقط، DEC73) وتوقيتها (DEC38). النجاح 303 إلى /account/reset
+      مع كوكيز الجلسة وربط زائر جديد. جلسة عادية حية في المتصفح 403 FORBIDDEN بلا استهلاك للرابط،
+      والصفحة تعرض قبلها زر «اخرج وأكمل الاستعادة». جلسة استعادة سابقة تُنهى أولاً.
+      الرابط المستعمل أو المنتهي أو الأقدم من رابط أحدث 422 LINK_INVALID_OR_EXPIRED.
+      حين يكون التأكيد مفعّلاً، فتح الرابط يؤكد البريد أيضاً (يثبت ملكيته).
+    x-spec-ids: [API007, FR03, FR59, BR21, DEC37, DEC38, DEC73, TC03]
     x-access: guest
     security:
       - csrfToken: []
@@ -245,14 +259,25 @@ recoveryVerify:
         $ref: '../components/responses.yaml#/Forbidden'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 reset:
   post:
     operationId: api008ResetPassword
     tags: [auth]
     summary: تعيين كلمة مرور جديدة من جلسة الاستعادة
-    description: يغيّر كلمة المرور ويلغي كل الجلسات الأخرى (FR03، TC27).
-    x-spec-ids: [API008, FR03, FR59, DEC32, DEC38, TC03, TC27]
+    description: >-
+      يغيّر كلمة المرور ويلغي كل جلسات الحساب، ومنها جلسة الاستعادة نفسها (FR03، TC27)، ويحذف كوكيز
+      الجلسة ويجدد ربط الزائر. ثم يدخل العضو بكلمة المرور الجديدة. يُسجَّل account.password_reset في
+      التدقيق، ويرسل Supabase Auth بريد الإشعار (SEC11). الزائر وجلسة الاستعادة بعد خمس دقائق 401،
+      والجلسة العادية 403 FORBIDDEN (تغيير كلمة المرور من الحساب في 3.6). أي حالة حساب تعيّن كلمة
+      المرور، والدخول بعدها يوجّه المقيّد إلى /restricted. رموز الحقل new_password: too_short
+      وtoo_long وtoo_many_bytes (DEC32)، وsame_password لنفس كلمة المرور، وweak لما يرفضه فحص
+      Supabase.
+    x-spec-ids: [API008, FR03, FR59, DEC32, DEC38, DEC73, SEC11, TC03, TC27]
     x-access: recovery
     security:
       - sessionCookie: []
@@ -266,12 +291,18 @@ reset:
     responses:
       '204':
         $ref: '../components/responses.yaml#/NoContent'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 reauth:
   post:

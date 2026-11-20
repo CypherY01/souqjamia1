@@ -54,9 +54,10 @@ export const STATIC_SECURITY_HEADERS: readonly [string, string][] = [
 /**
  * SEC03, task 3.2 item 5: pages under /auth/ carry a token in their address (the email links), so
  * they send no Referer and are never stored. They load nothing from outside the site either.
+ * Task 3.4: the new-password page of the recovery session gets the same headers.
  */
 export function isAuthLinkPath(pathname: string): boolean {
-  return pathname === "/auth" || pathname.startsWith("/auth/");
+  return pathname === "/auth" || pathname.startsWith("/auth/") || pathname === "/account/reset";
 }
 
 export const AUTH_LINK_HEADERS: readonly [string, string][] = [

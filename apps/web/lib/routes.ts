@@ -12,10 +12,13 @@ export const routes = {
   guidelines: "/guidelines",
   login: "/login",
   signup: "/signup",
-  // Task 3.4: the recovery request page. Linked from the DEC64 message on the signup page.
+  // Task 3.4: the recovery request page (API006). Linked from the login page and the DEC64
+  // message on the signup page.
   recover: "/recover",
   // Task 3.2: the email confirmation link page (API004), while confirmation is on.
   confirmEmail: "/auth/confirm",
+  // Task 3.4: the recovery link page (API007), in both confirmation modes.
+  recoverLink: "/auth/recover",
   // FR78, task 3.1: the state of a restricted or deletion-pending account.
   restricted: "/restricted",
   sell: "/sell",
@@ -26,10 +29,16 @@ export const routes = {
     listings: "/account/listings",
     wanted: "/account/wanted",
     favorites: "/account/favorites",
+    // Task 3.4: the new password, for the recovery session only (API008, DEC38).
+    reset: "/account/reset",
   },
   api: {
     // API002 and API003 (task 3.3). POST only: no state change on GET (SEC05).
     login: "/api/auth/login",
     logout: "/api/auth/logout",
+    // API006, API007 and API008 (task 3.4).
+    recovery: "/api/auth/recovery",
+    recoveryVerify: "/api/auth/recovery/verify",
+    reset: "/api/auth/reset",
   },
 } as const;

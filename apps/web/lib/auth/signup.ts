@@ -1,7 +1,8 @@
 // API001, signup (task 3.2, item 3): FR01, UC01, DEC26, DEC32, DEC36, DEC37, DEC63, DEC64, DEC74,
 // BR24, TC01, TC25. Framework-free: the route handler passes the request, its identity and the
 // configuration, and integration tests call it the same way.
-//   1. A live member session may not sign up again (403 FORBIDDEN).
+//   1. A live member session may not sign up again (403 FORBIDDEN). A limited session (a
+//      recovery link) is ended first (task 3.4, prepareSession).
 //   2. Every field error at once, in one 422 (TC01): name, email, password (DEC32), both boxes,
 //      the policy versions in force (API114, not_current) and an active college (unknown).
 //   3. RL02 (DEC74), and RL03 for the address while confirmation is on (a signup sends a link),
@@ -22,7 +23,11 @@ import { ApiError, type FieldError } from "../http/errors.ts";
 import { countAttempt } from "../http/rate-limit.ts";
 import { accepted, ok } from "../http/respond.ts";
 import { routes } from "../routes.ts";
-import { createRequestAuthClient } from "../supabase/server.ts";
+import {
+  createRequestAuthClient,
+  type AuthFlowClient,
+  type WrittenCookie,
+} from "../supabase/server.ts";
 import { isSessionCookieName } from "../supabase/session.ts";
 import {
   AUTH_RATE_LIMIT_RETRY_SECONDS,
@@ -88,10 +93,24 @@ async function isActiveCollege(db: AppDb, traceId: string, id: string): Promise<
   });
 }
 
-/** A live session of any state is refused; an ended one is a guest (its cookie is stale). */
-async function assertNotSignedIn(ctx: AuthFlowContext): Promise<void> {
+/**
+ * Before a flow that opens a session (signup, login, the recovery link): a live ordinary session
+ * of any account state is refused (403 FORBIDDEN), an ended one is a guest (its cookie is
+ * stale), and a limited session (a recovery link, DEC73) is ended first with this client, so
+ * the new session replaces it. Task 3.3 for login; task 3.4 shares it with signup (the page
+ * shows its form to a limited session, and API001 refused it with 403) and the recovery link.
+ */
+export async function prepareSession(
+  ctx: AuthFlowContext,
+  client: AuthFlowClient,
+  flow: string,
+): Promise<void> {
   const identity = await ctx.identity();
   if (identity === null) return;
+  if (identity.limited) {
+    await signOutQuietly(client, ctx.traceId, flow);
+    return;
+  }
   try {
     await loadSessionState(identity, ctx.traceId, ctx.db);
   } catch (error) {
@@ -139,6 +158,8 @@ function failure(
     case "link_invalid":
     case "invalid_credentials":
     case "email_not_confirmed":
+    case "same_password":
+    case "session_ended":
     case "unexpected":
       logAuthFailure("signup", traceId, error);
       return new ApiError("INTERNAL_ERROR");
@@ -147,7 +168,8 @@ function failure(
 
 export async function signup(request: Request, ctx: AuthFlowContext): Promise<Response> {
   const { env, db, traceId } = ctx;
-  await assertNotSignedIn(ctx);
+  const { client, written } = createRequestAuthClient(env, readAllCookies(request.headers));
+  await prepareSession(ctx, client, "signup");
   const input = await readJson(request, SignupBody);
 
   const fieldErrors = signupFieldErrors(input);
@@ -174,7 +196,6 @@ export async function signup(request: Request, ctx: AuthFlowContext): Promise<Re
     ...(confirmationOn ? emailLimits(env.APP_SECRET, email) : []),
   ]);
 
-  const { client, written } = createRequestAuthClient(env, readAllCookies(request.headers));
   const { data, error } = await client.auth.signUp({
     email,
     password: input.password,
@@ -192,14 +213,14 @@ export async function signup(request: Request, ctx: AuthFlowContext): Promise<Re
   if (error !== null) {
     const answer = failure(classifyAuthError(error), confirmationOn, error, traceId);
     if (answer instanceof ApiError) throw answer;
-    return answer;
+    return withRemovals(answer, written);
   }
 
   if (confirmationOn) {
     // Supabase Auth opens no session while confirmation is on. If it ever does (its setting
-    // differs from ours), the session is ended here and no cookie leaves the server.
+    // differs from ours), the session is ended here and no session cookie leaves the server.
     if (data.session !== null) await signOutQuietly(client, traceId);
-    return accepted({ status: "accepted" });
+    return withRemovals(accepted({ status: "accepted" }), written);
   }
 
   const response = ok({ state: "signed_in", next: routes.home });
@@ -209,6 +230,19 @@ export async function signup(request: Request, ctx: AuthFlowContext): Promise<Re
   // Owner condition 1 on task 1.6: a new guest binding, so the guest token from before is not
   // valid again after a later logout. The page fetches a new CSRF token now.
   response.headers.append("set-cookie", rotateGuestBinding().setCookie);
+  return response;
+}
+
+/**
+ * Task 3.4: the removals of a limited session ended by prepareSession reach the browser even when
+ * the answer opens no new session. Only removals: never a session cookie with a value.
+ */
+function withRemovals(response: Response, written: readonly WrittenCookie[]): Response {
+  for (const cookie of written) {
+    if (cookie.value === null && isSessionCookieName(cookie.name)) {
+      response.headers.append("set-cookie", cookie.setCookie);
+    }
+  }
   return response;
 }
 

@@ -113,13 +113,21 @@ export function createSessionClient(
 }
 
 /**
- * What the auth flows use: signup, the confirmation link, resend and sign-out (task 3.2), and
- * login with the verification of the session it opens (task 3.3).
+ * What the auth flows use: signup, the confirmation link, resend and sign-out (task 3.2), login
+ * with the verification of the session it opens (task 3.3), and the recovery request and the
+ * new password (task 3.4).
  */
 export interface AuthFlowClient {
   auth: Pick<
     SupabaseClient["auth"],
-    "signUp" | "verifyOtp" | "resend" | "signOut" | "signInWithPassword" | "getClaims"
+    | "signUp"
+    | "verifyOtp"
+    | "resend"
+    | "signOut"
+    | "signInWithPassword"
+    | "getClaims"
+    | "resetPasswordForEmail"
+    | "updateUser"
   >;
 }
 

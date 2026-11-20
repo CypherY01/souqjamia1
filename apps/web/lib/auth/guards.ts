@@ -4,9 +4,11 @@
 //   session  a verified identity, a live session (app.session_context), not a limited session
 //   member   session, then the order of app.assert_active_member(): DELETION_PENDING,
 //            ACCOUNT_RESTRICTED, EMAIL_NOT_CONFIRMED, TERMS_NOT_ACKNOWLEDGED
-// Later levels join with their tasks: recovery (3.4), member_reauth (3.6), role_holder, staff
-// and platform_owner (7.1). Writes pass the guard here and again app.assert_active_member()
-// inside the entry point: the database is the authority, the guard rejects early.
+//   recovery a live limited session (DEC73, a recovery link) within its 5 minutes (DEC38), for
+//            API008 only (task 3.4). Any account state (FR78: a narrow, verified flow).
+// Later levels join with their tasks: member_reauth (3.6), role_holder, staff and
+// platform_owner (7.1). Writes pass the guard here and again app.assert_active_member() inside
+// the entry point: the database is the authority, the guard rejects early.
 import type { enums } from "@souq/domain";
 import { appDb, type AppDb } from "../db/app-client.ts";
 import { ApiError, type ErrorCode } from "../http/errors.ts";
@@ -141,18 +143,51 @@ export async function requireSession(
 }
 
 /**
+ * x-access: recovery, without the database (task 3.4): a guest or a limited session past its
+ * 5 minutes is UNAUTHENTICATED, an ordinary session FORBIDDEN (it changes its password from the
+ * account page, task 3.6), and a limited session within its 5 minutes passes (null).
+ */
+export function recoveryDenial(identity: Identity | null, nowSeconds: number): ErrorCode | null {
+  if (identity === null) return "UNAUTHENTICATED";
+  if (!identity.limited) return "FORBIDDEN";
+  return limitedSessionExpired(identity, nowSeconds) ? "UNAUTHENTICATED" : null;
+}
+
+/** x-access: recovery (DEC38, DEC73), with the live-session check of app.session_context(). */
+export async function requireRecovery(
+  ctx: GuardContext,
+  options: GuardOptions = {},
+): Promise<SessionAuth> {
+  const identity = await ctx.identity();
+  const denial = recoveryDenial(identity, options.nowSeconds ?? Date.now() / 1000);
+  if (denial !== null || identity === null) throw new ApiError(denial ?? "UNAUTHENTICATED");
+  const state = await loadSessionState(identity, ctx.traceId, options.db);
+  return { identity, state };
+}
+
+/**
  * Item 8, server pages: where a member page sends this visitor, or null to render it. A guest
  * or an ended session goes to the login page with the path to come back to (a local path only,
- * TC02 in task 3.3), a limited session to the login page too (task 3.4 adds the recovery page),
- * and a restricted account or one awaiting deletion to /restricted (FR78, DEC41). Email and
- * terms are not redirects: the page shows what is missing, and every write is refused.
+ * TC02 in task 3.3), a limited session to the new-password page within its 5 minutes and to the
+ * login page after them (task 3.4), and a restricted account or one awaiting deletion to
+ * /restricted (FR78, DEC41). Email and terms are not redirects: the page shows what is missing,
+ * and every write is refused.
  */
-export function memberPageRedirect(auth: SessionAuth | null, path: string): string | null {
+export function memberPageRedirect(
+  auth: SessionAuth | null,
+  path: string,
+  nowSeconds = Date.now() / 1000,
+): string | null {
   if (auth === null) return `${routes.login}?next=${encodeURIComponent(path)}`;
-  if (auth.identity.limited) return routes.login;
+  if (auth.identity.limited) return limitedSessionPage(auth.identity, nowSeconds);
   const denial = memberDenial(auth.state);
   if (denial === "DELETION_PENDING" || denial === "ACCOUNT_RESTRICTED") return routes.restricted;
   return null;
+}
+
+/** Task 3.4: a limited session belongs on the new-password page, until its 5 minutes are over. */
+export function limitedSessionPage(identity: Identity, nowSeconds: number): string {
+  return limitedSessionExpired(identity, nowSeconds) ? routes.login : routes.account.reset;
 }
 
 /** x-access: member (BR01, DEC36, DEC63). */

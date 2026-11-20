@@ -36,7 +36,7 @@ import { AUTH_RATE_LIMIT_RETRY_SECONDS, classifyAuthError, logAuthFailure } from
 import { loadSessionState, restrictionOf } from "./guards.ts";
 import { expectedIssuer, verifyIdentity } from "./identity.ts";
 import { loginLimits } from "./limits.ts";
-import { signOutQuietly, type AuthFlowContext } from "./signup.ts";
+import { prepareSession, signOutQuietly, type AuthFlowContext } from "./signup.ts";
 
 /** LoginInput of the contract. `next` is checked below with the other fields (422). */
 export const LoginBody = z.strictObject({
@@ -74,23 +74,6 @@ export function cannotBeRight(password: string): boolean {
   return passwordLength(password) > PASSWORD_MAX || passwordBytes(password) > PASSWORD_MAX_BYTES;
 }
 
-/** A live ordinary session is refused; an ended one is a guest; a limited one is ended. */
-async function prepareSession(ctx: AuthFlowContext, client: AuthFlowClient): Promise<void> {
-  const identity = await ctx.identity();
-  if (identity === null) return;
-  if (identity.limited) {
-    await signOutQuietly(client, ctx.traceId, "login");
-    return;
-  }
-  try {
-    await loadSessionState(identity, ctx.traceId, ctx.db);
-  } catch (error) {
-    if (error instanceof ApiError && error.code === "UNAUTHENTICATED") return;
-    throw error;
-  }
-  throw new ApiError("FORBIDDEN");
-}
-
 /** RL01 after a wrong password: 401, or 429 when this failure went over a limit. */
 async function wrongCredentials(
   ctx: AuthFlowContext,
@@ -103,7 +86,7 @@ async function wrongCredentials(
 export async function login(request: Request, ctx: AuthFlowContext): Promise<Response> {
   const { env, db, traceId } = ctx;
   const { client, written } = createRequestAuthClient(env, readAllCookies(request.headers));
-  await prepareSession(ctx, client);
+  await prepareSession(ctx, client, "login");
   const input = await readJson(request, LoginBody);
 
   const fieldErrors = loginFieldErrors(input);

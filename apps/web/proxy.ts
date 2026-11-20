@@ -85,8 +85,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse | Respon
   // Task 3.3, DEC76: a refresh written here would join the sign-out response and could put the
   // session back. On sign-out only the request passed on carries it (the route signs that
   // session out), and every session cookie the browser sent is removed here too, so chunks the
-  // refresh renamed do not stay behind.
-  if (isSignOut(request.method, request.nextUrl.pathname)) {
+  // refresh renamed do not stay behind. Task 3.4: the new password (API008) ends the session too.
+  if (endsSession(request.method, request.nextUrl.pathname)) {
     for (const { name } of readAllCookies(request.headers)) {
       if (isSessionCookieName(name)) {
         response.headers.append("set-cookie", sessionSetCookie(name, "", true));
@@ -98,8 +98,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse | Respon
   return response;
 }
 
-function isSignOut(method: string, pathname: string): boolean {
-  return method === "POST" && pathname === routes.api.logout;
+function endsSession(method: string, pathname: string): boolean {
+  return method === "POST" && (pathname === routes.api.logout || pathname === routes.api.reset);
 }
 
 export const config = {

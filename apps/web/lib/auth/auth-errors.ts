@@ -17,6 +17,10 @@ export type AuthFailure =
   | "invalid_credentials"
   /** Task 3.3: only after the right password, so it reveals nothing to a guesser. */
   | "email_not_confirmed"
+  /** Task 3.4: the new password is the current one (checked 20 November). */
+  | "same_password"
+  /** Task 3.4: the session is no longer at Supabase Auth (revoked, or past its limits). */
+  | "session_ended"
   | "unavailable"
   | "unexpected";
 
@@ -31,6 +35,8 @@ const BY_CODE: Readonly<Record<string, AuthFailure>> = {
   email_address_invalid: "email_invalid",
   invalid_credentials: "invalid_credentials",
   email_not_confirmed: "email_not_confirmed",
+  same_password: "same_password",
+  session_not_found: "session_ended",
 };
 
 /** Seconds a 429 from Supabase Auth asks to wait: it sends no Retry-After of its own. */
