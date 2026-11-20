@@ -360,3 +360,5 @@ policyAcknowledgments:
         $ref: '../components/responses.yaml#/Forbidden'
       '409':
         $ref: '../components/responses.yaml#/Conflict'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'

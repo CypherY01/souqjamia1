@@ -14,9 +14,17 @@ signup:
       والتأكيد معطّل، البريد المستخدم يرد 422 VALIDATION_FAILED مع خطأ الحقل email بالرمز
       email_registered ورسالة «هذا البريد مسجّل. سجّل الدخول أو استعد كلمة المرور»،
       بلا حساب ولا جلسة (DEC64).
-    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, DEC63, DEC64, BR24, TC01, TC25, TC26]
+      كل أخطاء الحقول معاً في رد 422 واحد (TC01)، برموز الحقول: name (required، too_small، too_big،
+      invalid_format)، email (required، too_big، invalid_format، email_registered)، password
+      (too_short، too_long، too_many_bytes، وweak لكلمة مرور ضعيفة أو مسرّبة، DEC32)،
+      terms_version وprivacy_version (not_current: تغيّرت النسخ، فتجلب الواجهة API114 من جديد)،
+      college_id (unknown: كلية غير موجودة أو معطّلة)، accept_terms وacknowledge_privacy (required).
+      العضو بجلسة حية يرد 403 FORBIDDEN. حد RL02 عندنا قبل استدعاء Supabase (DEC74): 5 محاولات
+      في الساعة لكل زائر، و300 لكل عنوان قابلة للضبط، وتُعدّ المحاولة ولو فشلت. ومع التفعيل
+      يُعدّ التسجيل من RL03 لهذا البريد.
+    x-spec-ids: [API001, FR01, FR57, DEC26, DEC32, DEC36, DEC37, DEC63, DEC64, DEC74, BR24, TC01, TC25, TC26]
     x-access: guest
-    x-rate-limit: [supabase_auth, turnstile]
+    x-rate-limit: [RL02, supabase_auth, turnstile]
     security:
       - csrfToken: []
     requestBody:
@@ -101,7 +109,8 @@ confirm:
     summary: تأكيد البريد من صفحة الرابط
     description: >-
       صفحة الرابط بطلب GET تعرض زراً فقط، وهذا الطلب POST هو الذي يستهلك الرابط مرة واحدة،
-      حماية من ماسحات البريد (القسم 5). لا تُنشأ جلسة سوق، والتوجيه لصفحة الدخول.
+      حماية من ماسحات البريد (القسم 5). لا تُنشأ جلسة سوق: الجلسة التي يفتحها Supabase
+      عند قبول الرابط تُلغى فوراً، ولا كوكي. والتوجيه إلى /login?confirmed=1.
       تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 NOT_FOUND (DEC63، DEC66).
     x-spec-ids: [API004, FR57, BR21, DEC37, DEC63, DEC66, TC26]
     x-access: guest
@@ -124,6 +133,10 @@ confirm:
         $ref: '../components/responses.yaml#/NotFound'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 resend:
   post:
@@ -133,6 +146,9 @@ resend:
     description: >-
       رد عام بلا كشف للحساب. مهلة 60 ثانية بين الإرسالين (RL03، DEC37).
       تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 NOT_FOUND (DEC63، DEC66).
+      حدود RL03 لكل بريد (واحد في الدقيقة، و3 في الساعة، و10 في اليوم) تُعدّ قبل الاستدعاء، وتنطبق
+      على أي بريد مسجّلاً كان أو لا. مهلة Supabase لحساب موجود تصل كالرد العام 202.
+      purpose=email_change يرجع 404 حتى المهمة 3.6. البريد بصيغة خاطئة 422 للحقل email.
     x-spec-ids: [API005, FR57, DEC37, DEC63, DEC66, TC26]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
@@ -153,8 +169,12 @@ resend:
         $ref: '../components/responses.yaml#/Forbidden'
       '404':
         $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 recovery:
   post:
