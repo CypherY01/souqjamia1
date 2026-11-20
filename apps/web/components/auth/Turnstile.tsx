@@ -119,7 +119,7 @@ export function Turnstile({ siteKey, onToken, ref }: TurnstileProps) {
   );
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} data-turnstile="">
       <p className="visually-hidden">{t("auth.captcha.label")}</p>
       {state === "loading" && (
         <p className={styles.status} role="status">

@@ -196,15 +196,13 @@ test("API105 and API106: health is open, readiness needs the probe token", async
     headers: { "x-probe-token": process.env.E2E_PROBE_TOKEN ?? "" },
   });
   const body = (await ready.json()) as { status: string; checks: Record<string, boolean> };
-  // Task 3.1: the E2E server's DATABASE_URL points at a port nothing listens on, so the
-  // database and the queue are down whether or not a local Supabase stack runs.
-  expect(ready.status()).toBe(503);
-  expect(body.status).toBe("not_ready");
-  expect(body.checks).toEqual({
-    supabase_auth: body.checks.supabase_auth,
-    database: false,
-    job_queue: false,
-  });
-  expect(typeof body.checks.supabase_auth).toBe("boolean");
+  // Task 3.2: the E2E servers use the local stack, so Auth and the database answer and the server
+  // is ready. The queue check is reported but does not decide readiness (task 3.1), and depends
+  // on what earlier local runs left in the queue (no worker runs here).
+  expect(ready.status()).toBe(200);
+  expect(body.status).toBe("ready");
+  expect(body.checks.supabase_auth).toBe(true);
+  expect(body.checks.database).toBe(true);
+  expect(typeof body.checks.job_queue).toBe("boolean");
   expect(ready.headers()["cache-control"]).toBe("no-store");
 });

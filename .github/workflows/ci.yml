@@ -81,6 +81,8 @@ jobs:
           # CI only checks that the bundle builds, so these are public placeholders, not keys.
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+          # Task 3.2: Cloudflare's public Turnstile test site key (always passes).
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
 
       - name: No secrets in browser-facing build output (SEC06)
         run: pnpm check:bundle
@@ -110,9 +112,23 @@ jobs:
       - name: Build
         run: pnpm build
         env:
-          # Public placeholders, not keys (see the checks job).
+          # Public placeholders, not keys (see the checks job). The servers of the tests get the
+          # local stack's values at start-up (tests/e2e/playwright.config.ts).
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+
+      # Task 3.2 (item 10): signup and the confirmation link run against local Supabase, with the
+      # same services as the integration job. `pnpm env:local` writes apps/web/.env.local
+      # (DATABASE_URL with a new souq_web password), which the test servers read.
+      - name: Turn off Supabase CLI telemetry
+        run: pnpm --filter @souq/db exec supabase telemetry disable
+
+      - name: Start local Supabase
+        run: pnpm --filter @souq/db exec supabase start -x studio,postgres-meta,realtime,storage-api,imgproxy
+
+      - name: Local environment for the test servers
+        run: pnpm env:local
 
       # The browser is cached between runs, keyed by the Playwright version, so a version bump
       # downloads it once again. There is no `playwright install-deps` (apt) step: it took up to
@@ -135,6 +151,15 @@ jobs:
 
       - name: E2E tests
         run: pnpm test:e2e
+
+      - name: Supabase container logs (on failure)
+        if: failure()
+        run: |
+          for container in $(docker ps -a --filter label=com.supabase.cli.project=souqjamia1 --format '{{.Names}}'); do
+            echo "::group::${container}"
+            docker logs --tail 80 "${container}" 2>&1
+            echo "::endgroup::"
+          done
 
   integration:
     name: Integration (local Supabase, database and RLS)

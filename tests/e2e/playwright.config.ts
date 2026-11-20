@@ -1,15 +1,71 @@
 // E2E tests (tasks 1.5 and 1.6): Chromium at the three widths of NFR01, right to left only (DEC47).
 // Runs against the production build: `pnpm build`, then `pnpm test:e2e` starts `next start`.
 // WebKit and Firefox join in task 8.4.
+//
+// Task 3.2 (item 10): the servers use the local Supabase stack (`pnpm db:start`, then
+// `pnpm env:local`, as in CI), with the values `pnpm env:local` wrote to apps/web/.env.local:
+//   PORT          confirmation off (DEC63), as the site runs now
+//   CONFIRM_PORT  the same build with EMAIL_CONFIRMATION_REQUIRED=true, for the confirmation
+//                 link page (signup-confirm.spec.ts). Supabase itself keeps confirmation off;
+//                 generate_link gives the unconfirmed account and its link.
 import { randomBytes } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "@playwright/test";
+import { CONFIRM_PORT, PORT } from "./ports.ts";
 
-const PORT = 3100;
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+/** apps/web/.env.local as `pnpm env:local` wrote it: the local stack's values. */
+function localWebEnv(): Record<string, string> {
+  const file = join(REPO_ROOT, "apps", "web", ".env.local");
+  if (!existsSync(file)) {
+    throw new Error("E2E needs the local Supabase stack: run pnpm db:start, then pnpm env:local.");
+  }
+  const values: Record<string, string> = {};
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+    const match = /^([A-Z0-9_]+)=(.*)$/.exec(line);
+    if (match?.[1] !== undefined && match[2] !== undefined) values[match[1]] = match[2];
+  }
+  return values;
+}
 
 // Server secrets for this run (task 1.6): random, set once in the main process; the test workers
 // inherit them, so tests can call /readyz with the probe token.
 process.env.E2E_APP_SECRET ??= randomBytes(32).toString("base64url");
 process.env.E2E_PROBE_TOKEN ??= randomBytes(32).toString("base64url");
+
+const local = localWebEnv();
+
+function serverEnv(port: number, confirmation: boolean): Record<string, string> {
+  return {
+    APP_ENV: "development",
+    APP_ORIGIN: `http://localhost:${String(port)}`,
+    NEXT_PUBLIC_SUPABASE_URL: local.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: local.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "",
+    EMAIL_CONFIRMATION_REQUIRED: String(confirmation),
+    APP_SECRET: process.env.E2E_APP_SECRET ?? "",
+    PROBE_TOKEN: process.env.E2E_PROBE_TOKEN ?? "",
+    TRUSTED_PROXY_HOPS: "0",
+    DATABASE_URL: local.DATABASE_URL ?? "",
+    CONTACT_EMAIL: "contact@example.test",
+    NEXT_TELEMETRY_DISABLED: "1",
+  };
+}
+
+function server(port: number, confirmation: boolean) {
+  return {
+    command: `pnpm --filter @souq/web exec next start --port ${String(port)}`,
+    cwd: "../..",
+    url: `http://localhost:${String(port)}/healthz`,
+    reuseExistingServer: false,
+    timeout: 60_000,
+    // Variables checked at start-up (OPS05). The public values were inlined by `pnpm build`.
+    env: serverEnv(port, confirmation),
+  };
+}
 
 export default defineConfig({
   testDir: ".",
@@ -28,29 +84,5 @@ export default defineConfig({
     { name: "tablet-768", use: { viewport: { width: 768, height: 1024 } } },
     { name: "desktop-1440", use: { viewport: { width: 1440, height: 900 } } },
   ],
-  webServer: {
-    command: `pnpm --filter @souq/web exec next start --port ${String(PORT)}`,
-    cwd: "../..",
-    url: `http://localhost:${String(PORT)}/healthz`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-    // Server variables checked at start-up (OPS05). Public placeholders, not keys: these pages
-    // do not call Supabase. The public values were inlined by `pnpm build`. Key-like strings
-    // are assembled at run time, so the repository never contains one (gitleaks).
-    env: {
-      APP_ENV: "development",
-      APP_ORIGIN: `http://localhost:${String(PORT)}`,
-      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ["sb", "publishable", "e2e", "placeholder"].join("_"),
-      EMAIL_CONFIRMATION_REQUIRED: "false",
-      APP_SECRET: process.env.E2E_APP_SECRET,
-      PROBE_TOKEN: process.env.E2E_PROBE_TOKEN,
-      TRUSTED_PROXY_HOPS: "0",
-      // Task 3.1: nothing listens on port 1, so the database is down for these tests (the
-      // E2E job has no Supabase until task 3.2) and /readyz reports it.
-      DATABASE_URL: "postgresql://souq_web@127.0.0.1:1/postgres",
-      CONTACT_EMAIL: "contact@example.test",
-      NEXT_TELEMETRY_DISABLED: "1",
-    },
-  },
+  webServer: [server(PORT, false), server(CONFIRM_PORT, true)],
 });
