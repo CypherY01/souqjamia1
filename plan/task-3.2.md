@@ -1,6 +1,6 @@
 # المهمة 3.2 — التسجيل والتأكيد
 
-الحالة: **منفّذة على الفرع (20 نوفمبر 2026)، وتنتظر CI ومراجعتك المحلية.** التفاصيل معتمدة في نفس اليوم. المهمة 3.1 مدموجة في main، وCI أخضر على آخر commit فيه (التشغيل [44582926783](https://github.com/CypherY01/souqjamia1/actions/runs/44582926783)). قرارات المالك في القسم التالي، وهي تتقدم على ما بعدها في هذا الملف.
+الحالة: **منفّذة على الفرع (20 نوفمبر 2026)، وCI أخضر (التشغيل [44643168092](https://github.com/CypherY01/souqjamia1/actions/runs/44643168092))، وتنتظر مراجعتك المحلية.** التفاصيل معتمدة في نفس اليوم. المهمة 3.1 مدموجة في main، وCI أخضر على آخر commit فيه (التشغيل [44582926783](https://github.com/CypherY01/souqjamia1/actions/runs/44582926783)). قرارات المالك في القسم التالي، وهي تتقدم على ما بعدها في هذا الملف.
 
 ## قرارات المالك عند الاعتماد
 
@@ -306,6 +306,7 @@ packages/db/README.md، CLAUDE.md، ops/runbooks/local-dev.md، plan/phase-1.md
 | `pnpm contract:lint` و`pnpm check:contract-ids` | العقد صالح، و99 عملية و20 مستبعدة تغطي API001 إلى API119 |
 | `pnpm db:lint` و`pnpm check:migrations` و`pnpm emails:check` و`pnpm check:supabase-images` و`pnpm check:bundle` | كلها ناجحة |
 | actionlint على `ci.yml` | بلا ملاحظات |
+| CI على GitHub ([44643168092](https://github.com/CypherY01/souqjamia1/actions/runs/44643168092)) | المهام الأربع ناجحة. E2E أخذت 150 ثانية، منها 70 لتشغيل Supabase و45 للاختبارات. و`integration` 111 ثانية، منها 56 لتشغيل Supabase |
 
 - **تجربة في المتصفح** على البناء الإنتاجي (المنفذ 3101، ثم أُوقف):
   - الإرسال فارغاً أظهر الأخطاء الخمسة معاً، والتركيز على الاسم.
