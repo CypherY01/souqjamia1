@@ -56,9 +56,17 @@ login:
     summary: الدخول بالبريد وكلمة المرور
     description: >-
       ينشئ جلسة في كوكيز يديرها الخادم ويرجع مساراً محلياً مسموحاً فقط (TC02).
-      الفشل برسالة عامة. الحساب المقيّد أو بانتظار الحذف يُوجَّه لتدفقه المحدود (FR78).
-      أصحاب الأدوار الإدارية يكملون بـ API011.
-    x-spec-ids: [API002, FR02, FR78, BR21, DEC38, TC02, TC28]
+      الحساب المقيّد أو بانتظار الحذف يُوجَّه لتدفقه المحدود (FR78): الحالة restricted أو
+      deletion_pending، وnext هو /restricted. أصحاب الأدوار الإدارية يكملون بـ API011 (المهمة 7.1).
+      كلمة مرور خاطئة وبريد غير مسجّل يأخذان نفس الرد 401 UNAUTHENTICATED، بلا كشف للحساب.
+      كل أخطاء الحقول معاً في رد 422 قبل استدعاء Supabase، فلا جلسة: email (required،
+      too_big، invalid_format)، password (required)، next (not_local: ليس مساراً محلياً مسموحاً).
+      حد RL01 عندنا: 5 محاولات فاشلة في 15 دقيقة لكل بريد، و200 لكل عنوان، بنوافذ ثابتة.
+      الطلب أثناء الحد يرد 429 مع Retry-After بلا فحص كلمة المرور. CAPTCHA_FAILED يرد 403 ولا
+      يُعدّ. البريد غير المؤكد (حين يُفعَّل التأكيد) يرد 403 EMAIL_NOT_CONFIRMED بعد كلمة مرور
+      صحيحة فقط. العضو بجلسة عادية حية يرد 403 FORBIDDEN، وجلسة الاستعادة تُنهى ثم يكمل الدخول.
+      النجاح يجدد ربط رمز CSRF بكوكي زائر جديد (المهمة 1.6).
+    x-spec-ids: [API002, FR02, FR78, BR21, RL01, DEC38, DEC52, DEC70, DEC73, TC02, TC28]
     x-access: guest
     x-rate-limit: [RL01, supabase_auth, turnstile]
     security:
@@ -78,6 +86,8 @@ login:
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
       '503':
@@ -88,8 +98,13 @@ logout:
     operationId: api003Logout
     tags: [auth]
     summary: الخروج
-    description: يلغي الجلسة ويمسح كوكيزها، والعميل يغلق قنوات Realtime الخاصة (FR49، TC56).
-    x-spec-ids: [API003, FR49, TC56]
+    description: >-
+      يلغي هذه الجلسة فقط عند Supabase Auth (scope local)، ويحذف كل كوكيز الجلسة، ويجدد ربط
+      رمز CSRF بكوكي زائر جديد، والعميل يغلق قنوات Realtime الخاصة (FR49، TC56). أي جلسة
+      موثّقة تخرج، ومنها جلسة الاستعادة المحدودة (DEC73). الخروج ينجح على الجهاز دائماً
+      (DEC76): يرد 204 ويحذف الكوكيز حتى حين لا يرد Supabase أو يفشل الإلغاء، ويُسجَّل الفشل
+      بلا رموز. بلا جلسة أصلاً يرد 401، مع حذف الكوكيز وتجديد الربط أيضاً.
+    x-spec-ids: [API003, FR49, DEC73, DEC76, TC56]
     x-access: session
     security:
       - sessionCookie: []
