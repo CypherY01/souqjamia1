@@ -21,7 +21,6 @@ import {
 } from "./_harness/auth-flow.ts";
 import { closeDb, dbPool, scalar } from "./_harness/db.ts";
 import {
-  cookiePairs,
   identityFrom,
   memberIdentity,
   recoverySession,

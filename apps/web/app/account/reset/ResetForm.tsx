@@ -109,6 +109,7 @@ export function ResetForm() {
         id={FIELD_ID}
         name="new_password"
         label={t("auth.reset.password.label")}
+        hint={t("auth.reset.password.hint")}
         error={error}
         autoComplete="new-password"
       />
