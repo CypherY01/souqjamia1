@@ -133,6 +133,13 @@ docs            specs (read-only, except recording owner decisions, DEC48)
 6. Secrets live only in `.env.local` and the hosting dashboards. Keep `.env.example` current with no values. Never commit secrets.
 7. Commit small and often, with messages that reference spec IDs.
 
+Saving context (owner rule, 20 November 2026):
+
+8. **One task per session.** A session starts by reading the notes (the status table and «ملاحظات للجلسة القادمة» in `plan/phase-1.md`) and ends with the merge and updated notes.
+9. **Never read `docs/spec-v3-en.md` in full, nor the addendum.** Search them (grep) for the IDs and terms the task needs, and read only those sections.
+10. **Test, build and CI output:** show the failures and the summary only, never the full log.
+11. **Use subagents** for broad reading and for long test suites. They return a summary only.
+
 ## Definition of done (per feature)
 
 The feature has Arabic UI with all states, server-side validation and DB constraints, owner and third-party authorization tests, the relevant TC tests passing, an audit record for sensitive/admin actions, and docs/contracts updated if anything changed. Until staging exists (cost stage 1, DEC62), a slice is approved after CI is green and the owner has reviewed it locally with `pnpm dev`, following run steps you give them.
