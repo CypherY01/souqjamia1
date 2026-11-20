@@ -141,8 +141,19 @@ test("field errors show under each field before any request, focus on the first"
   );
   await expect(page.locator("#signup-terms-error")).toBeVisible();
   await expect(page.getByLabel("الاسم", { exact: true })).toBeFocused();
-  // The count of 64 follows the typed password, uncut.
-  await expect(page.locator("#signup-password-counter")).toHaveText("5 من 64");
+  // DEC75: "8 characters at least" only; the count appears past 56 characters, uncut.
+  await expect(page.locator("#signup-password-hint")).toHaveText("8 أحرف على الأقل");
+  await expect(page.locator("#signup-password-counter")).toHaveCount(0);
+  const password = page.getByLabel("كلمة المرور", { exact: true });
+  await password.fill("a".repeat(56));
+  await expect(page.locator("#signup-password-counter")).toHaveCount(0);
+  await password.fill("a".repeat(57));
+  await expect(page.locator("#signup-password-counter")).toHaveText("57 من 64");
+  await expect(page.locator("#signup-password-bytes")).toHaveCount(0);
+  // Past 72 bytes well under 56 characters: the count and the notice.
+  await password.fill("ك".repeat(37));
+  await expect(page.locator("#signup-password-counter")).toHaveText("37 من 64");
+  await expect(page.locator("#signup-password-bytes")).toBeVisible();
 });
 
 test("is right to left, without horizontal scrolling or WCAG 2.2 AA violations", async ({

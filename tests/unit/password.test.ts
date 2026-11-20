@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   checkPassword,
   parseEmail,
+  passwordHints,
+  PASSWORD_COUNT_AFTER,
   passwordBytes,
   passwordLength,
   PASSWORD_MAX,
@@ -54,6 +56,23 @@ describe("checkPassword (DEC32)", () => {
     expect(checkPassword("aaaaaaaa")).toBeNull();
     expect(checkPassword("12345678")).toBeNull();
     expect(checkPassword(cp(0x643).repeat(8))).toBeNull();
+  });
+});
+
+describe("passwordHints (DEC75: the limits show only near them)", () => {
+  it("no count up to 56 characters, the count from 57", () => {
+    expect(PASSWORD_COUNT_AFTER).toBe(56);
+    expect(passwordHints("")).toEqual({ count: false, tooManyBytes: false });
+    expect(passwordHints("a".repeat(8))).toEqual({ count: false, tooManyBytes: false });
+    expect(passwordHints("a".repeat(56))).toEqual({ count: false, tooManyBytes: false });
+    expect(passwordHints("a".repeat(57))).toEqual({ count: true, tooManyBytes: false });
+    expect(passwordHints("a".repeat(65))).toEqual({ count: true, tooManyBytes: false });
+  });
+
+  it("past 72 bytes: the count and the notice, even well under 56 characters", () => {
+    expect(passwordHints(cp(0x643).repeat(36))).toEqual({ count: false, tooManyBytes: false });
+    expect(passwordHints(cp(0x643).repeat(37))).toEqual({ count: true, tooManyBytes: true });
+    expect(passwordHints(cp(0x1f600).repeat(19))).toEqual({ count: true, tooManyBytes: true });
   });
 });
 

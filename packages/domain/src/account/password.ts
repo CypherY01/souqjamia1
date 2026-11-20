@@ -20,6 +20,25 @@ export function passwordBytes(password: string): number {
   return encoder.encode(password).byteLength;
 }
 
+/** DEC75: the count of 64 shows only after this many characters (from 57). */
+export const PASSWORD_COUNT_AFTER = 56;
+
+export interface PasswordHints {
+  /** The count "x of 64": past 56 characters, or past 72 bytes. */
+  count: boolean;
+  /** The byte notice: past 72 bytes. */
+  tooManyBytes: boolean;
+}
+
+/**
+ * DEC75: what a new-password field shows under the field besides "8 characters at least". The
+ * rule itself (checkPassword, DEC32) does not change.
+ */
+export function passwordHints(password: string): PasswordHints {
+  const tooManyBytes = passwordBytes(password) > PASSWORD_MAX_BYTES;
+  return { count: tooManyBytes || passwordLength(password) > PASSWORD_COUNT_AFTER, tooManyBytes };
+}
+
 /** null when the password follows the rule, otherwise the first rule it breaks. */
 export function checkPassword(password: string): PasswordError | null {
   const length = passwordLength(password);

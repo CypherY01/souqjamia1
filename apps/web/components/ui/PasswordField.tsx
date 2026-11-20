@@ -1,12 +1,13 @@
 "use client";
 
-// A password field (task 3.2, item 8): a show/hide toggle button, a live count of 64, and a
-// notice when the text passes 72 UTF-8 bytes before 64 characters (Arabic letters and emoji take
-// more than one byte). The rule is checkPassword from @souq/domain, the same as on the server
-// (DEC32). The value is never trimmed or changed, and the browser does not cut it: the server
-// rejects longer input. Uncontrolled, so a form reads it from FormData by `name`.
+// A password field (task 3.2, item 8): a show/hide toggle button and, for a new password, the
+// limits only when they come near (DEC75): the count "x of 64" past 56 characters, and with it a
+// notice past 72 UTF-8 bytes (Arabic letters and emoji take more than one byte). The hint under
+// the field says "8 characters at least" only. The rule is checkPassword from @souq/domain, the
+// same as on the server (DEC32). The value is never trimmed or changed, and the browser does not
+// cut it: the server rejects longer input. Uncontrolled, so a form reads it from FormData.
 import { useState, type InputHTMLAttributes } from "react";
-import { PASSWORD_MAX, PASSWORD_MAX_BYTES, passwordBytes, passwordLength } from "@souq/domain";
+import { PASSWORD_MAX, passwordHints, passwordLength } from "@souq/domain";
 import { formatNumber, t } from "@souq/i18n";
 import { describedBy, FieldFrame } from "./Field";
 import styles from "./Field.module.css";
@@ -21,7 +22,7 @@ interface PasswordFieldProps extends Omit<
   error?: string;
   /** "new-password" for signup and reset, "current-password" for login and reauthentication. */
   autoComplete: "new-password" | "current-password";
-  /** Shows the count and the byte notice (new passwords only). */
+  /** New passwords only: the count and the byte notice near the limits (DEC75). */
   showRules?: boolean;
 }
 
@@ -41,12 +42,13 @@ export function PasswordField({
   const [value, setValue] = useState(initial);
   const counterId = `${id}-counter`;
   const bytesId = `${id}-bytes`;
-  const tooManyBytes =
-    passwordBytes(value) > PASSWORD_MAX_BYTES && passwordLength(value) <= PASSWORD_MAX;
+  const hints = passwordHints(value);
+  const showCount = showRules && hints.count;
+  const showBytes = showRules && hints.tooManyBytes;
   const described = [
     describedBy(id, hint, error),
-    showRules ? counterId : undefined,
-    showRules && tooManyBytes ? bytesId : undefined,
+    showCount ? counterId : undefined,
+    showBytes ? bytesId : undefined,
   ]
     .filter(Boolean)
     .join(" ");
@@ -84,7 +86,7 @@ export function PasswordField({
           {t("ui.password.show")}
         </button>
       </div>
-      {showRules && (
+      {showCount && (
         <p id={counterId} className={styles.counter}>
           {t("ui.password.count", {
             count: formatNumber(passwordLength(value)),
@@ -92,7 +94,7 @@ export function PasswordField({
           })}
         </p>
       )}
-      {showRules && tooManyBytes && (
+      {showBytes && (
         <p id={bytesId} className={styles.notice}>
           {t("ui.password.tooManyBytes")}
         </p>

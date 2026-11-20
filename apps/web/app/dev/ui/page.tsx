@@ -31,9 +31,11 @@ import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
 
-// PasswordField states (task 3.2): seven characters, and 40 Arabic letters (80 UTF-8 bytes, over
-// the 72-byte limit of DEC32 while under 64 characters).
+// PasswordField states (task 3.2, DEC75): seven characters (no count), 60 Latin characters (the
+// count, past 56), and 40 Arabic letters (80 UTF-8 bytes, over the 72-byte limit of DEC32 while
+// under 64 characters: the count and the notice).
 const DEV_SHORT_PASSWORD = "abc1234";
+const DEV_NEAR_LIMIT_PASSWORD = "a".repeat(60);
 const DEV_LONG_ARABIC_PASSWORD = "ك".repeat(40);
 
 export const metadata: Metadata = {
@@ -201,6 +203,12 @@ export default function DevUiPage() {
             error={t("dev.password.error")}
             autoComplete="new-password"
             defaultValue={DEV_SHORT_PASSWORD}
+          />
+          <PasswordField
+            id="dev-password-near-limit"
+            label={t("dev.password.nearLimitLabel")}
+            autoComplete="new-password"
+            defaultValue={DEV_NEAR_LIMIT_PASSWORD}
           />
           <PasswordField
             id="dev-password-bytes"

@@ -15,9 +15,12 @@ export { EMAIL_MAX, parseEmail, type EmailError, type EmailResult } from "./acco
 export {
   checkPassword,
   passwordBytes,
+  passwordHints,
   passwordLength,
+  PASSWORD_COUNT_AFTER,
   PASSWORD_MAX,
   PASSWORD_MAX_BYTES,
   PASSWORD_MIN,
   type PasswordError,
+  type PasswordHints,
 } from "./account/password.ts";
