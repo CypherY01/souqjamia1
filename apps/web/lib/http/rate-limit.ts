@@ -7,7 +7,8 @@
 // Counter keys are never stored in the clear: HMAC-SHA256 with the rate-limit key derived from
 // APP_SECRET, 32 bytes as app.rate_limit_bucket requires. If the counter cannot be reached, the
 // operation is refused with 503, never let through without a limit (SEC07).
-// First real use: RL02 and RL03 in task 3.2 (countAttempt below); RL01 for logins in task 3.3.
+// First real use: RL02 and RL03 in task 3.2 (countAttempt below); RL01 for logins in task 3.3
+// (checkLimits before the call, countFailures after a wrong password).
 import { createHmac } from "node:crypto";
 import type { AppDb } from "../db/app-client.ts";
 import { ApiError } from "./errors.ts";
@@ -106,13 +107,36 @@ export async function countAttempt(
   traceId: string,
   limits: readonly AttemptLimit[],
 ): Promise<void> {
+  await checkLimits(db, traceId, limits);
+  const wait = await countFailures(db, traceId, limits);
+  if (wait > 0) throw rateLimited(wait);
+}
+
+/** Before an attempt, without counting: RATE_LIMITED with the longest wait, if any is spent. */
+export async function checkLimits(
+  db: AppDb,
+  traceId: string,
+  limits: readonly AttemptLimit[],
+): Promise<void> {
   let wait = 0;
   for (const { limit, key } of limits) {
     wait = Math.max(wait, await rateLimitCheck(db, traceId, limit, key));
   }
   if (wait > 0) throw rateLimited(wait);
+}
+
+/**
+ * Counts one attempt (or failure) in each limit, kept whatever happens next (DEC70). Returns
+ * the longest wait when the count went over a limit, otherwise 0.
+ */
+export async function countFailures(
+  db: AppDb,
+  traceId: string,
+  limits: readonly AttemptLimit[],
+): Promise<number> {
+  let wait = 0;
   for (const { limit, key } of limits) {
     wait = Math.max(wait, await rateLimitHit(db, traceId, limit, key));
   }
-  if (wait > 0) throw rateLimited(wait);
+  return wait;
 }
