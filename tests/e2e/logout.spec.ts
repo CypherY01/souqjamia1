@@ -30,9 +30,7 @@ test("sign-out from the account menu: home page, the visitor header, nothing lef
   baseURL,
 }) => {
   const email = newEmail("logout");
-  const request = await playwright.request.newContext({ baseURL });
-  await signUpThroughApi(request, baseURL ?? "", email);
-  await request.dispose();
+  await signUpThroughApi(playwright, baseURL, email);
   await logIn(page, email);
   const oldCookies = (await context.cookies()).filter((cookie) => cookie.name.startsWith("sb-"));
   expect(oldCookies.length).toBeGreaterThan(0);
@@ -56,8 +54,16 @@ test("sign-out from the account menu: home page, the visitor header, nothing lef
   expect(storage).not.toMatch(JWT);
   expect(storage).not.toMatch(/sb_secret_|service_role|refresh_token|access_token/);
 
-  // The old cookies sent again: the session was revoked, so the server sees a guest.
+  // The old cookies sent again: the session was revoked, so the server sees a guest (its
+  // access token still has minutes left, but its row in auth.sessions is gone).
   await context.addCookies(oldCookies);
-  const me = await page.request.get("/api/me");
-  expect(me.status()).toBe(401);
+  await page.goto("/");
+  await expect(
+    page
+      .locator("header")
+      .first()
+      .getByRole("link", { name: "دخول", exact: true, includeHidden: true }),
+  ).toHaveCount(1);
+  await page.goto("/restricted");
+  await expect(page).toHaveURL(/\/login$/);
 });

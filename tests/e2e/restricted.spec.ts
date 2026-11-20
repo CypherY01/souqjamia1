@@ -36,9 +36,7 @@ for (const state of STATES) {
     baseURL,
   }) => {
     const email = newEmail("restricted");
-    const request = await playwright.request.newContext({ baseURL });
-    const userId = await signUpThroughApi(request, baseURL ?? "", email);
-    await request.dispose();
+    const userId = await signUpThroughApi(playwright, baseURL, email);
     await changeMember(userId, state.sql);
 
     await page.goto("/login?next=%2Fmarket");

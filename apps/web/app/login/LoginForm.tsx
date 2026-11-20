@@ -9,7 +9,7 @@
 //   403  CAPTCHA_FAILED resets the widget; EMAIL_NOT_CONFIRMED (confirmation on) offers the
 //        resend form; FORBIDDEN means another tab signed in, so the page moves on.
 //   422  field errors under their fields. 503 and the network: try again.
-import { useRef, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { parseEmail } from "@souq/domain";
 import { formatWait, t } from "@souq/i18n";
 import { FailureAlert, fieldMessage } from "../../components/auth/messages";
@@ -65,6 +65,13 @@ export function LoginForm({ siteKey, next }: LoginFormProps) {
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
+  const feedback = useRef<HTMLDivElement>(null);
+
+  // Item 6: a failed request moves focus to its message, so keyboard and screen-reader users
+  // land on it (field errors move focus to the field instead).
+  useEffect(() => {
+    if (failure !== null || unconfirmed !== null) feedback.current?.focus();
+  }, [failure, unconfirmed]);
 
   async function onSubmit(event: SubmitEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -133,11 +140,15 @@ export function LoginForm({ siteKey, next }: LoginFormProps) {
           void onSubmit(event);
         }}
       >
-        {failure !== null && <LoginFailure failure={failure} />}
-        {unconfirmed !== null && (
-          <Alert variant="warning" title={t("auth.login.notConfirmed.title")} live>
-            {t("auth.login.notConfirmed.body")}
-          </Alert>
+        {(failure !== null || unconfirmed !== null) && (
+          <div ref={feedback} tabIndex={-1} className={styles.feedback}>
+            {failure !== null && <LoginFailure failure={failure} />}
+            {unconfirmed !== null && (
+              <Alert variant="warning" title={t("auth.login.notConfirmed.title")} live>
+                {t("auth.login.notConfirmed.body")}
+              </Alert>
+            )}
+          </div>
         )}
 
         <TextField

@@ -2,7 +2,12 @@
 // Accounts are made through API001 by another guest; account states are set with the local
 // postgres role, as the integration tests do (local stack only, assertLocalUrl).
 import { randomUUID } from "node:crypto";
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import {
+  expect,
+  type APIRequestContext,
+  type Page,
+  type PlaywrightWorkerArgs,
+} from "@playwright/test";
 import pg from "pg";
 import { assertLocalUrl, readLocalStack } from "../../scripts/local-supabase.ts";
 
@@ -33,13 +38,32 @@ async function guest(request: APIRequestContext): Promise<{ token: string; cooki
   return { token: body.data.token, cookie };
 }
 
-/** A member account made through API001 (confirmation off); returns its user id. */
+/**
+ * A member account made through API001 (confirmation off) by a guest of its own, in a request
+ * context of its own: the session it opens stays there, so the next account starts as a guest
+ * again (a live session may not sign up, 403). Returns the user id.
+ */
 export async function signUpThroughApi(
-  request: APIRequestContext,
-  baseURL: string,
+  playwright: PlaywrightWorkerArgs["playwright"],
+  baseURL: string | undefined,
   email: string,
   name = "عضو اختبار الدخول",
 ): Promise<string> {
+  const request = await playwright.request.newContext({ baseURL });
+  try {
+    await signUp(request, baseURL ?? "", email, name);
+  } finally {
+    await request.dispose();
+  }
+  return userIdOf(email);
+}
+
+async function signUp(
+  request: APIRequestContext,
+  baseURL: string,
+  email: string,
+  name: string,
+): Promise<void> {
   const { token, cookie } = await guest(request);
   const policies = (await (await request.get("/api/policies/current")).json()) as {
     data: { terms: { version: string }; privacy: { version: string } };
@@ -59,6 +83,9 @@ export async function signUpThroughApi(
     },
   });
   expect(res.status()).toBe(200);
+}
+
+async function userIdOf(email: string): Promise<string> {
   const stack = readLocalStack();
   const client = new pg.Client({ connectionString: assertLocalUrl(stack.dbUrl) });
   await client.connect();

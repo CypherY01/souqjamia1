@@ -19,8 +19,8 @@
   gap: var(--space-1);
 }
 
-.form > [role="alert"],
-.form > [role="status"] {
+.form > [role="status"],
+.feedback {
   margin-block-end: var(--space-4);
 }
 

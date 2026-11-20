@@ -32,9 +32,7 @@ test("FR02: login leads home, with the member header and cookies JavaScript cann
   baseURL,
 }) => {
   const email = newEmail();
-  const request = await playwright.request.newContext({ baseURL });
-  await signUpThroughApi(request, baseURL ?? "", email, "عضو اختبار الشريط");
-  await request.dispose();
+  await signUpThroughApi(playwright, baseURL, email, "عضو اختبار الشريط");
 
   await logIn(page, email);
   await expect(page).toHaveURL(/\/$/);
@@ -60,17 +58,18 @@ test("a wrong password: one general message, no session cookie", async ({
   baseURL,
 }) => {
   const email = newEmail();
-  const request = await playwright.request.newContext({ baseURL });
-  await signUpThroughApi(request, baseURL ?? "", email);
-  await request.dispose();
+  await signUpThroughApi(playwright, baseURL, email);
 
   await page.goto("/login");
   await fillLogin(page, email, "wrong-password-1");
   await captchaSolved(page);
   await page.getByRole("button", { name: "دخول", exact: true }).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "البريد أو كلمة المرور غير صحيحة.",
-  );
+  const alert = page.getByRole("main").getByRole("alert");
+  await expect(alert).toContainText("البريد أو كلمة المرور غير صحيحة.");
+  // Item 6: focus moves to the message.
+  await expect
+    .poll(() => alert.evaluate((element) => element.parentElement === document.activeElement))
+    .toBe(true);
   expect((await context.cookies()).filter((cookie) => cookie.name.startsWith("sb-"))).toEqual([]);
 });
 
@@ -79,12 +78,10 @@ test("TC02: an outside next is dropped, a local one is followed", async ({
   playwright,
   baseURL,
 }) => {
-  const request = await playwright.request.newContext({ baseURL });
   const outside = newEmail();
   const local = newEmail();
-  await signUpThroughApi(request, baseURL ?? "", outside);
-  await signUpThroughApi(request, baseURL ?? "", local);
-  await request.dispose();
+  await signUpThroughApi(playwright, baseURL, outside);
+  await signUpThroughApi(playwright, baseURL, local);
 
   await logIn(page, outside, "/login?next=https%3A%2F%2Fevil.example%2F");
   await expect(page).toHaveURL(/^http:\/\/localhost:\d+\/$/);
@@ -101,9 +98,7 @@ test("RL01: after five wrong passwords the page shows the wait", async ({
 }) => {
   test.skip(test.info().project.name !== "desktop-1440", "one width is enough for the limit");
   const email = newEmail("rl01");
-  const request = await playwright.request.newContext({ baseURL });
-  await signUpThroughApi(request, baseURL ?? "", email);
-  await request.dispose();
+  await signUpThroughApi(playwright, baseURL, email);
 
   await page.goto("/login");
   const alert = page.getByRole("main").getByRole("alert");
