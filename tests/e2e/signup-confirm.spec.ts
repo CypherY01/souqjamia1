@@ -15,7 +15,7 @@ const PASSWORD = "كلمة-مرور-تجريبية-1";
 test.use({ baseURL: BASE });
 
 /** An unconfirmed account and its link, through the Auth admin API (local secret key only). */
-async function generateLink(): Promise<string> {
+async function generateLink(email = `e2e-link-${randomUUID()}@example.test`): Promise<string> {
   const stack = readLocalStack();
   const policies = (await (await fetch(`${BASE}/api/policies/current`)).json()) as {
     data: { terms: { version: string }; privacy: { version: string } };
@@ -29,7 +29,7 @@ async function generateLink(): Promise<string> {
     },
     body: JSON.stringify({
       type: "signup",
-      email: `e2e-link-${randomUUID()}@example.test`,
+      email,
       password: PASSWORD,
       data: {
         display_name: "عضو اختبار الرابط",
@@ -92,6 +92,8 @@ test("the link page: a button only, no token in the address, then the login page
 
   await button.click();
   await expect(page).toHaveURL(`${BASE}/login?confirmed=1`);
+  // Task 3.3: the login page says the email is confirmed.
+  await expect(page.getByText("تأكد بريدك")).toBeVisible();
 });
 
 test("a spent link shows the expired message and a clear resend form (DEC37)", async ({ page }) => {
@@ -105,4 +107,19 @@ test("a spent link shows the expired message and a clear resend form (DEC37)", a
   await expect(page.getByText("الرابط انتهى أو استُخدم")).toBeVisible();
   await expect(page.getByLabel("البريد الإلكتروني")).toBeVisible();
   await expect(page.getByRole("button", { name: "إعادة إرسال الرابط" })).toBeVisible();
+});
+
+test("task 3.3: an unconfirmed account logs in to a message and the resend form", async ({
+  page,
+}) => {
+  const email = `e2e-unconfirmed-${randomUUID()}@example.test`;
+  await generateLink(email);
+  await page.goto("/login");
+  await page.getByLabel("البريد الإلكتروني").fill(email);
+  await page.getByLabel("كلمة المرور", { exact: true }).fill(PASSWORD);
+  await captchaSolved(page);
+  await page.getByRole("button", { name: "دخول", exact: true }).click();
+  await expect(page.getByText("بريدك لم يُؤكَّد بعد")).toBeVisible();
+  await expect(page.getByRole("button", { name: "إعادة إرسال الرابط" })).toBeVisible();
+  expect((await page.context().cookies()).filter((c) => c.name.startsWith("sb-"))).toEqual([]);
 });
