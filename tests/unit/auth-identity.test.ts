@@ -156,12 +156,11 @@ describe("item 8: member access, in the order of app.assert_active_member()", ()
       state: s,
     });
     expect(memberPageRedirect(null, "/account/listings")).toBe("/login?next=%2Faccount%2Flistings");
-    expect(
-      memberPageRedirect(
-        auth(state(), identity({ amr: [{ method: "otp", timestamp: NOW }] })),
-        "/sell",
-      ),
-    ).toBe("/login");
+    // Task 3.4: a limited session goes to the new-password page within its 5 minutes, then to
+    // the login page.
+    const limited = auth(state(), identity({ amr: [{ method: "otp", timestamp: NOW }] }));
+    expect(memberPageRedirect(limited, "/sell", NOW + 60)).toBe("/account/reset");
+    expect(memberPageRedirect(limited, "/sell", NOW + 301)).toBe("/login");
     expect(memberPageRedirect(auth(state({ restricted: true })), "/sell")).toBe("/restricted");
     expect(memberPageRedirect(auth(state({ deletionRequestedAt: new Date() })), "/sell")).toBe(
       "/restricted",
