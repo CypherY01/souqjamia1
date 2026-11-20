@@ -210,15 +210,20 @@ export async function signup(request: Request, ctx: AuthFlowContext): Promise<Re
   return response;
 }
 
-/** Ends the session the client holds; a failure is logged, the flow goes on. */
+/**
+ * Ends the session the client holds (this session only, scope local); a failure is logged with
+ * its class and code, never a token, and the flow goes on. supabase-js treats a session Supabase
+ * no longer has (session_not_found) as signed out already: no error.
+ */
 export async function signOutQuietly(
   client: ReturnType<typeof createRequestAuthClient>["client"],
   traceId: string,
+  flow = "sign_out",
 ): Promise<void> {
   try {
     const { error } = await client.auth.signOut({ scope: "local" });
-    if (error !== null) logAuthFailure("sign_out", traceId, error);
+    if (error !== null) logAuthFailure(flow, traceId, error);
   } catch (error) {
-    logAuthFailure("sign_out", traceId, error);
+    logAuthFailure(flow, traceId, error);
   }
 }

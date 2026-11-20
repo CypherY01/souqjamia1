@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { formatNumber, t } from "@souq/i18n";
 import { routes } from "../../lib/routes";
+import { SignOutButton } from "../auth/SignOutButton";
 import { Button, LinkButton } from "../ui/Button";
 import { Icon } from "../ui/Icon";
 import { Disclosure } from "./Disclosure";
@@ -20,12 +21,15 @@ interface SiteHeaderProps {
   /** Distinct names and ids when a second header is shown, as in the /dev/ui preview. */
   navLabel?: string;
   idPrefix?: string;
+  /** The /dev/ui preview: the sign-out button there sends nothing. */
+  preview?: boolean;
 }
 
 export function SiteHeader({
   member = null,
   navLabel = t("layout.header.navLabel"),
   idPrefix = "site",
+  preview = false,
 }: SiteHeaderProps) {
   const searchId = `${idPrefix}-search`;
   return (
@@ -74,7 +78,11 @@ export function SiteHeader({
               </li>
             </ul>
           </nav>
-          {member === null ? <VisitorActions /> : <MemberActions member={member} />}
+          {member === null ? (
+            <VisitorActions />
+          ) : (
+            <MemberActions member={member} preview={preview} />
+          )}
         </Disclosure>
       </div>
     </header>
@@ -97,7 +105,7 @@ function VisitorActions() {
   );
 }
 
-function MemberActions({ member }: { member: HeaderMember }) {
+function MemberActions({ member, preview }: { member: HeaderMember; preview: boolean }) {
   const unread = member.unreadNotifications;
   return (
     <div className={styles.actions}>
@@ -157,12 +165,8 @@ function MemberActions({ member }: { member: HeaderMember }) {
             <Link href={routes.messages}>{t("layout.header.member.messages")}</Link>
           </li>
         </ul>
-        {/* API003: sign out is a POST, never a GET link (SEC05). CSRF is added in 1.6 and 3.3. */}
-        <form action={routes.api.logout} method="post">
-          <Button type="submit" variant="ghost">
-            {t("layout.header.member.signOut")}
-          </Button>
-        </form>
+        {/* API003: a POST with the CSRF token, never a GET link or a plain form (SEC05, task 3.3). */}
+        <SignOutButton preview={preview ? "idle" : undefined} />
       </Disclosure>
     </div>
   );

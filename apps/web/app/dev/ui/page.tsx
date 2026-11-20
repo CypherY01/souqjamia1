@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { t, type MessageKey } from "@souq/i18n";
 import { AccountRestrictedNotice } from "../../../components/account/AccountRestrictedNotice";
+import { SignOutButton } from "../../../components/auth/SignOutButton";
 import { SiteHeader } from "../../../components/layout/SiteHeader";
 import { SafeText } from "../../../components/text/SafeText";
 import { Alert, SafeMeetupNotice } from "../../../components/ui/Alert";
@@ -356,8 +357,19 @@ export default function DevUiPage() {
             member={sampleMember}
             navLabel={t("dev.header.navLabel")}
             idPrefix="preview"
+            preview
           />
         </div>
+      </Section>
+
+      <Section id="sign-out" title={t("dev.sections.signOut")}>
+        <p>{t("dev.signOut.intro")}</p>
+        <h3>{t("dev.signOut.idle")}</h3>
+        <SignOutButton preview="idle" />
+        <h3>{t("dev.signOut.busy")}</h3>
+        <SignOutButton preview="busy" />
+        <h3>{t("dev.signOut.failed")}</h3>
+        <SignOutButton preview="failed" />
       </Section>
 
       <Section id="account-restricted" title={t("dev.sections.restricted")}>

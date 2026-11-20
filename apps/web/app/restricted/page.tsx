@@ -5,10 +5,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { t } from "@souq/i18n";
 import { AccountRestrictedNotice } from "../../components/account/AccountRestrictedNotice";
+import { SignOutButton } from "../../components/auth/SignOutButton";
 import { restrictionOf } from "../../lib/auth/guards";
 import { pageSession } from "../../lib/auth/page";
 import { serverEnv } from "../../lib/env";
 import { routes } from "../../lib/routes";
+import styles from "./restricted.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,10 @@ export default async function RestrictedPage() {
     <>
       <h1>{t("account.restricted.pageTitle")}</h1>
       <AccountRestrictedNotice restriction={restriction} contactEmail={serverEnv().CONTACT_EMAIL} />
+      {/* Task 3.3: the restricted flow has no header menu of its own, so sign-out is here too. */}
+      <div className={styles.signOut}>
+        <SignOutButton />
+      </div>
     </>
   );
 }

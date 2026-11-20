@@ -12,7 +12,7 @@
 import { log } from "@souq/log";
 import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "./lib/env";
-import { cookieHeaderWith } from "./lib/http/cookies";
+import { cookieHeaderWith, readAllCookies } from "./lib/http/cookies";
 import { ApiError } from "./lib/http/errors";
 import { guardRequest } from "./lib/http/guard";
 import { errorResponse } from "./lib/http/respond";
@@ -24,7 +24,9 @@ import {
   securityHeaders,
 } from "./lib/http/security-headers";
 import { newTraceId, TRACE_HEADER } from "./lib/http/trace";
-import { authenticateRequest } from "./lib/supabase/session";
+import { routes } from "./lib/routes";
+import { sessionSetCookie } from "./lib/supabase/server";
+import { authenticateRequest, isSessionCookieName } from "./lib/supabase/session";
 
 export async function proxy(request: NextRequest): Promise<NextResponse | Response> {
   const env = serverEnv();
@@ -80,8 +82,24 @@ export async function proxy(request: NextRequest): Promise<NextResponse | Respon
   if (isAuthLinkPath(request.nextUrl.pathname)) {
     for (const [name, value] of AUTH_LINK_HEADERS) response.headers.set(name, value);
   }
-  withSessionCookies(response);
+  // Task 3.3, DEC76: a refresh written here would join the sign-out response and could put the
+  // session back. On sign-out only the request passed on carries it (the route signs that
+  // session out), and every session cookie the browser sent is removed here too, so chunks the
+  // refresh renamed do not stay behind.
+  if (isSignOut(request.method, request.nextUrl.pathname)) {
+    for (const { name } of readAllCookies(request.headers)) {
+      if (isSessionCookieName(name)) {
+        response.headers.append("set-cookie", sessionSetCookie(name, "", true));
+      }
+    }
+  } else {
+    withSessionCookies(response);
+  }
   return response;
+}
+
+function isSignOut(method: string, pathname: string): boolean {
+  return method === "POST" && pathname === routes.api.logout;
 }
 
 export const config = {
