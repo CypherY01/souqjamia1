@@ -126,6 +126,22 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **أي إنشاء لحساب دخول يرسل النسختين الحاليتين** في بيانات المستخدم (`data` في التسجيل، و`generate_link` و`admin.createUser`)، وإلا رفضه المُشغّل. أداة الاختبارات `signupData()` في `tests/integration/_harness/users.ts`، وسكربت تهيئة المالك في 7.1 يحتاجها أيضاً.
 - **دالة تستبدل دالة سابقة تبدأ من آخر نسخة لها،** لا من أول هجرة: المُشغّل عُرّف في 2.2، ثم استُبدل في 2.4 بصف التفضيلات، ثم هنا. اختبار «every profile has its preference row» كشف ذلك أثناء التنفيذ.
 
+## القراءة من الخادم والحساب (المهمة 3.5، DEC77 وDEC78)
+
+`20261121090000_account_profile.sql`، وتفاصيله في `plan/task-3.5.md`:
+
+| الدالة | العمل |
+| --- | --- |
+| `app.me()` | لـ `souq_web` (API015، DEC58): حقول الحساب الخاصة لعضو الجلسة، ومنها البريد وMFA من `auth`. أي جلسة حية عادية بأي حالة حساب، والجلسة المحدودة `RECOVERY_SESSION_ONLY`. تبني على `app.session_context()` فلا يتكرر فحص الجلسة |
+| `app.update_profile(expected_version, patch)` | لـ `souq_web` (API016): الاسم والكلية، و`avatar_id` بمعرّف `unknown` حتى 4.7، و`locale` = `ar` فقط. أي مفتاح آخر `BAD_REQUEST`، والنسخة القديمة `STATE_CONFLICT` دائماً. الكلية الحالية تبقى ولو عُطّلت. طلب بلا تغيير يرجع النسخة نفسها بلا عدّ ولا تدقيق. حد DEC78 بـ `app.rate_limit_take('DEC78:hour', ...)`، وتدقيق `profile.update` بأسماء الحقول فقط |
+
+**قاعدة القراءة من الخادم (DEC77):** خادم Next.js لا يقرأ عبر PostgREST، بل بدوال قراءة في `app`:
+- **دالة القراءة** = دالة في `app` بصفة `stable` أو `immutable` ينفّذها دور خادم. `security definer` لدور واحد، كباقي دوال المدخل.
+- **أعمدة مسماة فقط:** `returns table (...)` أو قيمة مفردة، لا صف جدول كاملاً. لا `select *` ولا `alias.*` ولا `row_to_json` ولا `to_jsonb`/`json_agg` على اسم مجرد، ولو في تعليق. والخادم يسمّي الأعمدة عند قراءتها أيضاً.
+- **الظهور** بنفس دوال schema `rls` التي تستعملها السياسات. `auth.uid()` يعمل لأن `withActor` يضبط `request.jwt.claims`.
+- **مصفوفة صلاحيات القراءة:** كل دالة قراءة مسجّلة في `tests/integration/_harness/read-matrix.ts` بعنوان اختبار طرف ثالث وعنوان اختبار زائر، والعنوانان موجودان حرفياً في ملف تكامل. الفحص الشامل يفشل بالقواعد `read_function_unregistered` و`read_function_untested` و`read_matrix_stale` و`read_function_whole_row`.
+- **RLS تبقى مفعّلة** على كل جدول، لقراءات المتصفح وRealtime.
+
 ## schema `rls`
 
 - دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.
