@@ -3,7 +3,13 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { inject } from "vitest";
 import { closeDb, rolledBack } from "./_harness/db.ts";
-import { securityViolations, type Rule, type Violation } from "./_harness/security.ts";
+import {
+  readFunctionViolations,
+  securityViolations,
+  type ReadFunction,
+  type Rule,
+  type Violation,
+} from "./_harness/security.ts";
 
 afterAll(closeDb);
 
@@ -95,6 +101,13 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
       await plant(
         "alter default privileges for role postgres grant execute on functions to public",
       );
+      // DEC77: a read function returning a whole row, missing from the matrix, and a matrix
+      // entry whose function is gone.
+      await plant(
+        "create function app.planted_read_row() returns public.profile language sql stable security definer set search_path = '' as 'select p.* from public.profile p limit 1'",
+      );
+      await plant("grant execute on function app.planted_read_row() to souq_web");
+      await plant("drop function app.active_colleges()");
       return securityViolations(client);
     });
 
@@ -146,7 +159,17 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
       has(violations, "default_privileges", "security_probe_f", "anon EXECUTE by default"),
     ).toBe(true);
 
-    // Every rule fired at least once, except "server_role_missing" (the roles exist).
+    // Twice: the return type, and p.* in the body.
+    expect(
+      violations.filter(
+        (v) => v.rule === "read_function_whole_row" && v.object === "app.planted_read_row()",
+      ),
+    ).toHaveLength(2);
+    expect(has(violations, "read_function_unregistered", "app.planted_read_row()")).toBe(true);
+    expect(has(violations, "read_matrix_stale", "app.active_colleges()")).toBe(true);
+
+    // Every rule fired at least once, except "server_role_missing" (the roles exist) and
+    // "read_function_untested" (the matrix is a file: see the planted matrix below).
     const fired = rulesOf(violations);
     const expected: Rule[] = [
       "rls_disabled",
@@ -171,8 +194,46 @@ describe("SEC02 and DEC36: comprehensive security check", () => {
       "default_privileges",
       "rls_function_definer",
       "rls_function_volatile",
+      "read_function_whole_row",
+      "read_function_unregistered",
+      "read_matrix_stale",
     ];
     expect([...fired].sort()).toEqual([...expected].sort());
+  });
+
+  it("DEC77: the read-permission matrix needs both tests, and no stale entry", () => {
+    const fn = (name: string, source = "select 1"): ReadFunction => ({
+      fn: name,
+      source,
+      returnsRowOf: null,
+    });
+    const tests = { reads: "planted", thirdParty: "a third party test", guest: "a guest test" };
+    const violations = readFunctionViolations(
+      [
+        fn("app.listed()"),
+        fn("app.untested()"),
+        fn("app.star()", "select * from public.profile"),
+        fn("app.whole_json()", "select pg_catalog.to_jsonb(p) from public.profile p"),
+        fn("app.unlisted()"),
+      ],
+      {
+        "app.listed()": tests,
+        "app.untested()": { reads: "planted", thirdParty: "", guest: "no such test" },
+        "app.star()": tests,
+        "app.whole_json()": tests,
+        "app.gone()": tests,
+      },
+      ['it("a third party test", async () => {});', "it('a guest test', async () => {});"],
+    );
+    expect(violations.map((v) => `${v.rule} ${v.object}`)).toEqual([
+      "read_function_untested app.untested()",
+      "read_function_untested app.untested()",
+      "read_function_whole_row app.star()",
+      "read_function_whole_row app.whole_json()",
+      "read_function_unregistered app.unlisted()",
+      "read_matrix_stale app.gone()",
+    ]);
+    expect(violations[1]?.detail).toBe("guest test not found: no such test");
   });
 
   it("reports a missing server role", async () => {

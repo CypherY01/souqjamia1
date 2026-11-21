@@ -2,7 +2,11 @@
 // violation. sec02-baseline.test.ts expects none, and plants one of each to prove each rule
 // fires. Run it as postgres inside a transaction: the default-privileges probe creates objects
 // in a savepoint and rolls them back.
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type pg from "pg";
+import { READ_MATRIX, type ReadFunctionTests } from "./read-matrix.ts";
 import { CALLER_ROLES, SERVER_ROLES } from "./roles.ts";
 
 /**
@@ -43,7 +47,11 @@ export type Rule =
   | "time_source"
   | "default_privileges"
   | "rls_function_definer"
-  | "rls_function_volatile";
+  | "rls_function_volatile"
+  | "read_function_whole_row"
+  | "read_function_unregistered"
+  | "read_function_untested"
+  | "read_matrix_stale";
 
 export interface Violation {
   rule: Rule;
@@ -514,6 +522,116 @@ async function defaultPrivilegeRules(
   }
 }
 
+/**
+ * DEC77, owner condition 1: a read function returns named columns, never a whole row, so a
+ * private column added to a table later cannot leak through it. These patterns in its body
+ * read or return a whole row: `select *`, `alias.*`, row_to_json, and to_json/to_jsonb/json_agg/
+ * jsonb_agg of a bare name (a row alias, or a variable to write another way). Comments count.
+ */
+export const WHOLE_ROW_PATTERNS: readonly RegExp[] = [
+  /\bselect\s+(?:distinct\s+)?\*/i,
+  /\b[a-z_][a-z0-9_$]*\s*\.\s*\*/i,
+  /\brow_to_json\s*\(/i,
+  /\b(?:to_jsonb?|jsonb?_agg)\s*\(\s*[a-z_][a-z0-9_$]*\s*\)/i,
+];
+
+export interface ReadFunction {
+  fn: string;
+  source: string;
+  /** The relation whose row type it returns, or null. */
+  returnsRowOf: string | null;
+}
+
+/** Integration test files, the place where the matrix's test titles must be found. */
+export function integrationTestSources(): string[] {
+  const dir = fileURLToPath(new URL("..", import.meta.url));
+  return readdirSync(dir)
+    .filter((name) => name.endsWith(".test.ts"))
+    .map((name) => readFileSync(join(dir, name), "utf8"));
+}
+
+/**
+ * DEC77, owner condition 2: every read function is in the read-permission matrix with a
+ * third-party and a guest test that exist, and the matrix lists no function that is gone.
+ * Pure, so sec02-baseline.test.ts can feed it a planted matrix.
+ */
+export function readFunctionViolations(
+  functions: readonly ReadFunction[],
+  matrix: Readonly<Record<string, ReadFunctionTests>>,
+  testSources: readonly string[],
+): Violation[] {
+  const out: Violation[] = [];
+  const found = (title: string): boolean =>
+    title.trim() !== "" &&
+    testSources.some((source) => source.includes(`"${title}"`) || source.includes(`'${title}'`));
+  for (const f of functions) {
+    if (f.returnsRowOf !== null) {
+      out.push({
+        rule: "read_function_whole_row",
+        object: f.fn,
+        detail: `returns the whole row of ${f.returnsRowOf}; return named columns`,
+      });
+    }
+    const pattern = WHOLE_ROW_PATTERNS.find((p) => p.test(f.source));
+    if (pattern !== undefined) {
+      out.push({
+        rule: "read_function_whole_row",
+        object: f.fn,
+        detail: `body matches ${pattern.source}; name each column`,
+      });
+    }
+    const entry = matrix[f.fn];
+    if (entry === undefined) {
+      out.push({
+        rule: "read_function_unregistered",
+        object: f.fn,
+        detail: "read function missing from tests/integration/_harness/read-matrix.ts",
+      });
+      continue;
+    }
+    for (const kind of ["thirdParty", "guest"] as const) {
+      if (!found(entry[kind])) {
+        out.push({
+          rule: "read_function_untested",
+          object: f.fn,
+          detail: `${kind} test not found: ${entry[kind] === "" ? "(empty)" : entry[kind]}`,
+        });
+      }
+    }
+  }
+  const live = new Set(functions.map((f) => f.fn));
+  for (const fn of Object.keys(matrix)) {
+    if (!live.has(fn)) {
+      out.push({ rule: "read_matrix_stale", object: fn, detail: "no such read function" });
+    }
+  }
+  return out;
+}
+
+/** DEC77: STABLE or IMMUTABLE functions in app that a server role may execute. */
+async function readFunctionRules(client: pg.ClientBase, out: Violation[]): Promise<void> {
+  const functions = await rows<ReadFunction>(
+    client,
+    `select (n.nspname || '.' || p.proname || '(' || pg_catalog.oidvectortypes(p.proargtypes) || ')') as fn,
+            p.prosrc as source,
+            (select rn.nspname || '.' || rc.relname
+               from pg_catalog.pg_type t
+               join pg_catalog.pg_class rc on rc.oid = t.typrelid
+               join pg_catalog.pg_namespace rn on rn.oid = rc.relnamespace
+              where t.oid = p.prorettype and rc.relkind in ('r', 'v', 'm', 'p', 'f')) as "returnsRowOf"
+       from pg_catalog.pg_proc p
+       join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'app'
+        and p.provolatile in ('s', 'i')
+        and exists (select 1 from pg_catalog.pg_roles r
+                     where r.rolname = any($1)
+                       and pg_catalog.has_function_privilege(r.oid, p.oid, 'EXECUTE'))
+      order by 1`,
+    [[...SERVER_ROLES]],
+  );
+  out.push(...readFunctionViolations(functions, READ_MATRIX, integrationTestSources()));
+}
+
 /** Every SEC02 / DEC36 violation in the current database, in a stable order. */
 export async function securityViolations(client: pg.ClientBase): Promise<Violation[]> {
   const out: Violation[] = [];
@@ -531,5 +649,6 @@ export async function securityViolations(client: pg.ClientBase): Promise<Violati
   await serverRoleRules(client, out);
   await ownerRules(client, out);
   await defaultPrivilegeRules(client, callers, out);
+  await readFunctionRules(client, out);
   return out;
 }
