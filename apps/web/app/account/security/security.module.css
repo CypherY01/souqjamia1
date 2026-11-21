@@ -31,6 +31,13 @@
   overflow-wrap: anywhere;
 }
 
+/* An address moves to the next line whole, and breaks only when longer than the line. */
+.address {
+  display: inline-block;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
 .block {
   display: flex;
   flex-direction: column;

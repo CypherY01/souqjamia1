@@ -86,7 +86,10 @@ export function EmailChangeForm({
         <Alert variant="info" title={t("account.security.email.pending.title")}>
           <p>{t("account.security.email.pending.body")}</p>
           <p>
-            {t("account.security.email.pending.address")} <bdi dir="ltr">{pending}</bdi>
+            {t("account.security.email.pending.address")}{" "}
+            <bdi dir="ltr" className={styles.address}>
+              {pending}
+            </bdi>
           </p>
         </Alert>
       )}

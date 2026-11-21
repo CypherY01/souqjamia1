@@ -50,7 +50,10 @@ export default async function SecurityPage() {
       <section className={styles.section} aria-labelledby="security-email-title">
         <h2 id="security-email-title">{t("account.security.email.title")}</h2>
         <p className={styles.current}>
-          {t("account.security.email.current")} <bdi dir="ltr">{me.email}</bdi>
+          {t("account.security.email.current")}{" "}
+          <bdi dir="ltr" className={styles.address}>
+            {me.email}
+          </bdi>
         </p>
         <EmailChangeForm
           siteKey={siteKey}
