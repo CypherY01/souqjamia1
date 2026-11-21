@@ -10,6 +10,7 @@
 - دوال العامل الخلفي في المهمة 2.5: `plan/task-2.5.md`، وDEC71.
 - اتصال خادم Next.js والحراس في المهمة 3.1: `plan/task-3.1.md`، وDEC72 وDEC73.
 - التسجيل والإقرار بالسياسات في المهمة 3.2: `plan/task-3.2.md`، وDEC74.
+- التأكيد المزدوج لتغيير البريد في المهمة 3.6: `plan/task-3.6.md`، وDEC79، وفحص الترقية في `ops/runbooks/supabase-upgrade.md`.
 
 ## قواعد كتابة الهجرات
 
@@ -141,6 +142,21 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **الظهور** بنفس دوال schema `rls` التي تستعملها السياسات. `auth.uid()` يعمل لأن `withActor` يضبط `request.jwt.claims`.
 - **مصفوفة صلاحيات القراءة:** كل دالة قراءة مسجّلة في `tests/integration/_harness/read-matrix.ts` بعنوان اختبار طرف ثالث وعنوان اختبار زائر، والعنوانان موجودان حرفياً في ملف تكامل. الفحص الشامل يفشل بالقواعد `read_function_unregistered` و`read_function_untested` و`read_matrix_stale` و`read_function_whole_row`.
 - **RLS تبقى مفعّلة** على كل جدول، لقراءات المتصفح وRealtime.
+
+## إعادة التحقق وتغيير البريد وكلمة المرور (المهمة 3.6، DEC79)
+
+`20261122090000_credentials.sql`، وتفاصيله في `plan/task-3.6.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| `app.email_change_confirmation` | داخلي، RLS مفعّلة وبلا منح: أي رابطي تغيير البريد المعلّق أُكّد عبر خادمنا، لوقت الطلب نفسه (`email_change_sent_at`). طلب جديد يصفّره |
+| `app.guard_email_change()` | مُشغّل `BEFORE UPDATE OF email` على `auth.users` بشرط `when (old.email is distinct from new.email)` (شرط المالك الأول). أي تغيير لعمود البريد يُرفض `LINK_INVALID_OR_EXPIRED` ما لم يكن إكمال الطلب المعلّق بعد تأكيد الرابطين. عند الإكمال يحذف الصف ويكتب `account.email_changed` في نفس المعاملة |
+| `app.confirm_email_change_link(token_hash)` | لـ `souq_web` (API021، بلا هوية): يسجّل رابطاً واحداً خلال ساعة (DEC37) بقفل الصف. المستعمل والآخر لم يُؤكَّد `LINK_INVALID_OR_EXPIRED`. يرجع `recorded` أو `complete` ورمز الرابط الآخر |
+| `app.record_credential_change(action)` | لـ `souq_web`: تدقيق `account.password_changed` (API022) أو `account.email_change_requested` (API020) من جلسة عادية حية |
+| `app.me()` | أُعيد إنشاؤها بعمود `pending_email`: العنوان المعلّق ما دام رابطاه صالحين، وإلا `null` |
+
+- **المُشغّل يعتمد على أعمدة يديرها Supabase:** يُعاد فحصه مع الكود والاختبارات عند كل ترقية، بالخطوات في `ops/runbooks/supabase-upgrade.md` (شرط المالك الثاني).
+- **تغيير البريد من الإدارة** (غير موجود في المرحلة الأولى) يرفضه المُشغّل اليوم، ويحتاج قراراً ومساراً خاصاً.
 
 ## schema `rls`
 
