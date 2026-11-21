@@ -222,6 +222,12 @@ export function reauthenticatedUntil(identity: Identity): number | null {
   return times.length === 0 ? null : Math.max(...times) + REAUTH_SECONDS;
 }
 
+/** For the security page: the end of the window while it is open, otherwise null. */
+export function openReauthWindow(identity: Identity, nowSeconds = Date.now() / 1000): Date | null {
+  const until = reauthenticatedUntil(identity);
+  return until !== null && nowSeconds <= until ? new Date(until * 1000) : null;
+}
+
 /** x-access: member_reauth without the database: REAUTH_REQUIRED once the window is closed. */
 export function reauthDenial(identity: Identity, nowSeconds: number): ErrorCode | null {
   const until = reauthenticatedUntil(identity);

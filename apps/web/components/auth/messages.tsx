@@ -17,6 +17,9 @@ const FIELD_GROUP: Readonly<Record<string, string>> = {
   display_name: "name",
   accept_terms: "terms",
   acknowledge_privacy: "privacy",
+  // Task 3.6: API009 and API022 (wrong), and API020 (same_email, taken).
+  current_password: "currentPassword",
+  new_email: "newEmail",
 };
 
 export function fieldMessage(field: string, code: string): string {
