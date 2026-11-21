@@ -8,6 +8,7 @@ import { MAIN_CONTENT_ID, SkipLink } from "../components/layout/SkipLink";
 import { SiteFooter } from "../components/layout/SiteFooter";
 import { SiteHeader, type HeaderMember } from "../components/layout/SiteHeader";
 import { pageSession } from "../lib/auth/page";
+import { serverEnv, turnstileStubOn } from "../lib/env";
 import "./tokens.css";
 import "./globals.css";
 import styles from "./layout.module.css";
@@ -48,7 +49,13 @@ async function headerMember(): Promise<HeaderMember | null> {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   await connection();
   return (
-    <html lang="ar" dir="rtl" className={`${arabic.variable} ${latin.variable}`}>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`${arabic.variable} ${latin.variable}`}
+      // Task 3.5: E2E's Turnstile stand-in (components/auth/Turnstile.tsx), never in production.
+      data-turnstile-stub={turnstileStubOn(serverEnv()) ? "" : undefined}
+    >
       <body>
         <SkipLink />
         <SiteHeader member={await headerMember()} />

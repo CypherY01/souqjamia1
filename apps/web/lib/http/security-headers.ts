@@ -21,9 +21,20 @@ export interface CspOptions {
   supabaseUrl: string;
   /** The site is served over https (staging and production). */
   https: boolean;
+  /**
+   * Task 3.5: E2E's local Turnstile stand-in (TURNSTILE_STUB) is on, so no Cloudflare frame is
+   * allowed. Never in production (lib/env.ts refuses it there).
+   */
+  turnstileStub?: boolean;
 }
 
-export function buildCsp({ nonce, dev, supabaseUrl, https }: CspOptions): string {
+export function buildCsp({
+  nonce,
+  dev,
+  supabaseUrl,
+  https,
+  turnstileStub = false,
+}: CspOptions): string {
   const supabase = new URL(supabaseUrl);
   const supabaseWs = `${supabase.protocol === "https:" ? "wss:" : "ws:"}//${supabase.host}`;
   return [
@@ -33,7 +44,7 @@ export function buildCsp({ nonce, dev, supabaseUrl, https }: CspOptions): string
     `img-src 'self' blob: data: ${supabase.origin}`,
     "font-src 'self'",
     `connect-src 'self' ${supabase.origin} ${supabaseWs}`,
-    `frame-src ${TURNSTILE_ORIGIN}`,
+    turnstileStub ? "frame-src 'none'" : `frame-src ${TURNSTILE_ORIGIN}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

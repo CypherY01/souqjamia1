@@ -97,9 +97,6 @@ test("RL01: after five wrong passwords the page shows the wait", async ({
   baseURL,
 }) => {
   test.skip(test.info().project.name !== "desktop-1440", "one width is enough for the limit");
-  // Six real Turnstile solves on one page: 2 to 8 seconds each from Cloudflare (measured on
-  // 20 November 2026, task 3.4), more than the 30-second default for the whole test.
-  test.setTimeout(90_000);
   const email = newEmail("rl01");
   await signUpThroughApi(playwright, baseURL, email);
 

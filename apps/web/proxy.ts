@@ -11,7 +11,7 @@
 //  5. Email link pages under /auth/ send no Referer and are never stored (SEC03, task 3.2).
 import { log } from "@souq/log";
 import { NextResponse, type NextRequest } from "next/server";
-import { serverEnv } from "./lib/env";
+import { serverEnv, turnstileStubOn } from "./lib/env";
 import { cookieHeaderWith, readAllCookies } from "./lib/http/cookies";
 import { ApiError } from "./lib/http/errors";
 import { guardRequest } from "./lib/http/guard";
@@ -65,6 +65,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse | Respon
     dev: process.env.NODE_ENV === "development",
     supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
     https,
+    turnstileStub: turnstileStubOn(env),
   });
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(TRACE_HEADER, traceId);

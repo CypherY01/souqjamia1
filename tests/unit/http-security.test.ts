@@ -226,6 +226,21 @@ describe("SEC06 security headers", () => {
     expect(csp).toContain("wss://project.supabase.example");
   });
 
+  it("task 3.5: the Turnstile frame is allowed, except with the E2E stand-in", () => {
+    expect(buildCsp({ nonce: "n", dev: false, supabaseUrl, https: false })).toContain(
+      "frame-src https://challenges.cloudflare.com",
+    );
+    const stub = buildCsp({
+      nonce: "n",
+      dev: false,
+      supabaseUrl,
+      https: false,
+      turnstileStub: true,
+    });
+    expect(stub).toContain("frame-src 'none'");
+    expect(stub).not.toContain("challenges.cloudflare.com");
+  });
+
   it("next dev only: eval for React and unsigned dev styles", () => {
     const csp = buildCsp({ nonce: "n", dev: true, supabaseUrl, https: false });
     expect(csp).toContain("'unsafe-eval'");

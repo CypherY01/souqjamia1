@@ -93,6 +93,21 @@ describe("local Supabase Auth (task 1.4)", () => {
     expect(res.status).toBeLessThan(500);
   });
 
+  // Task 3.5: E2E replaces the widget in the browser (TURNSTILE_STUB), so the real Turnstile
+  // check is here: Supabase Auth asks Cloudflare (siteverify) with the test secret of
+  // config.toml. A missing token never gets that far (DEC52 above). Checked on 21 November 2026:
+  // the always-pass test secret accepts any token, not only the dummy one, so a refusal by
+  // Cloudflare can only be seen with a real secret (cost stage 1). This test pins that fact.
+  it("task 3.5: Cloudflare's always-pass test secret accepts any token", async () => {
+    const res = await auth("/signup", {
+      email: email(),
+      password: PASSWORD,
+      data: await signupData(DISPLAY_NAME),
+      gotrue_meta_security: { captcha_token: "not.a.cloudflare.token" },
+    });
+    expect(res.status).toBe(200);
+  });
+
   it("DEC32: a 7 character password is rejected", async () => {
     const res = await auth("/signup", {
       email: email(),

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { EnvError, loadPublicEnv, loadServerEnv } from "../../apps/web/lib/env.ts";
+import { EnvError, loadPublicEnv, loadServerEnv, turnstileStubOn } from "../../apps/web/lib/env.ts";
 import { loadWorkerEnv } from "../../apps/worker/src/env.ts";
 
 const validWeb = {
@@ -92,6 +92,18 @@ describe("OPS05 web environment", () => {
     expect(
       loadServerEnv({ ...validWeb, SIGNUP_IP_LIMIT_PER_HOUR: "1200" }).SIGNUP_IP_LIMIT_PER_HOUR,
     ).toBe(1200);
+  });
+
+  it("task 3.5: TURNSTILE_STUB is off unless set, and refused with APP_ENV=production", () => {
+    expect(turnstileStubOn(loadServerEnv(validWeb))).toBe(false);
+    expect(turnstileStubOn(loadServerEnv({ ...validWeb, TURNSTILE_STUB: "false" }))).toBe(false);
+    expect(turnstileStubOn(loadServerEnv({ ...validWeb, TURNSTILE_STUB: "true" }))).toBe(true);
+    expect(() =>
+      loadServerEnv({ ...validWeb, APP_ENV: "production", TURNSTILE_STUB: "true" }),
+    ).toThrow(/TURNSTILE_STUB/);
+    expect(() => loadServerEnv({ ...validWeb, TURNSTILE_STUB: "yes" })).toThrow(/TURNSTILE_STUB/);
+    // Even a configuration that slipped past the schema keeps the widget in production.
+    expect(turnstileStubOn({ APP_ENV: "production", TURNSTILE_STUB: true })).toBe(false);
   });
 
   it("checks only public variables for the build", () => {

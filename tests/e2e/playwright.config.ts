@@ -8,6 +8,10 @@
 //   CONFIRM_PORT  the same build with EMAIL_CONFIRMATION_REQUIRED=true, for the confirmation
 //                 link page (signup-confirm.spec.ts). Supabase itself keeps confirmation off;
 //                 generate_link gives the unconfirmed account and its link.
+// Task 3.5: both run with TURNSTILE_STUB, the local stand-in for the Turnstile widget, so no test
+// waits on Cloudflare in the browser (2 to 8 seconds per solve, task 3.4). Supabase Auth still
+// verifies the test token at Cloudflare, and tests/integration/supabase-local.test.ts checks
+// that verification. The owner's local review uses the real widget.
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -51,6 +55,7 @@ function serverEnv(port: number, confirmation: boolean): Record<string, string> 
     TRUSTED_PROXY_HOPS: "0",
     DATABASE_URL: local.DATABASE_URL ?? "",
     CONTACT_EMAIL: "contact@example.test",
+    TURNSTILE_STUB: "true",
     NEXT_TELEMETRY_DISABLED: "1",
   };
 }

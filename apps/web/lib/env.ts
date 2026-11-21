@@ -33,38 +33,52 @@ export const publicEnvSchema = z.object({
 /** DEC74: RL02 signups per client address and hour, when SIGNUP_IP_LIMIT_PER_HOUR is not set. */
 export const DEFAULT_SIGNUP_IP_LIMIT_PER_HOUR = 300;
 
-export const serverEnvSchema = publicEnvSchema.extend({
-  APP_ENV: z.enum(["development", "staging", "production"]),
-  // The trusted origin of the site: the Origin check (SEC05) compares requests with it exactly.
-  APP_ORIGIN: origin,
-  // DEC63: email_confirmation_required. Must match enable_confirmations in config.toml.
-  EMAIL_CONFIRMATION_REQUIRED: booleanString,
-  // Task 1.6: the server secret. The CSRF and cursor keys are derived from it with HKDF, one
-  // purpose name each. Changing it invalidates both (ops/runbooks/secrets.md).
-  APP_SECRET: z.string().min(32),
-  // API106: shared with the hosting platform's readiness probe (X-Probe-Token).
-  PROBE_TOKEN: z.string().min(32),
-  // SEC07: how many trusted proxies in front of the app append to X-Forwarded-For (0 locally).
-  TRUSTED_PROXY_HOPS: z
-    .string()
-    .regex(/^[0-9]$/)
-    .transform(Number),
-  // Task 3.1, DEC36: direct Postgres connection for the souq_web role. lib/db/app-client.ts
-  // refuses any other role.
-  DATABASE_URL: z.string().refine(isPostgresUrl),
-  // Task 3.1, FR78: the contact address shown to restricted accounts for objections (section 3
-  // of the addendum). The real address comes with G05; locally a fixture.
-  CONTACT_EMAIL: z.email(),
-  // DEC74: RL02 signups per client address and hour (a shared campus network counts as one
-  // address). Optional: unset or empty means 300. Reviewed after the load test (task 8.4).
-  SIGNUP_IP_LIMIT_PER_HOUR: z
-    .string()
-    .regex(/^([1-9][0-9]{0,5})?$/)
-    .optional()
-    .transform((value) =>
-      value === undefined || value === "" ? DEFAULT_SIGNUP_IP_LIMIT_PER_HOUR : Number(value),
-    ),
-});
+export const serverEnvSchema = publicEnvSchema
+  .extend({
+    APP_ENV: z.enum(["development", "staging", "production"]),
+    // The trusted origin of the site: the Origin check (SEC05) compares requests with it exactly.
+    APP_ORIGIN: origin,
+    // DEC63: email_confirmation_required. Must match enable_confirmations in config.toml.
+    EMAIL_CONFIRMATION_REQUIRED: booleanString,
+    // Task 1.6: the server secret. The CSRF and cursor keys are derived from it with HKDF, one
+    // purpose name each. Changing it invalidates both (ops/runbooks/secrets.md).
+    APP_SECRET: z.string().min(32),
+    // API106: shared with the hosting platform's readiness probe (X-Probe-Token).
+    PROBE_TOKEN: z.string().min(32),
+    // SEC07: how many trusted proxies in front of the app append to X-Forwarded-For (0 locally).
+    TRUSTED_PROXY_HOPS: z
+      .string()
+      .regex(/^[0-9]$/)
+      .transform(Number),
+    // Task 3.1, DEC36: direct Postgres connection for the souq_web role. lib/db/app-client.ts
+    // refuses any other role.
+    DATABASE_URL: z.string().refine(isPostgresUrl),
+    // Task 3.1, FR78: the contact address shown to restricted accounts for objections (section 3
+    // of the addendum). The real address comes with G05; locally a fixture.
+    CONTACT_EMAIL: z.email(),
+    // DEC74: RL02 signups per client address and hour (a shared campus network counts as one
+    // address). Optional: unset or empty means 300. Reviewed after the load test (task 8.4).
+    SIGNUP_IP_LIMIT_PER_HOUR: z
+      .string()
+      .regex(/^([1-9][0-9]{0,5})?$/)
+      .optional()
+      .transform((value) =>
+        value === undefined || value === "" ? DEFAULT_SIGNUP_IP_LIMIT_PER_HOUR : Number(value),
+      ),
+    // Task 3.5, for E2E only: "true" replaces the Turnstile widget with a local stand-in that gives
+    // Cloudflare's test token at once, so the browser never contacts Cloudflare. Supabase Auth
+    // still verifies the token at Cloudflare. Unset means false; refused with APP_ENV=production.
+    TURNSTILE_STUB: booleanString.optional().transform((value) => value ?? false),
+  })
+  .refine((env) => !(env.TURNSTILE_STUB && env.APP_ENV === "production"), {
+    path: ["TURNSTILE_STUB"],
+    message: "TURNSTILE_STUB is for E2E only, never with APP_ENV=production",
+  });
+
+/** Task 3.5: the E2E stand-in for Turnstile is on (and never in production). */
+export function turnstileStubOn(env: Pick<ServerEnv, "APP_ENV" | "TURNSTILE_STUB">): boolean {
+  return env.TURNSTILE_STUB && env.APP_ENV !== "production";
+}
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
