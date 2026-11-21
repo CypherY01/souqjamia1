@@ -205,13 +205,13 @@ describe("RL03 and API005 without enumeration (confirmation on)", () => {
     expect([result.status, result.code]).toEqual([429, "RATE_LIMITED"]);
   });
 
-  it("item 7: email_change is 404 until task 3.6; a wrong address is a field error", async () => {
+  it("task 3.6: email_change for an address with no pending change is the general 202; a wrong address is a field error", async () => {
     const change = await resend({
       email: testEmail(),
       purpose: "email_change",
       captcha_token: DUMMY_CAPTCHA,
     });
-    expect([change.status, change.code]).toEqual([404, "NOT_FOUND"]);
+    expect(change.status).toBe(202);
     const wrong = await resend({ email: "nope", purpose: "signup", captcha_token: DUMMY_CAPTCHA });
     expect(wrong.status).toBe(422);
     expect(wrong.fieldErrors).toEqual([{ field: "email", code: "invalid_format" }]);
