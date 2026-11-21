@@ -56,7 +56,7 @@ interface SessionContextRow {
 }
 
 /** pg returns an array of an enum type as its text form, {owner,moderator}. */
-function parseRoles(value: Role[] | string): Role[] {
+export function parseRoles(value: Role[] | string): Role[] {
   if (Array.isArray(value)) return value;
   const inner = value.replace(/^\{|\}$/g, "");
   return inner === "" ? [] : (inner.split(",") as Role[]);
@@ -129,15 +129,28 @@ export interface GuardOptions {
   nowSeconds?: number;
 }
 
+/**
+ * The first half of x-access: session, without the database: a guest is UNAUTHENTICATED and a
+ * limited session gets its DEC73 refusal. For a route whose own read function checks the live
+ * session in the same query (API015 and app.me(), task 3.5); otherwise use requireSession.
+ */
+export async function requireIdentity(
+  ctx: GuardContext,
+  options: GuardOptions = {},
+): Promise<Identity> {
+  const identity = await ctx.identity();
+  if (identity === null) throw new ApiError("UNAUTHENTICATED");
+  const limited = limitedSessionDenial(identity, options.nowSeconds ?? Date.now() / 1000);
+  if (limited !== null) throw new ApiError(limited);
+  return identity;
+}
+
 /** x-access: session. Any account state, so restricted accounts can see their state (DEC58). */
 export async function requireSession(
   ctx: GuardContext,
   options: GuardOptions = {},
 ): Promise<SessionAuth> {
-  const identity = await ctx.identity();
-  if (identity === null) throw new ApiError("UNAUTHENTICATED");
-  const limited = limitedSessionDenial(identity, options.nowSeconds ?? Date.now() / 1000);
-  if (limited !== null) throw new ApiError(limited);
+  const identity = await requireIdentity(ctx, options);
   const state = await loadSessionState(identity, ctx.traceId, options.db);
   return { identity, state };
 }

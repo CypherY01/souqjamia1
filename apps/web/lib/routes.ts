@@ -25,6 +25,8 @@ export const routes = {
   messages: "/messages",
   notifications: "/notifications",
   account: {
+    // Task 3.5: the account page (API015) and the profile edit (API016).
+    home: "/account",
     profile: "/account/profile",
     listings: "/account/listings",
     wanted: "/account/wanted",
@@ -40,5 +42,10 @@ export const routes = {
     recovery: "/api/auth/recovery",
     recoveryVerify: "/api/auth/recovery/verify",
     reset: "/api/auth/reset",
+    // API015, API016 (task 3.5) and API119 (DEC69, its first form in task 3.5).
+    me: "/api/me",
+    profile: "/api/profile/me",
+    policyAcknowledgments: "/api/me/policy-acknowledgments",
+    currentPolicies: "/api/policies/current",
   },
 } as const;
