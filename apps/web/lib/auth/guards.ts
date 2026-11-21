@@ -6,8 +6,10 @@
 //            ACCOUNT_RESTRICTED, EMAIL_NOT_CONFIRMED, TERMS_NOT_ACKNOWLEDGED
 //   recovery a live limited session (DEC73, a recovery link) within its 5 minutes (DEC38), for
 //            API008 only (task 3.4). Any account state (FR78: a narrow, verified flow).
-// Later levels join with their tasks: member_reauth (3.6), role_holder, staff and
-// platform_owner (7.1). Writes pass the guard here and again app.assert_active_member() inside
+//   member_reauth  member, and a password check within the last 5 minutes (DEC38, task 3.6):
+//            the newest password entry in amr. A login is one; API009 opens a new session for
+//            another. Otherwise REAUTH_REQUIRED.
+// Later levels join with their tasks: role_holder, staff and platform_owner (7.1). Writes pass the guard here and again app.assert_active_member() inside
 // the entry point: the database is the authority, the guard rejects early.
 import type { enums } from "@souq/domain";
 import { appDb, type AppDb } from "../db/app-client.ts";
@@ -206,6 +208,26 @@ export function limitedSessionPage(identity: Identity, nowSeconds = Date.now() /
   return limitedSessionExpired(identity, nowSeconds) ? routes.login : routes.account.reset;
 }
 
+/** DEC38: a sensitive change needs a password check within the last 5 minutes. */
+export const REAUTH_SECONDS = 5 * 60;
+
+/**
+ * Task 3.6: when the reauthentication window of this session closes (Unix seconds): its newest
+ * password entry in amr plus 5 minutes, or null for a session without one (a limited session).
+ */
+export function reauthenticatedUntil(identity: Identity): number | null {
+  const times = identity.amr
+    .filter((entry) => entry.method === "password")
+    .map((entry) => entry.timestamp);
+  return times.length === 0 ? null : Math.max(...times) + REAUTH_SECONDS;
+}
+
+/** x-access: member_reauth without the database: REAUTH_REQUIRED once the window is closed. */
+export function reauthDenial(identity: Identity, nowSeconds: number): ErrorCode | null {
+  const until = reauthenticatedUntil(identity);
+  return until !== null && nowSeconds <= until ? null : "REAUTH_REQUIRED";
+}
+
 /** x-access: member (BR01, DEC36, DEC63). */
 export async function requireMember(
   ctx: GuardContext,
@@ -213,6 +235,20 @@ export async function requireMember(
 ): Promise<SessionAuth> {
   const auth = await requireSession(ctx, options);
   const denial = memberDenial(auth.state);
+  if (denial !== null) throw new ApiError(denial);
+  return auth;
+}
+
+/**
+ * x-access: member_reauth (DEC38, task 3.6): member first, so a restricted or unconfirmed
+ * account gets its own code, then the 5-minute window.
+ */
+export async function requireMemberReauth(
+  ctx: GuardContext,
+  options: GuardOptions = {},
+): Promise<SessionAuth> {
+  const auth = await requireMember(ctx, options);
+  const denial = reauthDenial(auth.identity, options.nowSeconds ?? Date.now() / 1000);
   if (denial !== null) throw new ApiError(denial);
   return auth;
 }

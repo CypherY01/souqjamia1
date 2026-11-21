@@ -19,7 +19,7 @@ export interface Me {
   id: string;
   email: string;
   email_confirmed: boolean;
-  /** Task 3.6 (BR23). */
+  /** Task 3.6 (BR23, DEC79): the new address while both links of a change are valid. */
   pending_email: string | null;
   display_name: string;
   college: CatalogRef | null;
@@ -60,6 +60,7 @@ interface MeRow {
   user_id: string;
   email: string;
   email_confirmed: boolean;
+  pending_email: string | null;
   display_name: string;
   college_id: string | null;
   college_key: string | null;
@@ -84,7 +85,7 @@ interface MeRow {
 }
 
 // Named columns (DEC77): a column added to app.me() later reaches no response by accident.
-const ME_QUERY = `select user_id, email, email_confirmed, display_name, college_id, college_key,
+const ME_QUERY = `select user_id, email, email_confirmed, pending_email, display_name, college_id, college_key,
   college_label_ar, college_label_en, locale, joined_at, account_status, suspended_until,
   deletion_requested_at, restricted, terms_acknowledged, roles, mfa_enrolled, email_offers,
   email_meetups, email_deals, email_reviews, email_reports, preferences_version, version
@@ -115,7 +116,7 @@ function toAccount(row: MeRow, identity: Identity): Account {
     id: row.user_id,
     email: row.email,
     email_confirmed: row.email_confirmed,
-    pending_email: null,
+    pending_email: row.pending_email,
     display_name: row.display_name,
     college,
     avatar: null,

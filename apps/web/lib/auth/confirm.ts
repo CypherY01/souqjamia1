@@ -70,8 +70,6 @@ export async function resendConfirmation(
 ): Promise<Response> {
   assertConfirmationOn(ctx);
   const input = await readJson(request, ResendBody);
-  // Item 7: the email change links come with task 3.6.
-  if (input.purpose === "email_change") throw new ApiError("NOT_FOUND");
   const email = parseEmail(input.email);
   if (!email.ok) {
     throw new ApiError("VALIDATION_FAILED", {
@@ -81,8 +79,11 @@ export async function resendConfirmation(
   await countAttempt(ctx.db, ctx.traceId, emailLimits(ctx.env.APP_SECRET, email.value));
 
   const { client } = createRequestAuthClient(ctx.env, []);
+  // Task 3.6: purpose email_change sends both links of the pending change of the account whose
+  // current address this is, again; the new links replace the old ones, and what was recorded of
+  // them (DEC79) no longer counts. Supabase Auth answers the same for an address without one.
   const { error } = await client.auth.resend({
-    type: "signup",
+    type: input.purpose,
     email: email.value,
     options: { captchaToken: input.captcha_token },
   });
