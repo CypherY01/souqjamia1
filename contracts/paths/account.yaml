@@ -7,14 +7,18 @@ me:
     summary: بيانات الحساب الخاصة
     description: >-
       متاح لأي جلسة صالحة حتى يعرض الحساب غير المؤكد أو المقيّد حالته.
-      الصلاحيات الفعلية في capabilities (DEC58).
-    x-spec-ids: [API015, FR49, FR04, DEC58]
+      الصلاحيات الفعلية في capabilities (DEC58). جلسة الاستعادة المحدودة 403 RECOVERY_SESSION_ONLY
+      (DEC73). في المرحلة الأولى قبل جداولها: pending_email حتى المهمة 3.6، وavatar حتى 4.7،
+      وstudent_badge بقيمتين فارغتين حتى 7.6، كلها null.
+    x-spec-ids: [API015, FR49, FR04, DEC58, DEC73, DEC77]
     x-access: session
     responses:
       '200':
         $ref: '../components/responses.yaml#/MeOk'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../components/responses.yaml#/Forbidden'
 
 profileMe:
   patch:
@@ -22,10 +26,14 @@ profileMe:
     tags: [account]
     summary: تعديل الملف الشخصي
     description: >-
-      الحقول المسموحة فقط، وأي حقل للدور أو الشارة أو التقييم يُرفض (TC21، TC65).
-      الصورة الشخصية يجب أن تكون بغرض avatar وجاهزة ويملكها العضو (TC75).
-    x-spec-ids: [API016, FR49, FR61, DEC30, DEC51, DEC54, TC21, TC65, TC75]
+      الحقول المسموحة فقط، وأي حقل آخر (الدور أو الشارة أو التقييم أو النسخة) يُرفض 400 بلا تغيير (TC21، TC65).
+      الصورة الشخصية يجب أن تكون بغرض avatar وجاهزة ويملكها العضو (TC75). حتى المهمة 4.7 لا توجد صورة
+      مؤهلة: avatar_id بمعرّف يرجع 422 بالرمز unknown، وnull يُقبل. الكلية فعّالة، أو الحالية إن لم تتغير
+      (رمز unknown). expected_version قديم 409 STATE_CONFLICT. طلب لا يغيّر شيئاً يرجع 200 بلا زيادة النسخة.
+      حد DEC78: 10 تعديلات ناجحة في الساعة لكل عضو.
+    x-spec-ids: [API016, FR49, FR61, DEC30, DEC51, DEC54, DEC78, TC21, TC65, TC75]
     x-access: member
+    x-rate-limit: [DEC78]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -48,6 +56,8 @@ profileMe:
         $ref: '../components/responses.yaml#/Conflict'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
 
 profilePublic:
   get:
