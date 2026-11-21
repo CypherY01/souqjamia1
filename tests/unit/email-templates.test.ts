@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { t } from "@souq/i18n";
 import {
+  ADDRESS_LINES,
   EMAIL_TEMPLATES,
   generatedTemplates,
   NOTIFICATION_TEMPLATES,
@@ -73,9 +74,23 @@ describe("Supabase Auth security notices (SEC11, task 3.4)", () => {
     const html = renderNotificationTemplate(name);
     expect(html).toContain('<html lang="ar" dir="rtl">');
     expect(html).toContain(t(`email.${name}.heading`));
-    expect(html).not.toMatch(/<a\b|\{\{/);
+    expect(html).not.toMatch(/<a\b|\.SiteURL|\.TokenHash|\.ConfirmationURL/);
     expect(html).not.toMatch(/<(img|script|link|iframe)\b/i);
     expect(html).toContain('<meta name="referrer" content="no-referrer" />');
+    // The only placeholder a notice may carry is the address line (task 3.6, item 10).
+    const placeholders = html.match(/\{\{[^}]*\}\}/g) ?? [];
+    expect(placeholders).toEqual(
+      ADDRESS_LINES[name] === undefined ? [] : [ADDRESS_LINES[name].placeholder],
+    );
+  });
+
+  it("task 3.6, item 10: the email change and its notice show the new address, left to right", () => {
+    expect(renderEmailTemplate("email_change")).toContain(
+      `${t("email.email_change.newAddress")} <span dir="ltr" style="font-weight: bold">{{ .NewEmail }}</span>`,
+    );
+    expect(renderNotificationTemplate("email_changed")).toContain(
+      `${t("email.email_changed.newAddress")} <span dir="ltr" style="font-weight: bold">{{ .Email }}</span>`,
+    );
   });
 
   it.each(notices)("DEC65: %s ends with the line for people who did not sign up", (name) => {

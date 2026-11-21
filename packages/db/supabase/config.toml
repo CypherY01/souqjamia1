@@ -283,6 +283,13 @@ enabled = true
 subject = "تغيّرت كلمة مرورك في سوق الجامعة"
 content_path = "./supabase/templates/password_changed_notification.html"
 
+# SEC11, task 3.6 (owner condition at the approval of task 3.4, BR23): the old address is told by
+# email after an email change completes (both links confirmed, DEC79), with the new address.
+[auth.email.notification.email_changed]
+enabled = true
+subject = "تغيّر بريد حسابك في سوق الجامعة"
+content_path = "./supabase/templates/email_changed_notification.html"
+
 [auth.sms]
 # Allow/disallow the phone provider. When false, users can't sign up or sign in with SMS.
 # To block new signups only, set enable_signup = false under [auth] instead.

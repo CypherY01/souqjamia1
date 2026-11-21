@@ -21,10 +21,12 @@ export type EmailTemplateName = keyof typeof EMAIL_TEMPLATES;
 
 /**
  * Task 3.4, SEC11: security notices Supabase Auth sends after the change, with no link (a
- * password reset now, a password change in task 3.6). Name -> the file name Supabase expects.
+ * password reset or change, and from task 3.6 a completed email change, sent to the old
+ * address). Name -> the file name Supabase expects.
  */
 export const NOTIFICATION_TEMPLATES = {
   password_changed: "password_changed_notification",
+  email_changed: "email_changed_notification",
 } as const;
 
 export type NotificationTemplateName = keyof typeof NOTIFICATION_TEMPLATES;
@@ -38,6 +40,25 @@ const OWN_NOTICE: Record<EmailTemplateName, MessageKey | null> = {
   recovery: "email.recovery.notRequested",
   email_change: "email.email_change.notRequested",
 };
+
+/**
+ * Task 3.6 (item 10): the new address, as a Go placeholder Supabase Auth fills in, so the owner
+ * of the old address sees where the account moves. Shown left to right, isolated from the
+ * Arabic text around it.
+ */
+export const ADDRESS_LINES: Partial<
+  Record<EmailTemplateName | NotificationTemplateName, { label: MessageKey; placeholder: string }>
+> = {
+  email_change: { label: "email.email_change.newAddress", placeholder: "{{ .NewEmail }}" },
+  email_changed: { label: "email.email_changed.newAddress", placeholder: "{{ .Email }}" },
+};
+
+function addressLine(name: EmailTemplateName | NotificationTemplateName): string {
+  const line = ADDRESS_LINES[name];
+  if (line === undefined) return "";
+  return `                <p style="margin: 0 0 24px; font-size: 16px">${escapeHtml(t(line.label))} <span dir="ltr" style="font-weight: bold">${line.placeholder}</span></p>
+`;
+}
 
 export const TEMPLATES_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -112,7 +133,7 @@ export function renderEmailTemplate(name: EmailTemplateName): string {
   // Go template placeholders filled in by Supabase Auth. The page shows a button and only its
   // POST consumes the link, so mail scanners cannot use it (section 5 of the addendum).
   const link = `{{ .SiteURL }}${EMAIL_TEMPLATES[name]}?token_hash={{ .TokenHash }}`;
-  const rest = `                <p style="margin: 0 0 24px">
+  const rest = `${addressLine(name)}                <p style="margin: 0 0 24px">
                   <a href="${link}" style="display: inline-block; padding: 12px 24px; border-radius: 8px; background-color: ${color.primary}; color: #FFFFFF; font-size: 16px; font-weight: bold; text-decoration: none">${button}</a>
                 </p>
                 <p style="margin: 0 0 8px; font-size: 14px">${escapeHtml(t("email.common.validity"))}</p>
@@ -133,7 +154,7 @@ export function renderNotificationTemplate(name: NotificationTemplateName): stri
     t(`email.${name}.subject`),
     t(`email.${name}.heading`),
     t(`email.${name}.body`),
-    noticeLines(`email.${name}.notRequested`),
+    `${addressLine(name)}${noticeLines(`email.${name}.notRequested`)}`,
   );
 }
 
