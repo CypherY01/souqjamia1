@@ -25,9 +25,10 @@
       "unread": "{count} غير مقروءة",
       "favorites": "المفضلة",
       "accountMenu": "حسابي",
+      "account": "صفحة حسابي",
       "myListings": "إعلاناتي",
       "myWanted": "طلبات الشراء الخاصة بي",
-      "profile": "ملفي العام"
+      "profile": "تعديل الملف"
     }
   },
   "footer": {

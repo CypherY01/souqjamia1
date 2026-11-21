@@ -3,7 +3,7 @@
 // addendum (section 5): after sign-out the browser holds no session cookie, and no token or key
 // in any storage; the old cookies, sent again, open nothing.
 import { expect, test, type Page } from "@playwright/test";
-import { logIn, newEmail, openAccountMenu, signUpThroughApi } from "./auth-helpers.ts";
+import { logIn, meOf, newEmail, openAccountMenu, signUpThroughApi } from "./auth-helpers.ts";
 
 /** Everything page JavaScript can read: cookies, both storages and the IndexedDB names. */
 async function browserStorage(page: Page): Promise<string> {
@@ -66,4 +66,6 @@ test("sign-out from the account menu: home page, the visitor header, nothing lef
   ).toHaveCount(1);
   await page.goto("/restricted");
   await expect(page).toHaveURL(/\/login$/);
+  // Task 3.5: API015 says so directly.
+  expect((await meOf(page)).status).toBe(401);
 });

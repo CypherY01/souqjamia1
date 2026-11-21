@@ -1,0 +1,11 @@
+/* The acknowledgment of new policy versions on the account page (API119, task 3.5). */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-start: var(--space-3);
+}
+
+.feedback {
+  margin-block: var(--space-3);
+}

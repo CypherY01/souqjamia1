@@ -150,6 +150,9 @@ function MemberActions({ member, preview }: { member: HeaderMember; preview: boo
         )}
         <ul className={styles.menuList}>
           <li>
+            <Link href={routes.account.home}>{t("layout.header.member.account")}</Link>
+          </li>
+          <li>
             <Link href={routes.account.listings}>{t("layout.header.member.myListings")}</Link>
           </li>
           <li>

@@ -127,6 +127,18 @@ export async function logIn(page: Page, email: string, path = "/login"): Promise
   await expect(page).not.toHaveURL(/\/login/);
 }
 
+/**
+ * Task 3.5: API015 with the page's own cookies: the status, and the account when there is one.
+ * The direct check that a session is live or ended (until 3.5, the visitor header was).
+ */
+export async function meOf(
+  page: Page,
+): Promise<{ status: number; me: Record<string, unknown> | null }> {
+  const response = await page.request.get("/api/me");
+  const body = (await response.json()) as { data?: Record<string, unknown> };
+  return { status: response.status(), me: body.data ?? null };
+}
+
 /** The account menu of the site header: opens it when it is closed. */
 export async function openAccountMenu(page: Page): Promise<void> {
   const header = page.locator("header").first();

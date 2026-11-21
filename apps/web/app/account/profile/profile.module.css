@@ -1,0 +1,24 @@
+/* The profile edit (task 3.5): one narrow column, mobile first (360, 768 and 1440 px). */
+.page {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.intro {
+  margin-block: 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.feedback {
+  margin-block-end: var(--space-4);
+}
+
+.back {
+  margin-block-start: var(--space-5);
+}

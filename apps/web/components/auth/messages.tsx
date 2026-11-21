@@ -13,6 +13,8 @@ const FIELD_GROUP: Readonly<Record<string, string>> = {
   // Task 3.4: API008's field, with the same rules (DEC32) and same_password.
   new_password: "password",
   college_id: "college",
+  // Task 3.5: API016's name field, with the signup rules (parseDisplayName).
+  display_name: "name",
   accept_terms: "terms",
   acknowledge_privacy: "privacy",
 };
