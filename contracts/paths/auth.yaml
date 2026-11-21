@@ -163,7 +163,8 @@ resend:
       تعمل فقط حين يكون التأكيد مفعّلاً، وإلا ترجع 404 NOT_FOUND (DEC63، DEC66).
       حدود RL03 لكل بريد (واحد في الدقيقة، و3 في الساعة، و10 في اليوم) تُعدّ قبل الاستدعاء، وتنطبق
       على أي بريد مسجّلاً كان أو لا. مهلة Supabase لحساب موجود تصل كالرد العام 202.
-      purpose=email_change يرجع 404 حتى المهمة 3.6. البريد بصيغة خاطئة 422 للحقل email.
+      purpose=email_change يعيد رابطي تغيير البريد المعلّق إلى العنوانين، وemail هو العنوان الحالي،
+      وطلب جديد يبطل الرابطين السابقين وما سُجّل من تأكيدهما (DEC79). البريد بصيغة خاطئة 422 للحقل email.
     x-spec-ids: [API005, FR57, DEC37, DEC63, DEC66, TC26]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
@@ -310,11 +311,14 @@ reauth:
     tags: [auth]
     summary: إعادة التحقق للعمليات الحساسة
     description: >-
-      يفتح نافذة خمس دقائق تُقرأ من توقيت amr (DEC38). أصحاب الأدوار الإدارية
-      يرسلون رمز MFA أيضاً.
+      دخول جديد بكلمة المرور من الخادم مع Turnstile (DEC36)، ببريد الحساب من القاعدة. الجلسة الجديدة
+      تحل محل جلسة المتصفح والقديمة تُلغى، فيتغير معرّف الجلسة ويتجدد رمز CSRF (SEC01). النافذة خمس
+      دقائق من توقيت password في amr (DEC38)، والدخول العادي خلالها يكفي. الكلمة الخاطئة 422 بالحقل
+      current_password والرمز wrong، وتُعدّ في عدادات RL01 نفسها مع الدخول. أصحاب الأدوار الإدارية
+      يرسلون رمز MFA أيضاً من المهمة 7.1، وحتى ذلك يُرفض mfa_code بالرمز not_enrolled.
     x-spec-ids: [API009, FR59, FR77, DEC38, TC27, TC28]
     x-access: member
-    x-rate-limit: [RL01]
+    x-rate-limit: [RL01, supabase_auth, turnstile]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -327,12 +331,18 @@ reauth:
     responses:
       '200':
         $ref: '../components/responses.yaml#/ReauthOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 mfaEnroll:
   post:

@@ -536,11 +536,13 @@ ResetInput:
 ReauthInput:
   type: object
   additionalProperties: false
-  required: [current_password]
+  required: [current_password, captcha_token]
   properties:
     current_password:
       type: string
       writeOnly: true
+    captcha_token:
+      $ref: '#/CaptchaToken'
     mfa_code:
       type: string
       pattern: '^\d{6}$'
@@ -609,13 +611,15 @@ EmailChangeInput:
 PasswordChangeInput:
   type: object
   additionalProperties: false
-  required: [current_password, new_password]
+  required: [current_password, new_password, captcha_token]
   properties:
     current_password:
       type: string
       writeOnly: true
     new_password:
       $ref: '#/Password'
+    captcha_token:
+      $ref: '#/CaptchaToken'
 
 DeletionInput:
   type: object
@@ -689,6 +693,9 @@ Me:
     email_confirmed:
       type: boolean
     pending_email:
+      description: >-
+        العنوان الجديد لتغيير بريد معلّق (API020) ما دام رابطاه صالحين (ساعة، DEC37)، وإلا null.
+        البريد الحالي يبقى حتى يتأكد العنوانان (BR23، DEC79).
       anyOf:
         - $ref: '#/Email'
         - type: 'null'

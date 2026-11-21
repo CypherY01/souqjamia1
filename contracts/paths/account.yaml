@@ -8,8 +8,8 @@ me:
     description: >-
       متاح لأي جلسة صالحة حتى يعرض الحساب غير المؤكد أو المقيّد حالته.
       الصلاحيات الفعلية في capabilities (DEC58). جلسة الاستعادة المحدودة 403 RECOVERY_SESSION_ONLY
-      (DEC73). في المرحلة الأولى قبل جداولها: pending_email حتى المهمة 3.6، وavatar حتى 4.7،
-      وstudent_badge بقيمتين فارغتين حتى 7.6، كلها null.
+      (DEC73). في المرحلة الأولى قبل جداولها: avatar حتى 4.7، وstudent_badge بقيمتين فارغتين حتى 7.6،
+      كلها null.
     x-spec-ids: [API015, FR49, FR04, DEC58, DEC73, DEC77]
     x-access: session
     responses:
@@ -130,10 +130,14 @@ emailChange:
     tags: [account]
     summary: طلب تغيير بريد الدخول
     description: >-
-      يرسل رابطاً لكل من العنوانين، صالحاً ساعة (DEC37). البريد القديم يبقى حتى يتأكد الاثنان (BR23).
-    x-spec-ids: [API020, FR59, BR23, DEC37, DEC38, TC74]
+      يرسل رابطاً لكل من العنوانين، صالحاً ساعة (DEC37). البريد القديم يبقى حتى يتأكد الاثنان (BR23،
+      DEC79). حدود RL03 تُعدّ للعنوانين الجديد والحالي قبل الاستدعاء. رموز الحقل new_email: صيغة البريد
+      كما في التسجيل، وsame_email لنفس البريد الحالي، وtaken لبريد حساب آخر (UC20، كشف مقبول خلف إعادة
+      التحقق كما في DEC64). طلب جديد بعد دقيقة يبطل الرابطين السابقين. بعد أكثر من خمس دقائق من آخر
+      تحقق بكلمة المرور 403 REAUTH_REQUIRED.
+    x-spec-ids: [API020, FR59, BR23, DEC37, DEC38, DEC79, TC74]
     x-access: member_reauth
-    x-rate-limit: [RL03]
+    x-rate-limit: [RL03, supabase_auth]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -146,6 +150,8 @@ emailChange:
     responses:
       '202':
         $ref: '../components/responses.yaml#/Accepted'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':
@@ -154,6 +160,8 @@ emailChange:
         $ref: '../components/responses.yaml#/Unprocessable'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 emailChangeConfirm:
   post:
@@ -161,9 +169,14 @@ emailChangeConfirm:
     tags: [account]
     summary: تأكيد أحد رابطي تغيير البريد
     description: >-
-      كل رابط يسجل تأكيد عنوانه فقط. الاستبدال وإلغاء الجلسات وإشعار الأمان بعد التأكيدين (TC74).
-    x-spec-ids: [API021, FR59, BR23, DEC37, TC74]
+      كل رابط يسجل تأكيد عنوانه فقط، ولا يقرأ جلسة المتصفح. الاستبدال وإلغاء كل الجلسات وإشعار الأمان
+      للعنوان القديم بعد التأكيدين (TC74). القاعدة تفرض التأكيدين (DEC79): رابط واحد لا يكمل التغيير ولو
+      أُرسل إلى Supabase Auth مباشرة. 303 إلى /auth/email-change/done?state=waiting بعد الأول، و?state=changed
+      بعد الثاني، مع حذف كوكيز جلسة المتصفح إن كانت لنفس العضو. الرابط المستعمل أو المنتهي (ساعة) أو الذي
+      أبطله طلب أحدث 422 LINK_INVALID_OR_EXPIRED.
+    x-spec-ids: [API021, FR59, BR23, DEC37, DEC79, TC74]
     x-access: guest
+    x-rate-limit: [supabase_auth]
     security:
       - csrfToken: []
     requestBody:
@@ -181,15 +194,25 @@ emailChangeConfirm:
         $ref: '../components/responses.yaml#/Forbidden'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 passwordChange:
   post:
     operationId: api022ChangePassword
     tags: [account]
     summary: تغيير كلمة المرور
-    description: يتحقق من الكلمة الحالية ثم يلغي الجلسات الأخرى ويرسل بريد الأمان (TC27).
+    description: >-
+      يتحقق من الكلمة الحالية بدخول جديد مع Turnstile، وهذا هو إعادة التحقق في نفس الطلب (DEC38). ثم
+      يغيّر الكلمة على الجلسة الجديدة، فتُلغى كل الجلسات الأخرى ومنها جلسة المتصفح القديمة، ويبقى العضو
+      داخلاً بالجديدة، فيتجدد رمز CSRF، ويصل بريد الأمان (TC27، SEC11). الكلمة الحالية الخاطئة 422
+      بالحقل current_password والرمز wrong، وتُعدّ في RL01 مع الدخول. رموز الحقل new_password كما في
+      API008، ومنها same_password.
     x-spec-ids: [API022, FR59, DEC32, DEC38, TC27]
-    x-access: member_reauth
+    x-access: member
+    x-rate-limit: [RL01, supabase_auth, turnstile]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -202,12 +225,18 @@ passwordChange:
     responses:
       '204':
         $ref: '../components/responses.yaml#/NoContent'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 deletion:
   post:
