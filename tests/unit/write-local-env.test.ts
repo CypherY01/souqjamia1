@@ -68,8 +68,13 @@ describe("pnpm env:local", () => {
   it("task 2.5: writes a worker env for souq_worker that passes the worker's validation", () => {
     const password = newRolePassword();
     const url = roleDatabaseUrl(localDbUrl, "souq_worker", password);
-    const env = loadWorkerEnv(parseDotenv(workerEnv(url, "http://127.0.0.1:54324")));
+    const env = loadWorkerEnv(parseDotenv(workerEnv(stack, url, "http://127.0.0.1:54324")));
     expect(env.APP_ENV).toBe("development");
+    // Task 4.0 (DEC82): the worker asks the same Supabase Auth as the web app at start-up.
+    expect(env).toMatchObject({
+      SUPABASE_URL: stack.apiUrl,
+      SUPABASE_PUBLISHABLE_KEY: stack.publishableKey,
+    });
     // Task 3.8: email to the local Mailpit, on the reserved souqjamia1.test name only.
     expect(env).toMatchObject({
       EMAIL_TRANSPORT: "mailpit",

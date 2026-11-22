@@ -16,6 +16,7 @@ import { SafeText } from "../../../components/text/SafeText";
 import { Alert, SafeMeetupNotice } from "../../../components/ui/Alert";
 import { Badge, NegotiableBadge, StudentBadge } from "../../../components/ui/Badge";
 import { Button, LinkButton } from "../../../components/ui/Button";
+import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { Card } from "../../../components/ui/Card";
 import { Dialog } from "../../../components/ui/Dialog";
 import {
@@ -184,6 +185,11 @@ export default function DevUiPage() {
           <Button disabledReason={t("dev.buttons.disabledReason")}>
             {t("dev.buttons.disabled")}
           </Button>
+        </div>
+        {/* Task 4.0: a form's submit button before React hydrates it, then SubmitButton live. */}
+        <div className={styles.row}>
+          <Button preparing>{t("dev.buttons.primary")}</Button>
+          <SubmitButton variant="secondary">{t("dev.buttons.secondary")}</SubmitButton>
         </div>
       </Section>
 

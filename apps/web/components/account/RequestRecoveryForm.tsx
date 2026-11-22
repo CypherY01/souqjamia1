@@ -11,7 +11,7 @@ import { routes } from "../../lib/routes";
 import { FailureAlert } from "../auth/messages";
 import { Turnstile, type TurnstileHandle } from "../auth/Turnstile";
 import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { SubmitButton } from "../ui/SubmitButton";
 import styles from "./RequestRecoveryForm.module.css";
 
 const COOLDOWN_SECONDS = 60;
@@ -86,6 +86,7 @@ export function RequestRecoveryForm({ email, siteKey, preview = false }: Request
       </p>
       <form
         className={styles.form}
+        method="post"
         noValidate
         onSubmit={(event) => {
           void onSubmit(event);
@@ -107,8 +108,7 @@ export function RequestRecoveryForm({ email, siteKey, preview = false }: Request
             {t("auth.captcha.pending")}
           </p>
         )}
-        <Button
-          type="submit"
+        <SubmitButton
           fullWidth
           variant={sent ? "secondary" : "primary"}
           loading={submitting}
@@ -118,7 +118,7 @@ export function RequestRecoveryForm({ email, siteKey, preview = false }: Request
           }
         >
           {t(sent ? "account.restricted.recovery.again" : "account.restricted.recovery.submit")}
-        </Button>
+        </SubmitButton>
       </form>
     </section>
   );

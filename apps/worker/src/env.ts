@@ -17,6 +17,17 @@ const origin = z.url().refine((value) => new URL(value).origin === value, {
   message: "must be an origin only: scheme, host and optional port, without a path",
 });
 
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** Task 4.0 (DEC82): APP_ENV=test runs on this machine only, never on a hosted server. */
+function isLocalOrigin(value: string): boolean {
+  try {
+    return LOCAL_HOSTS.has(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** "Name <address>" or a bare address, as EMAIL_FROM is written. */
 export interface FromAddress {
   readonly name: string | null;
@@ -35,7 +46,8 @@ export function parseFromAddress(value: string): FromAddress | null {
 
 export const workerEnvSchema = z
   .object({
-    APP_ENV: z.enum(["development", "staging", "production"]),
+    // Task 4.0 (DEC82): "test" is for tests on this machine only (refined below).
+    APP_ENV: z.enum(["development", "test", "staging", "production"]),
     // Connection for the souq_worker role (SEC02). main.ts refuses any other role.
     DATABASE_URL: z.string().refine(isPostgresUrl),
     // Task 3.8 (item 1 and 2): how email.send delivers. mailpit locally and in CI (DEC62), Resend
@@ -54,6 +66,11 @@ export const workerEnvSchema = z
     APP_ORIGIN: origin,
     // FR78: the contact address in the deletion email (the same value as the web app).
     CONTACT_EMAIL: z.email(),
+    // Task 4.0 (DEC82, owner condition 1): main.ts asks Supabase Auth at start-up whether it
+    // verifies Turnstile tokens, and refuses to run if not. The same public values as the web
+    // app's NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
+    SUPABASE_URL: z.url(),
+    SUPABASE_PUBLISHABLE_KEY: z.string().startsWith("sb_publishable_"),
   })
   .refine((env) => env.EMAIL_TRANSPORT !== "mailpit" || env.MAILPIT_URL !== undefined, {
     path: ["MAILPIT_URL"],
@@ -66,6 +83,10 @@ export const workerEnvSchema = z
   .refine((env) => env.EMAIL_TRANSPORT !== "resend" || env.RESEND_API_KEY !== undefined, {
     path: ["RESEND_API_KEY"],
     message: "RESEND_API_KEY is required with EMAIL_TRANSPORT=resend",
+  })
+  .refine((env) => env.APP_ENV !== "test" || isLocalOrigin(env.APP_ORIGIN), {
+    path: ["APP_ENV"],
+    message: "APP_ENV=test is for tests on this machine, with a localhost APP_ORIGIN",
   });
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;

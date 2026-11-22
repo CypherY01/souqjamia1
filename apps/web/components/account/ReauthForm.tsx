@@ -10,7 +10,7 @@ import { formatWait, t } from "@souq/i18n";
 import { FailureAlert, fieldMessage } from "../auth/messages";
 import { Turnstile, type TurnstileHandle } from "../auth/Turnstile";
 import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { SubmitButton } from "../ui/SubmitButton";
 import { PasswordField } from "../ui/PasswordField";
 import { api, type ApiFailure } from "../../lib/client/api";
 import { routes } from "../../lib/routes";
@@ -80,6 +80,7 @@ export function ReauthForm({ siteKey, expired, blockedReason, onDone }: ReauthFo
   return (
     <form
       className={styles.form}
+      method="post"
       noValidate
       aria-labelledby="reauth-title"
       onSubmit={(event) => {
@@ -117,14 +118,13 @@ export function ReauthForm({ siteKey, expired, blockedReason, onDone }: ReauthFo
           {t("auth.captcha.pending")}
         </p>
       )}
-      <Button
-        type="submit"
+      <SubmitButton
         loading={submitting}
         loadingLabel={t("account.security.reauth.submitting")}
         disabledReason={blockedReason}
       >
         {t("account.security.reauth.submit")}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

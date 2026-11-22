@@ -11,7 +11,7 @@ import { formatDateTime, t } from "@souq/i18n";
 import { ReauthForm } from "../../../components/account/ReauthForm";
 import { FailureAlert } from "../../../components/auth/messages";
 import { Alert } from "../../../components/ui/Alert";
-import { Button } from "../../../components/ui/Button";
+import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { Checkbox } from "../../../components/ui/Field";
 import { api, type ApiFailure } from "../../../lib/client/api";
 import { routes } from "../../../lib/routes";
@@ -96,6 +96,7 @@ export function DeleteAccountForm({ siteKey, reauthUntil, blockedReason }: Delet
       ) : (
         <form
           className={styles.form}
+          method="post"
           noValidate
           onSubmit={(event) => {
             void onSubmit(event);
@@ -114,8 +115,7 @@ export function DeleteAccountForm({ siteKey, reauthUntil, blockedReason }: Delet
             }}
           />
           <div>
-            <Button
-              type="submit"
+            <SubmitButton
               variant="danger"
               loading={submitting}
               loadingLabel={t("account.delete.confirm.submitting")}
@@ -125,7 +125,7 @@ export function DeleteAccountForm({ siteKey, reauthUntil, blockedReason }: Delet
               }
             >
               {t("account.delete.confirm.submit")}
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       )}

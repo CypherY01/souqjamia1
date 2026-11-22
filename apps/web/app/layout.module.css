@@ -10,3 +10,14 @@
 .main:focus {
   outline: none;
 }
+
+/* Task 4.0 (owner condition 2): shown only when the page's scripts do not run. */
+.noscript {
+  margin: 0;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  background-color: var(--color-warning-bg);
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: center;
+}

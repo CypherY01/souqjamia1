@@ -76,6 +76,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     >
       <body>
         <SkipLink />
+        {/* Task 4.0 (owner condition 2): why buttons stay disabled when scripts never run. */}
+        <noscript>
+          <p className={styles.noscript}>{t("layout.noscript")}</p>
+        </noscript>
         <SiteHeader member={await headerMember()} />
         <main id={MAIN_CONTENT_ID} tabIndex={-1} className={styles.main}>
           {children}

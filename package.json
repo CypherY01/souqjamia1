@@ -20,6 +20,8 @@
     "db:stop": "pnpm --filter @souq/db db:stop",
     "db:status": "pnpm --filter @souq/db db:status",
     "db:reset": "pnpm --filter @souq/db db:reset",
+    "db:restart": "node scripts/db-restart.ts",
+    "db:e2e": "node scripts/db-restart.ts --e2e",
     "db:lint": "pnpm --filter @souq/db db:lint",
     "env:local": "node scripts/write-local-env.ts",
     "emails:check": "pnpm --filter @souq/db emails:check",

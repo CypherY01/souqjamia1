@@ -10,6 +10,17 @@ const origin = z.url().refine((value) => new URL(value).origin === value, {
   message: "must be an origin only: scheme, host and optional port, without a path",
 });
 
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** Task 4.0 (DEC82): APP_ENV=test runs on this machine only, never on a hosted server. */
+export function isLocalOrigin(value: string): boolean {
+  try {
+    return LOCAL_HOSTS.has(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** A postgres:// or postgresql:// connection string with a host, as for the worker (task 2.5). */
 function isPostgresUrl(value: string): boolean {
   try {
@@ -35,7 +46,8 @@ export const DEFAULT_SIGNUP_IP_LIMIT_PER_HOUR = 300;
 
 export const serverEnvSchema = publicEnvSchema
   .extend({
-    APP_ENV: z.enum(["development", "staging", "production"]),
+    // Task 4.0 (DEC82): "test" is the E2E servers only, on this machine (refined below).
+    APP_ENV: z.enum(["development", "test", "staging", "production"]),
     // The trusted origin of the site: the Origin check (SEC05) compares requests with it exactly.
     APP_ORIGIN: origin,
     // DEC63: email_confirmation_required. Must match enable_confirmations in config.toml.
@@ -73,6 +85,10 @@ export const serverEnvSchema = publicEnvSchema
   .refine((env) => !(env.TURNSTILE_STUB && env.APP_ENV === "production"), {
     path: ["TURNSTILE_STUB"],
     message: "TURNSTILE_STUB is for E2E only, never with APP_ENV=production",
+  })
+  .refine((env) => env.APP_ENV !== "test" || isLocalOrigin(env.APP_ORIGIN), {
+    path: ["APP_ENV"],
+    message: "APP_ENV=test is for the E2E servers on this machine, with a localhost APP_ORIGIN",
   });
 
 /** Task 3.5: the E2E stand-in for Turnstile is on (and never in production). */

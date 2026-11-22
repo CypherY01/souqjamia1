@@ -90,11 +90,18 @@ export function roleDatabaseUrl(dbUrl: string, role: string, password: string): 
 }
 
 /** Task 3.8: email goes to the local Mailpit through its HTTP API (item 1 of the plan). */
-export function workerEnv(databaseUrl: string, mailpitUrl: string): string {
+export function workerEnv(
+  stack: Pick<LocalStack, "apiUrl" | "publishableKey">,
+  databaseUrl: string,
+  mailpitUrl: string,
+): string {
   return [
     GENERATED_HEADER,
     "APP_ENV=development",
     `DATABASE_URL=${databaseUrl}`,
+    // Task 4.0 (DEC82): the worker checks at start-up that Supabase Auth verifies Turnstile.
+    `SUPABASE_URL=${stack.apiUrl}`,
+    `SUPABASE_PUBLISHABLE_KEY=${stack.publishableKey}`,
     "EMAIL_TRANSPORT=mailpit",
     `EMAIL_FROM=${LOCAL_EMAIL_FROM}`,
     `MAILPIT_URL=${mailpitUrl}`,
@@ -147,7 +154,11 @@ if (import.meta.main) {
     await setLocalRolePassword(stack.dbUrl, "souq_worker", workerPassword);
     write(
       workerFile,
-      workerEnv(roleDatabaseUrl(stack.dbUrl, "souq_worker", workerPassword), stack.mailpitUrl),
+      workerEnv(
+        stack,
+        roleDatabaseUrl(stack.dbUrl, "souq_worker", workerPassword),
+        stack.mailpitUrl,
+      ),
     );
   } catch (error) {
     console.error(`env:local: ${error instanceof Error ? error.message : String(error)}`);

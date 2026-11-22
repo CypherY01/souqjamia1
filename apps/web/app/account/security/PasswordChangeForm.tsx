@@ -11,7 +11,7 @@ import { formatWait, t } from "@souq/i18n";
 import { FailureAlert, fieldMessage } from "../../../components/auth/messages";
 import { Turnstile, type TurnstileHandle } from "../../../components/auth/Turnstile";
 import { Alert } from "../../../components/ui/Alert";
-import { Button } from "../../../components/ui/Button";
+import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { PasswordField } from "../../../components/ui/PasswordField";
 import { api, type ApiFailure } from "../../../lib/client/api";
 import { routes } from "../../../lib/routes";
@@ -129,6 +129,7 @@ export function PasswordChangeForm({ siteKey, blockedReason }: PasswordChangeFor
       <form
         key={round}
         className={styles.form}
+        method="post"
         noValidate
         onSubmit={(event) => {
           void onSubmit(event);
@@ -156,14 +157,13 @@ export function PasswordChangeForm({ siteKey, blockedReason }: PasswordChangeFor
             {t("auth.captcha.pending")}
           </p>
         )}
-        <Button
-          type="submit"
+        <SubmitButton
           loading={submitting}
           loadingLabel={t("account.security.password.submitting")}
           disabledReason={blockedReason}
         >
           {t("account.security.password.submit")}
-        </Button>
+        </SubmitButton>
       </form>
     </div>
   );

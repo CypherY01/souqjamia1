@@ -106,6 +106,22 @@ describe("OPS05 web environment", () => {
     expect(turnstileStubOn({ APP_ENV: "production", TURNSTILE_STUB: true })).toBe(false);
   });
 
+  it("task 4.0 (DEC82): APP_ENV=test only with a localhost APP_ORIGIN", () => {
+    for (const origin of ["http://localhost:3100", "http://127.0.0.1:3100", "http://[::1]:3100"]) {
+      expect(loadServerEnv({ ...validWeb, APP_ENV: "test", APP_ORIGIN: origin }).APP_ENV).toBe(
+        "test",
+      );
+    }
+    for (const origin of ["https://souqjamia1.com", "https://staging.souqjamia1.com"]) {
+      expect(
+        errorOf(() => loadServerEnv({ ...validWeb, APP_ENV: "test", APP_ORIGIN: origin })).message,
+      ).toBe("Invalid or missing environment variables: APP_ENV. See .env.example.");
+      expect(
+        loadServerEnv({ ...validWeb, APP_ENV: "production", APP_ORIGIN: origin }).APP_ENV,
+      ).toBe("production");
+    }
+  });
+
   it("checks only public variables for the build", () => {
     expect(loadPublicEnv(validWeb)).toEqual({
       NEXT_PUBLIC_SUPABASE_URL: validWeb.NEXT_PUBLIC_SUPABASE_URL,
@@ -116,6 +132,17 @@ describe("OPS05 web environment", () => {
 });
 
 describe("OPS05 worker environment", () => {
+  it("task 4.0 (DEC82): APP_ENV=test only with a localhost APP_ORIGIN", () => {
+    const base = { DATABASE_URL: databaseUrl, ...mailpit };
+    expect(loadWorkerEnv({ ...base, APP_ENV: "test" }).APP_ENV).toBe("test");
+    expect(() =>
+      loadWorkerEnv({ ...base, APP_ENV: "test", APP_ORIGIN: "https://souqjamia1.com" }),
+    ).toThrow("Invalid or missing environment variables: APP_ENV.");
+    expect(() =>
+      loadWorkerEnv({ ...base, APP_ENV: "development", SUPABASE_PUBLISHABLE_KEY: "anon" }),
+    ).toThrow("Invalid or missing environment variables: SUPABASE_PUBLISHABLE_KEY.");
+  });
+
   // Built at run time: no connection string with a password is ever committed.
   const databaseUrl = `postgresql://souq_worker:${randomBytes(8).toString("hex")}@127.0.0.1:54322/postgres`;
 
@@ -126,6 +153,9 @@ describe("OPS05 worker environment", () => {
     MAILPIT_URL: "http://127.0.0.1:54324",
     APP_ORIGIN: "http://localhost:3000",
     CONTACT_EMAIL: "contact@souqjamia1.test",
+    // Task 4.0 (DEC82): for the start-up check of Supabase Auth's Turnstile verification.
+    SUPABASE_URL: "http://127.0.0.1:54321",
+    SUPABASE_PUBLISHABLE_KEY: "sb_publishable_localdevelopmentkey",
   };
   // Built at run time: the repository never holds a secret-like string.
   const resendKey = `re_${randomBytes(12).toString("hex")}`;
@@ -137,7 +167,7 @@ describe("OPS05 worker environment", () => {
       ...mailpit,
     });
     expect(() => loadWorkerEnv({})).toThrow(
-      "Invalid or missing environment variables: APP_ENV, APP_ORIGIN, CONTACT_EMAIL, DATABASE_URL, EMAIL_FROM, EMAIL_TRANSPORT.",
+      "Invalid or missing environment variables: APP_ENV, APP_ORIGIN, CONTACT_EMAIL, DATABASE_URL, EMAIL_FROM, EMAIL_TRANSPORT, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL.",
     );
   });
 

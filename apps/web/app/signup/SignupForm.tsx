@@ -16,7 +16,7 @@ import { FailureAlert, fieldMessage } from "../../components/auth/messages";
 import { ResendForm } from "../../components/auth/ResendForm";
 import { Turnstile, type TurnstileHandle } from "../../components/auth/Turnstile";
 import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
+import { SubmitButton } from "../../components/ui/SubmitButton";
 import { Checkbox, Select, TextField } from "../../components/ui/Field";
 import { PasswordField } from "../../components/ui/PasswordField";
 import { api, type ApiFailure } from "../../lib/client/api";
@@ -190,6 +190,7 @@ export function SignupForm({ siteKey, policies: initialPolicies, colleges }: Sig
     <form
       ref={formRef}
       className={styles.form}
+      method="post"
       noValidate
       onSubmit={(event) => {
         void onSubmit(event);
@@ -280,14 +281,9 @@ export function SignupForm({ siteKey, policies: initialPolicies, colleges }: Sig
         </p>
       )}
 
-      <Button
-        type="submit"
-        fullWidth
-        loading={submitting}
-        loadingLabel={t("auth.signup.submitting")}
-      >
+      <SubmitButton fullWidth loading={submitting} loadingLabel={t("auth.signup.submitting")}>
         {t("auth.signup.submit")}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

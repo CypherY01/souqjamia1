@@ -48,7 +48,8 @@
    - `reauth.test.ts` و`password-change.test.ts` و`reset.test.ts` و`auth-guards.test.ts`.
    - `deletion.test.ts` (المهمة 3.7): «Supabase: a deletion recovery link and a recovery link share one slot» يثبّت سلوك الخانة المشتركة، والرابط الحقيقي من Mailpit يسترجع الحساب، والرد العام في API027.
    - `supabase-local.test.ts` و`tests/unit/supabase-config.test.ts`.
-5. **E2E:** `pnpm build` ثم `pnpm test:e2e`، ومنها `security.spec.ts` و`deletion.spec.ts`.
+5. **E2E:** `pnpm db:e2e`، ثم `pnpm build` و`pnpm test:e2e`، ومنها `security.spec.ts` و`deletion.spec.ts`، ثم `pnpm db:restart`.
+   - **فحص Turnstile عند التشغيل (DEC82):** يعتمد على رمزي خطأ من Supabase Auth: `captcha_failed` لطلب دخول بلا رمز والتحقق مفعّل، و`invalid_credentials` لحساب غير موجود والتحقق معطل. يثبتهما `supabase-local.test.ts` (التحقق مفعّل) و`tests/e2e/global-setup.ts` (معطل). إن تغيّر أحدهما يرفض الموقع والعامل التشغيل (`check: unknown`)، فيُحدَّث `classifyCaptchaProbe` في `packages/domain/src/auth-captcha.ts` بقرار.
 6. **المشروع المستضاف (من مرحلة التكلفة 1):** نفس الخطوتين 2 و3 على قاعدته، ثم المراجعة اليدوية في القسم «مراجعة إعادة التحقق وتغيير البريد وكلمة المرور (المهمة 3.6)» في `local-dev.md` على staging.
 
 إن فشل أي فحص: لا تُدمج الترقية. سجّل ما تغيّر في Supabase في ملف المهمة، واعرضه على المالك قبل أي تعديل في المُشغّل أو الكود.

@@ -85,6 +85,18 @@ async function signUp(
   expect(res.status()).toBe(200);
 }
 
+/** Task 4.0: whether a login identity exists for the address (no-js.spec.ts). */
+export async function accountExists(email: string): Promise<boolean> {
+  const client = new pg.Client({ connectionString: assertLocalUrl(readLocalStack().dbUrl) });
+  await client.connect();
+  try {
+    const result = await client.query("select 1 from auth.users where email = lower($1)", [email]);
+    return result.rowCount === 1;
+  } finally {
+    await client.end();
+  }
+}
+
 async function userIdOf(email: string): Promise<string> {
   const stack = readLocalStack();
   const client = new pg.Client({ connectionString: assertLocalUrl(stack.dbUrl) });

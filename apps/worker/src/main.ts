@@ -1,10 +1,12 @@
 // DEC35: one background worker process on Railway, next to the web app (task 2.5).
 // Node 26 runs this TypeScript file directly (type stripping), so there is no build step.
 //  1. OPS05: refuse to run with a missing or invalid configuration, or as any role other than
-//     souq_worker (SEC02).
+//     souq_worker (SEC02). Task 4.0 (DEC82): refuse to run while Supabase Auth does not verify
+//     Turnstile tokens, unless APP_ENV=test.
 //  2. Run the job loop (loop.ts) and the scheduler (scheduler.ts).
 //  3. SIGTERM or SIGINT: stop claiming, wait up to 20 seconds for running jobs, close the pool
 //     and exit. A job still running is resumed after its lease by the next worker (item 12).
+import { captchaOffAllowed, captchaRefusal, probeAuthCaptcha } from "@souq/domain";
 import { log } from "@souq/log";
 import { createJobStore, createPool } from "./db.ts";
 import { emailSettingsFrom } from "./email/config.ts";
@@ -55,6 +57,31 @@ try {
   });
   await pool.end().catch(() => undefined);
   process.exit(1);
+}
+
+// Task 4.0 (DEC82, owner condition 1): a hosted Supabase must always verify (ops/runbooks).
+if (!captchaOffAllowed(env.APP_ENV)) {
+  const check = await probeAuthCaptcha({
+    supabaseUrl: env.SUPABASE_URL,
+    publishableKey: env.SUPABASE_PUBLISHABLE_KEY,
+    fetch,
+  });
+  const refusal = captchaRefusal(env.APP_ENV, check);
+  if (refusal !== null) {
+    log.error("worker.captcha_unverified", {
+      check,
+      app_env: env.APP_ENV,
+      message:
+        refusal === "off"
+          ? "Supabase Auth does not verify Turnstile tokens (DEC52). Only APP_ENV=test may run so (DEC82)."
+          : "Could not confirm that Supabase Auth verifies Turnstile tokens (DEC52, DEC82).",
+      ...(env.APP_ENV === "development"
+        ? { hint: refusal === "off" ? "Run pnpm db:restart." : "Run pnpm db:start." }
+        : {}),
+    });
+    await pool.end().catch(() => undefined);
+    process.exit(1);
+  }
 }
 
 const loop = startJobLoop({ store: createJobStore(pool), registry, db: pool });

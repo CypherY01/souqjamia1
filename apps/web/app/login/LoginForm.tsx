@@ -16,7 +16,7 @@ import { FailureAlert, fieldMessage } from "../../components/auth/messages";
 import { ResendForm } from "../../components/auth/ResendForm";
 import { Turnstile, type TurnstileHandle } from "../../components/auth/Turnstile";
 import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
+import { SubmitButton } from "../../components/ui/SubmitButton";
 import { TextField } from "../../components/ui/Field";
 import { PasswordField } from "../../components/ui/PasswordField";
 import { api, type ApiFailure } from "../../lib/client/api";
@@ -135,6 +135,7 @@ export function LoginForm({ siteKey, next }: LoginFormProps) {
     <>
       <form
         className={styles.form}
+        method="post"
         noValidate
         onSubmit={(event) => {
           void onSubmit(event);
@@ -182,14 +183,9 @@ export function LoginForm({ siteKey, next }: LoginFormProps) {
           </p>
         )}
 
-        <Button
-          type="submit"
-          fullWidth
-          loading={submitting}
-          loadingLabel={t("auth.login.submitting")}
-        >
+        <SubmitButton fullWidth loading={submitting} loadingLabel={t("auth.login.submitting")}>
           {t("auth.login.submit")}
-        </Button>
+        </SubmitButton>
       </form>
       {unconfirmed !== null && <ResendForm siteKey={siteKey} email={unconfirmed} />}
     </>

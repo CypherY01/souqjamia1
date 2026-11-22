@@ -6,6 +6,15 @@ export { parseAmount, type ParseAmountError, type ParseAmountResult } from "./mo
 export { countChars, normalizeText, stripBidiControls } from "./text.ts";
 export * as enums from "./enums.ts";
 export {
+  CAPTCHA_PROBE_EMAIL,
+  captchaOffAllowed,
+  captchaRefusal,
+  classifyCaptchaProbe,
+  probeAuthCaptcha,
+  type CaptchaCheck,
+  type CaptchaProbeOptions,
+} from "./auth-captcha.ts";
+export {
   EMAIL_CHANNELS,
   EMAIL_GROUPS,
   isEmailChannel,

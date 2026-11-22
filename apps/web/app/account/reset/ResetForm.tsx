@@ -12,7 +12,7 @@ import { checkPassword } from "@souq/domain";
 import { t } from "@souq/i18n";
 import { FailureAlert, fieldMessage } from "../../../components/auth/messages";
 import { Alert } from "../../../components/ui/Alert";
-import { Button } from "../../../components/ui/Button";
+import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { PasswordField } from "../../../components/ui/PasswordField";
 import { api, type ApiFailure } from "../../../lib/client/api";
 import { routes } from "../../../lib/routes";
@@ -94,6 +94,7 @@ export function ResetForm() {
   return (
     <form
       className={styles.form}
+      method="post"
       noValidate
       onSubmit={(event) => {
         void onSubmit(event);
@@ -114,14 +115,9 @@ export function ResetForm() {
         autoComplete="new-password"
       />
       <p className={styles.after}>{t("auth.reset.after")}</p>
-      <Button
-        type="submit"
-        fullWidth
-        loading={submitting}
-        loadingLabel={t("auth.reset.submitting")}
-      >
+      <SubmitButton fullWidth loading={submitting} loadingLabel={t("auth.reset.submitting")}>
         {t("auth.reset.submit")}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

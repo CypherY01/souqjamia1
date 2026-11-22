@@ -9,7 +9,7 @@ import { parseEmail } from "@souq/domain";
 import { t } from "@souq/i18n";
 import { api, type ApiFailure } from "../../lib/client/api";
 import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { SubmitButton } from "../ui/SubmitButton";
 import { TextField } from "../ui/Field";
 import { FailureAlert, fieldMessage } from "./messages";
 import { Turnstile, type TurnstileHandle } from "./Turnstile";
@@ -87,6 +87,7 @@ export function ResendForm({ siteKey, email: knownEmail }: ResendFormProps) {
       </h2>
       <p>{t("auth.resend.body")}</p>
       <form
+        method="post"
         noValidate
         onSubmit={(event) => {
           void onSubmit(event);
@@ -118,15 +119,14 @@ export function ResendForm({ siteKey, email: knownEmail }: ResendFormProps) {
             {t("auth.captcha.pending")}
           </p>
         )}
-        <Button
-          type="submit"
+        <SubmitButton
           variant="secondary"
           loading={submitting}
           loadingLabel={t("auth.resend.submitting")}
           disabledReason={wait > 0 ? t("auth.resend.wait", { seconds: wait }) : undefined}
         >
           {t("auth.resend.submit")}
-        </Button>
+        </SubmitButton>
       </form>
     </section>
   );

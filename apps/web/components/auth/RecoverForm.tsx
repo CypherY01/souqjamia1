@@ -10,7 +10,7 @@ import { formatWait, t } from "@souq/i18n";
 import { api, type ApiFailure } from "../../lib/client/api";
 import { routes } from "../../lib/routes";
 import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { SubmitButton } from "../ui/SubmitButton";
 import { TextField } from "../ui/Field";
 import { FailureAlert, fieldMessage } from "./messages";
 import { Turnstile, type TurnstileHandle } from "./Turnstile";
@@ -87,6 +87,7 @@ export function RecoverForm({ siteKey }: { siteKey: string }) {
   return (
     <form
       className={styles.form}
+      method="post"
       noValidate
       onSubmit={(event) => {
         void onSubmit(event);
@@ -120,8 +121,7 @@ export function RecoverForm({ siteKey }: { siteKey: string }) {
           {t("auth.captcha.pending")}
         </p>
       )}
-      <Button
-        type="submit"
+      <SubmitButton
         fullWidth
         variant={sent ? "secondary" : "primary"}
         loading={submitting}
@@ -129,7 +129,7 @@ export function RecoverForm({ siteKey }: { siteKey: string }) {
         disabledReason={wait > 0 ? t("auth.recover.wait", { seconds: wait }) : undefined}
       >
         {t(sent ? "auth.recover.again" : "auth.recover.submit")}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }

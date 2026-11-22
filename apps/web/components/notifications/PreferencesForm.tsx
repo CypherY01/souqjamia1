@@ -13,7 +13,7 @@ import { api, type ApiFailure } from "../../lib/client/api";
 import { routes } from "../../lib/routes";
 import { FailureAlert } from "../auth/messages";
 import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { SubmitButton } from "../ui/SubmitButton";
 import { Checkbox } from "../ui/Field";
 import styles from "./preferences.module.css";
 
@@ -96,6 +96,7 @@ export function PreferencesForm({
   return (
     <form
       className={styles.form}
+      method="post"
       noValidate
       onSubmit={(event) => {
         void onSubmit(event);
@@ -138,8 +139,7 @@ export function PreferencesForm({
         ))}
       </fieldset>
       <div>
-        <Button
-          type="submit"
+        <SubmitButton
           disabledReason={
             blocked === null ? undefined : t(`notifications.preferences.blocked.${blocked}`)
           }
@@ -147,7 +147,7 @@ export function PreferencesForm({
           loadingLabel={t("notifications.preferences.submitting")}
         >
           {t("notifications.preferences.submit")}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );

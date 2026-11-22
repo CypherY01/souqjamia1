@@ -91,6 +91,32 @@ describe("local Supabase Auth (task 1.4)", () => {
     const res = await auth("/signup", { email: email(), password: PASSWORD });
     expect(res.status).toBeGreaterThanOrEqual(400);
     expect(res.status).toBeLessThan(500);
+    // Task 4.0 (DEC82, owner condition 1): refused by the Turnstile check itself.
+    expect(((await res.json()) as { error_code?: string }).error_code).toBe("captcha_failed");
+  });
+
+  // Task 4.0 (DEC82, owner condition 1): E2E runs without this check, so it is proven here, on a
+  // real account with its right password: only the missing token stops the sign-in.
+  it("DEC52, DEC82: password sign-in without a Turnstile token is rejected", async () => {
+    const address = email();
+    const signup = await auth("/signup", {
+      email: address,
+      password: PASSWORD,
+      data: await signupData(DISPLAY_NAME),
+      gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
+    });
+    expect(signup.status).toBe(200);
+    const res = await auth("/token?grant_type=password", { email: address, password: PASSWORD });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error_code?: string; access_token?: string };
+    expect(body.error_code).toBe("captcha_failed");
+    expect(body.access_token).toBeUndefined();
+    const withToken = await auth("/token?grant_type=password", {
+      email: address,
+      password: PASSWORD,
+      gotrue_meta_security: { captcha_token: TURNSTILE_DUMMY_TOKEN },
+    });
+    expect(withToken.status).toBe(200);
   });
 
   // Task 3.5: E2E replaces the widget in the browser (TURNSTILE_STUB), so the real Turnstile

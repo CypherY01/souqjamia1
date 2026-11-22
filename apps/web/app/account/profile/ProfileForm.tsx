@@ -13,7 +13,7 @@ import { parseDisplayName } from "@souq/domain";
 import { formatWait, t } from "@souq/i18n";
 import { FailureAlert, fieldMessage } from "../../../components/auth/messages";
 import { Alert } from "../../../components/ui/Alert";
-import { Button } from "../../../components/ui/Button";
+import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { Select, TextField } from "../../../components/ui/Field";
 import { api, type ApiFailure } from "../../../lib/client/api";
 import { routes } from "../../../lib/routes";
@@ -127,6 +127,7 @@ export function ProfileForm({ initial, colleges, blocked }: ProfileFormProps) {
   return (
     <form
       className={styles.form}
+      method="post"
       noValidate
       onSubmit={(event) => {
         void onSubmit(event);
@@ -179,14 +180,13 @@ export function ProfileForm({ initial, colleges, blocked }: ProfileFormProps) {
         optional
       />
       <div>
-        <Button
-          type="submit"
+        <SubmitButton
           disabledReason={blocked === null ? undefined : t(`account.profile.blocked.${blocked}`)}
           loading={submitting}
           loadingLabel={t("account.profile.submitting")}
         >
           {t("account.profile.submit")}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );

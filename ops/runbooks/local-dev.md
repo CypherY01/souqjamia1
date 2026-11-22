@@ -623,6 +623,38 @@
 11. **المعرض:** <http://localhost:3000/dev/ui>، قسم «الإشعارات وتفضيلات البريد»: القائمة بحالاتها (غير مقروء، ومقروء، وغير متاح)، وزر تعليم الكل، والقسم الإلزامي، ونموذج التفضيلات عادياً ولعضو لم يوافق على الشروط الجديدة.
 12. **الإيقاف:** Ctrl+C في نافذة العامل (على Windows قد يسأل «Terminate batch job»، والجواب Y).
 
+## مراجعة استقرار الاختبارات (المهمة 4.0)
+
+لا هجرة ولا تغيير في `config.toml` ولا حزم جديدة. المتغيران الجديدان للعامل يكتبهما `pnpm env:local`. الأوامر من جذر المستودع، في نافذتي طرفية. شبكتك تفقد حزماً نحو Cloudflare (البند أ في `plan/task-4.0.md`)، فقد يأخذ الدخول بالتحقق الحقيقي ثوانٍ، أو تظهر «تعذّر تحميل التحقق» أحياناً: هذا من الشبكة لا من الموقع.
+
+1. **الفرع:** `git checkout phase1/task-4.0-flaky-tests`.
+2. **البيئة:** `pnpm env:local`. صار `apps/worker/.env.local` فيه `SUPABASE_URL` و`SUPABASE_PUBLISHABLE_KEY`. وتركتُ Supabase المحلي بالتحقق (الوضع العادي).
+3. **التشغيل العادي:** `pnpm dev` في نافذة، و`pnpm dev:worker` في الثانية. الموقع يفتح على <http://localhost:3000>، والعامل يكتب `worker.started`.
+4. **الحارس (شرطك 1):**
+   1. أوقف الاثنين بـ Ctrl+C، ثم `pnpm db:e2e`. ينتهي بعد حوالي 35 ثانية بالسطر «Local Supabase runs without the Turnstile check, for pnpm test:e2e only».
+   2. `pnpm dev`: يرفض ويتوقف، بالسطر `env.captcha_unverified` وفيه `"check":"off"` و`"hint":"Run pnpm db:restart to turn the check back on."`.
+   3. `pnpm dev:worker`: يرفض ويتوقف، بالسطر `worker.captcha_unverified` وفيه `"check":"off"`. إن بقيت النافذة تنتظر (وضع `--watch`) فأوقفها بـ Ctrl+C.
+   4. `pnpm test:integration`: يرفض قبل أي اختبار برسالة تبدأ بـ «Local Supabase Auth does not verify Turnstile tokens».
+   5. `pnpm db:restart`: يعود التحقق، والسطر «Local Supabase runs with the Turnstile check (DEC52)». ثم `pnpm dev` و`pnpm dev:worker` يعملان كالخطوة 3.
+5. **حالة «جارٍ التحميل» (شرطك 2):**
+   1. افتح <http://localhost:3000/dev/ui>، قسم «الأزرار»، الصف الأخير: الزر الأول بمؤشر دوران ومعطل (حالة ما قبل الربط)، والثاني عادي (`SubmitButton` بعد الربط).
+   2. اضغط F12، ثم Elements، واختر الزر الأول، ثم تبويب Accessibility: الاسم «نشر الإعلان جارٍ التحميل…»، و`disabled` و`busy`.
+   3. **ما يراه زائر بطيء:** في F12، تبويب Network، اختر «Slow 4G» من قائمة السرعة، ثم افتح <http://localhost:3000/login>. زر «دخول» وزر «القائمة» (عرض 360: Ctrl+Shift+M) معطلان بمؤشر دوران لحظات، ثم يصيران عاديين. أعد السرعة إلى «No throttling».
+6. **بلا JavaScript (شرطك 2):** في F12 اضغط Ctrl+Shift+P، واكتب «Disable JavaScript» واختره، ثم حدّث <http://localhost:3000/login>:
+   - أعلى الصفحة رسالة على خلفية صفراء فاتحة: «يحتاج هذا الموقع إلى JavaScript: أزرار الإرسال والقوائم تبقى معطلة بدونه. فعّل JavaScript في إعدادات متصفحك، ثم أعد تحميل الصفحة.»
+   - زر «دخول» معطل. اكتب أي بريد وكلمة مرور ثم Enter: لا يحدث شيء، والعنوان يبقى `/login` بلا `?email=` ولا `?password=`.
+   - أعد JavaScript: Ctrl+Shift+P ثم «Enable JavaScript».
+7. **طلب POST قبل الربط (طلبك في البند د):** في PowerShell، والموقع يعمل:
+
+   ```powershell
+   curl.exe -i -X POST http://localhost:3000/login -H "Origin: http://localhost:3000" -H "Sec-Fetch-Site: same-origin" --data-urlencode "email=review@example.test" --data-urlencode "password=كلمة-مرور-تجريبية-1"
+   ```
+
+   - الرد 403 وفيه `"code":"CSRF_FAILED"`، بلا `set-cookie` لجلسة (`sb-...-auth-token`).
+   - في نافذة `pnpm dev` سطر واحد `http.rejected` فيه `"method":"POST"` و`"path":"/login"` و`"code":"CSRF_FAILED"` فقط: لا البريد ولا كلمة المرور ولا جسم الطلب.
+8. **E2E (اختياري، حوالي 4 دقائق):** أوقف `pnpm dev` و`pnpm dev:worker`، ثم `pnpm db:e2e`، ثم `pnpm build`، ثم `pnpm test:e2e` (197 اختباراً). **وبعدها مباشرة `pnpm db:restart`.**
+9. **الإيقاف:** Ctrl+C في النافذتين.
+
 ## الاختبارات
 
 - `pnpm test`: اختبارات الوحدة، بلا أي خدمة.
@@ -631,6 +663,10 @@
   - تحتاج تنزيل متصفح الاختبار مرة واحدة: `pnpm --filter @souq/tests exec playwright install --only-shell chromium`.
   - تشغّل الموقع بنفسها على المنفذين 3100 (التأكيد معطّل) و3102 (التأكيد مفعّل)، فلا تتعارض مع `pnpm dev`.
   - **من المهمة 3.2 تحتاج Supabase المحلي:** `pnpm db:start` ثم `pnpm env:local`، فتأخذ رابط القاعدة ومفاتيح Supabase من `apps/web/.env.local`. وتحتاج اتصالاً بالإنترنت لسكربت Turnstile من Cloudflare.
+  - **من المهمة 4.0 (DEC82) تعمل على Supabase بلا تحقق Turnstile في الخادم:**
+    1. `pnpm db:e2e`: يوقف Supabase المحلي ويشغّله بلا التحقق (حوالي 35 ثانية، والبيانات تبقى).
+    2. `pnpm build` ثم `pnpm test:e2e`. خادما الاختبار يعملان بـ `APP_ENV=test`. وإن كان التحقق مفعّلاً يرفض `pnpm test:e2e` البدء ويكتب هذا الأمر.
+    3. **بعدها مباشرة:** `pnpm db:restart`، فيعود التحقق. بدونه يرفض `pnpm dev` و`pnpm dev:worker` التشغيل (السطر `env.captcha_unverified` أو `worker.captcha_unverified`)، وترفض `pnpm test:integration` البدء.
 
 ## الإيقاف
 
@@ -646,6 +682,12 @@
 2. `pnpm db:stop`، ثم `pnpm db:start`.
 3. `pnpm env:local`. ينسخ القيمة إلى `EMAIL_CONFIRMATION_REQUIRED`.
 4. حدّث الاختبار المرتبط في `tests/unit/supabase-config.test.ts`. هذا تغيير قرار، فيُسجَّل أولاً (DEC48).
+
+## تحقق Turnstile في الخادم (DEC52، DEC82)
+
+- **محلياً وضعان:** `pnpm db:start` و`pnpm db:restart` يشغّلان Supabase بالتحقق كما في `config.toml`، وهو الوضع العادي للتطوير والتكامل والمراجعة. و`pnpm db:e2e` بلا التحقق، لـ `pnpm test:e2e` وحده. `config.toml` لا يتغير: الأمر يضع `SUPABASE_AUTH_CAPTCHA_ENABLED=false` عند التشغيل.
+- **الحارس:** الموقع والعامل يسألان Supabase Auth عند التشغيل بطلب دخول بلا رمز. إن لم يرفضه التحقق يتوقفان برمز خروج 1، إلا مع `APP_ENV=test`، وهذه القيمة لا تُقبل إلا مع `APP_ORIGIN` على localhost.
+- **Supabase المستضاف يجب أن يكون التحقق فيه مفعّلاً دائماً،** بمفتاح Turnstile السري الحقيقي، و`APP_ENV` فيه `staging` أو `production` فقط. وفحصه قبل التجربة مع الطلاب في `plan/cost-plan.md` (إعدادات المهمة 4.0).
 
 ## ملاحظات
 

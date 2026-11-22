@@ -108,7 +108,9 @@ test("FR72 as the member sees it: the request, /restricted, the mailed link, the
 
   // The login was within 5 minutes, so the confirmation is open (DEC38); the box comes first.
   await expect(page.getByText(/التحقق صالح حتى/)).toBeVisible();
-  const submit = page.getByRole("button", { name: "احذف حسابي" });
+  // Task 4.0: the exact name is the hydrated button's (before, «جارٍ التحميل» joins it), so
+  // the button is disabled here for the unchecked box, not for hydration.
+  const submit = page.getByRole("button", { name: "احذف حسابي", exact: true });
   await expect(submit).toBeDisabled();
   await page.getByLabel("قرأت ما سبق، وأريد حذف حسابي").check();
   await expect(submit).toBeEnabled();

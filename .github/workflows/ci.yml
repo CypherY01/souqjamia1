@@ -124,8 +124,13 @@ jobs:
       - name: Turn off Supabase CLI telemetry
         run: pnpm --filter @souq/db exec supabase telemetry disable
 
-      - name: Start local Supabase
+      # Task 4.0 (DEC82): E2E runs without Supabase Auth's Turnstile check (pnpm db:e2e locally).
+      # The test servers run with APP_ENV=test, and tests/e2e/global-setup.ts refuses a stack that
+      # still verifies. The integration job keeps the check and tests DEC52 against it.
+      - name: Start local Supabase (without the Turnstile check)
         run: pnpm --filter @souq/db exec supabase start -x studio,postgres-meta,realtime,storage-api,imgproxy
+        env:
+          SUPABASE_AUTH_CAPTCHA_ENABLED: "false"
 
       - name: Local environment for the test servers
         run: pnpm env:local

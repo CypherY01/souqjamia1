@@ -10,7 +10,7 @@ import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { t } from "@souq/i18n";
 import { FailureAlert } from "../auth/messages";
 import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { SubmitButton } from "../ui/SubmitButton";
 import { Checkbox } from "../ui/Field";
 import { api, type ApiFailure } from "../../lib/client/api";
 import { routes } from "../../lib/routes";
@@ -95,6 +95,7 @@ export function PolicyAcknowledgeForm({ terms, privacy }: PolicyAcknowledgeFormP
   return (
     <form
       className={styles.form}
+      method="post"
       noValidate
       onSubmit={(event) => {
         void onSubmit(event);
@@ -130,13 +131,9 @@ export function PolicyAcknowledgeForm({ terms, privacy }: PolicyAcknowledgeFormP
         }
       />
       <div>
-        <Button
-          type="submit"
-          loading={submitting}
-          loadingLabel={t("account.home.terms.submitting")}
-        >
+        <SubmitButton loading={submitting} loadingLabel={t("account.home.terms.submitting")}>
           {t("account.home.terms.submit")}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );

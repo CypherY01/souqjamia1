@@ -10,7 +10,7 @@ import { parseEmail } from "@souq/domain";
 import { formatDateTime, formatWait, t } from "@souq/i18n";
 import { FailureAlert, fieldMessage } from "../../../components/auth/messages";
 import { Alert } from "../../../components/ui/Alert";
-import { Button } from "../../../components/ui/Button";
+import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { TextField } from "../../../components/ui/Field";
 import { api, type ApiFailure } from "../../../lib/client/api";
 import { routes } from "../../../lib/routes";
@@ -116,6 +116,7 @@ export function EmailChangeForm({
       ) : (
         <form
           className={styles.form}
+          method="post"
           noValidate
           onSubmit={(event) => {
             void onSubmit(event);
@@ -137,14 +138,13 @@ export function EmailChangeForm({
             autoCapitalize="none"
             spellCheck={false}
           />
-          <Button
-            type="submit"
+          <SubmitButton
             loading={submitting}
             loadingLabel={t("account.security.email.submitting")}
             disabledReason={blockedReason}
           >
             {t("account.security.email.submit")}
-          </Button>
+          </SubmitButton>
         </form>
       )}
     </div>
