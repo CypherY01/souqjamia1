@@ -66,7 +66,7 @@ v_prior := app.idempotency_claim('POST /api/listings', p_key, p_input);
 if v_prior is not null then return v_prior; end if;
 perform app.rate_limit_take('RL05:hour', pg_catalog.sha256(pg_catalog.convert_to(v_member::text, 'UTF8')), 5, '1 hour');
 -- ... العمل نفسه ...
-perform app.enqueue_job('email.send', pg_catalog.jsonb_build_object('notification_id', v_id), 'email:notification:' || v_id);
+perform app.notify(v_seller, 'offer.received', 'offer', v_offer_id, 'offer.received:' || v_offer_id);
 perform app.audit('listing.publish', 'listing', v_listing_id);
 perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 ```
@@ -172,6 +172,25 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 
 - **قاعدة DEC39 للمهام القادمة:** 5.5 (العروض) و5.6 (اللقاءات) و6.1 (الصفقات) تستبدل `app.cancel_pending_for_account` بـ `create or replace`، بدءاً من آخر نسخة لها، وتضيف إلغاء جدولها بالسبب `account_restricted`. تقفل صفوفها بعد قفل `account_control` الذي أخذه المستدعي، بترتيب الفصل 07. و7.4 تستدعيها للإيقاف والحظر النهائي.
 - **رابط الاسترجاع** رابط دخول من Supabase (`magic_link`)، وهو ورابط استعادة كلمة المرور في خانة واحدة (`recovery_token`). يُعاد فحص ذلك عند كل ترقية لـ Supabase (`ops/runbooks/supabase-upgrade.md`).
+
+## الإشعارات وبريدها (المهمة 3.8)
+
+`20261122170000_notifications.sql`، وتفاصيله في `plan/task-3.8.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| `app.notification_event` | داخلي، RLS مفعّلة وبلا منح: قناة بريد كل حدث، `required` أو إحدى المجموعات الخمس أو `none`. ومفتاح أجنبي من `public.notification.event_type` إليه (`not valid` للصفوف التجريبية القديمة) |
+| `app.notify(...)` | استُبدلت: الصف الجديد لحدث له بريد يضع مهمة `email.send` واحدة بمفتاح `email.send:<معرّف الإشعار>` في نفس المعاملة. الحدث المكرر لا صف ولا مهمة |
+| `app.notification_email(id)` | لـ `souq_worker`: صف واحد إن جاز الإرسال الآن، وإلا لا شيء. العنوان من `auth.users` وقت الإرسال. `required` يُرسل أياً كانت حالة الحساب، والاختياري لحساب نشط ومجموعته مفعّلة |
+| `app.member_read_actor()` | داخلية: وصول `member` لدالة قراءة، بترتيب `app.assert_active_member()` وبلا قفل |
+| `app.my_notifications(before_created, before_id, limit)` | لـ `souq_web` (API078): إشعارات العضو خلال 90 يوماً، الأحدث أولاً، حتى 51 صفاً |
+| `app.unread_notification_count()` | لـ `souq_web` (API115): عدد غير المقروء خلال 90 يوماً |
+| `app.mark_notifications_read(ids)` | لـ `souq_web` (API079): يعلّم ما للعضو فقط، ويتجاهل الباقي بلا كشف |
+| `app.update_notification_preferences(expected_version, groups)` | لـ `souq_web` (API029): المجموعات الخمس فقط، وأي مفتاح آخر `BAD_REQUEST`. النسخة القديمة `STATE_CONFLICT`، وطلب بلا تغيير يُبقي النسخة |
+
+- **حدث جديد في مهمة قادمة:** صف في `app.notification_event` في هجرتها، والصف نفسه في `packages/domain/src/notifications.ts` (اختبار التكامل يطابقهما)، ونصه داخل الموقع في `packages/i18n/src/ar/notifications.json`، ووجهته في `apps/web/lib/notifications/events.ts`. حدث `required` يحتاج بريده في `packages/email/src/notifications.ts`، والاختياري يستعمل بريد مجموعته.
+- **لا نص حر في البريد (BR38):** دوال العرض لا تأخذ نص عضو أصلاً. البريد الاختياري يقول إن شيئاً تغيّر، ويفتح `/notifications`.
+- **اختبار يرسل إشعاراً بحدث تجريبي** يضيف صفاً `test.<...>` للجدول ثم يحذفه مع إشعاراته ومهامه (`tests/integration/_harness/notifications.ts`).
 
 ## schema `rls`
 
