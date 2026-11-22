@@ -1,6 +1,6 @@
 # المهمة 3.7 — طلب حذف الحساب واسترجاعه
 
-الحالة: **التفاصيل معتمدة (22 نوفمبر 2026)، والتنفيذ جارٍ.** الفرع `phase1/task-3.7-deletion` من `main` (cdf4a55). CI أخضر على آخر commit في main (التشغيل [44959862497](https://github.com/CypherY01/souqjamia1/actions/runs/44959862497): الفحوص والبناء 72 ثانية، والتكامل 144، وE2E 268، وgitleaks 17). قرارات المالك في القسم التالي، وهي تتقدم على ما بعدها في هذا الملف.
+الحالة: **التفاصيل معتمدة (22 نوفمبر 2026)، والتنفيذ مكتمل وبانتظار CI ومراجعة المالك المحلية.** الفرع `phase1/task-3.7-deletion` من `main` (cdf4a55). CI أخضر على آخر commit في main (التشغيل [44959862497](https://github.com/CypherY01/souqjamia1/actions/runs/44959862497): الفحوص والبناء 72 ثانية، والتكامل 144، وE2E 268، وgitleaks 17). قرارات المالك في القسم التالي، وهي تتقدم على ما بعدها في هذا الملف.
 
 ## قرارات المالك عند الاعتماد
 
@@ -196,3 +196,40 @@
 8. **إلغاء الجلسات:** `signOut` من Supabase بعد الالتزام (مقترح)، أو حذف صفوف `auth.sessions` داخل الدالة نفسها.
 9. **إصلاح خارج الخطة:** قالب `magic_link` العربي يغلق القالب الإنجليزي الافتراضي القائم، ويُسجَّل في «اختلافات عن الخطة».
 10. **اختبار إخفاء الإعلانات وطلبات الشراء:** يُكمَل في 4.3 و4.6، لأن جداولها لم تُبنَ بعد (مقترح).
+
+## التنفيذ
+
+### ما بُني
+
+- **القاعدة** (`20261122130000_account_deletion.sql`): `app.request_account_deletion()` و`app.recover_account_deletion()` و`app.deletion_recovery_pending(email)` لـ `souq_web`، والداخليتان `app.deletion_deadline()` و`app.cancel_pending_for_account()` (نقطة DEC39، فارغة وترجع عدد ما ألغته). التدقيق `account.deletion_requested` و`account.deletion_recovered`، والإشعاران بنفس الاسمين. التفاصيل وقاعدة المهام 5.5 و5.6 و6.1 في `packages/db/README.md`.
+- **البريد:** قالب `magic_link` العربي في `config.toml`، مولَّد من `packages/i18n` (البند 9).
+- **الخادم:**
+  - `requireAccountReauth` و`accountOwnerDenial` (DEC81)، و`deletionDeadline`، و`recoverable` في `restrictionOf`، في `lib/auth/guards.ts`.
+  - `lib/account/deletion.ts`: API026 وAPI027 وAPI028، ومساراتها الثلاثة في `app/api/profile/`.
+  - `no_account` في `classifyAuthError` (رد `otp_disabled`)، و`signInWithOtp` في `AuthFlowClient`.
+- **الواجهة:** `/account/delete` ونموذجها، ورابطها في «أقسام الحساب»، ونموذج طلب الرابط في `/restricted` وحالة «انتهت مهلة الاسترجاع»، وسطر DEC81 للحساب الموقوف والمحظور، وصفحتا `/auth/account-recovery` و`/auth/account-recovery/done`. و`ReauthForm` صار مشتركاً في `components/account/`. والحالتان الجديدتان في `/dev/ui`.
+- **العقد 0.5.6:** مستوى `account_reauth`، والإضافات 37 إلى 39 في `contracts/README.md`.
+- **الوثائق:** DEC81 في الملحق، وشرط بريد الحذف في `plan/cost-plan.md` و3.8، ونقطة DEC81 في `plan/policy-notes.md`، و`plan/screens.md`، و`ops/runbooks/supabase-upgrade.md` (سلوك رابط الدخول)، وخطوات المراجعة في `ops/runbooks/local-dev.md`، وسطر في `CLAUDE.md`.
+
+### اختلافات عن الخطة
+
+1. **Turnstile في API027:** الخطة قالت «كما في API006»، أي 403 `CAPTCHA_FAILED` لرمز مرفوض. لكن Supabase يفحص الرمز فقط حين نطلب منه رابطاً، أي لحساب بانتظار الحذف. فلو رجع 403 لعرف الطالب أن الحساب بانتظار الحذف. صار الرمز المرفوض الرد العام 202، ويسجَّل `auth.call_failed`، وSupabase لا يرسل شيئاً. يبقى 429 من حد Supabase لكل عنوان IP و503 عند توقفه للحساب المؤهل وحده، وهما لا يظهران إلا عند ضغط أو عطل، مثل فرق التوقيت المقبول في «مخاطر معروفة» 4.
+2. **API028 لا يجدد ربط الزائر:** API021 يجدده دائماً. هنا لا تتغير كوكيز المتصفح أبداً، فرمز CSRF الذي معه يبقى صالحاً.
+3. **إصلاح خارج الخطة (البند 9 المعتمد):** قالب `magic_link` كان قالب Supabase الإنجليزي «Your sign-in link»، ويصل لأي حساب عبر `/auth/v1/otp` مباشرة. صار عربياً.
+4. **إصلاح خارج الخطة:** خطوة سجل التدقيق في مراجعة 3.6 (`local-dev.md`) كانت `like account.%` بلا علامتي تنصيص، فتفشل في Studio. صارت `like 'account.%'`.
+5. **رمز رابط الدخول يبدأ بـ `pkce_`:** `@supabase/ssr` يطلب الرابط بمسار PKCE. `verifyOtp` بالرمز من الخادم يعمل، ومفحوص برسالة Mailpit حقيقية في التكامل وE2E.
+6. **اختبار المعرض `account.spec.ts`:** صار في قسم «الحساب المقيّد» أربع حالات وأربعة روابط بريد التواصل، فعُدّل العدد، وأُضيف فحص سطر DEC81 ونموذج الرابط.
+
+### نتائج الفحص (22 نوفمبر 2026)
+
+- `pnpm lint` و`check:css` و`typecheck` و`format:check` و`contract:lint` و`check:contract-ids` (99 عملية و20 مستبعدة) و`emails:check` و`check:migrations` و`check:supabase-images` و`db:lint`: نجحت.
+- `pnpm test`: 32 ملفاً، و950 اختباراً.
+- `pnpm test:integration`: 28 ملفاً، و375 اختباراً، منها `deletion.test.ts` (24): TC59 الثلاثة بساعة الاختبار، وشرطك على البند 8، وDEC81، والطلبان المتزامنان، ونقطة DEC39، وAPI027 بلا كشف ومع RL03، وAPI028 برابط Mailpit حقيقي، والخانة المشتركة في GoTrue. ومعها الفحص الشامل ومصفوفة القراءة.
+- `pnpm build` و`check:bundle` و`secrets:scan`: نجحت.
+- `pnpm test:e2e`: 179 نجح و16 متخطى (تخطٍّ قديم)، منها `deletion.spec.ts` بخمسة اختبارات في كل عرض.
+- **فحص يدوي** على البناء الإنتاجي (المنفذ 3101) مع أداة Turnstile الحقيقية: صفحة الحذف، ثم الحذف، ثم الدخول إلى `/restricted`، ثم الرابط العربي من Mailpit، ثم «استُرجع حسابك» ثم «حسابي». أخطاء 404 في وحدة التحكم جلب مسبق لصفحات لم تُبنَ بعد، قديمة.
+- **اختبارات متقطعة:** لم يفشل أي اختبار في تشغيلين كاملين لـ E2E لسبب غير تغييراتي، ومنها `signup.spec.ts:159`.
+
+### المراجعة المحلية
+
+الخطوات في القسم «مراجعة حذف الحساب واسترجاعه (المهمة 3.7)» في `ops/runbooks/local-dev.md`. الهجرة وإعداد `config.toml` طُبّقا على Supabase المحلي في جهازك.
