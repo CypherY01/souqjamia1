@@ -22,6 +22,9 @@ export const routes = {
   // Task 3.6: an email change link (API021), and where it leads (?state=waiting or changed).
   emailChangeLink: "/auth/email-change",
   emailChangeDone: "/auth/email-change/done",
+  // Task 3.7: the deletion recovery link (API028), and where it leads.
+  accountRecoveryLink: "/auth/account-recovery",
+  accountRecoveryDone: "/auth/account-recovery/done",
   // FR78, task 3.1: the state of a restricted or deletion-pending account.
   restricted: "/restricted",
   sell: "/sell",
@@ -38,6 +41,8 @@ export const routes = {
     reset: "/account/reset",
     // Task 3.6: reauthentication, email and password change (API009, API020, API022).
     security: "/account/security",
+    // Task 3.7: the deletion request (API026, DEC81).
+    delete: "/account/delete",
   },
   api: {
     // API002 and API003 (task 3.3). POST only: no state change on GET (SEC05).
@@ -52,6 +57,10 @@ export const routes = {
     emailChange: "/api/profile/email-change",
     emailChangeConfirm: "/api/profile/email-change/confirm",
     passwordChange: "/api/profile/password-change",
+    // API026, API027 and API028 (task 3.7).
+    deletion: "/api/profile/deletion",
+    deletionRecoveryRequest: "/api/profile/deletion-recovery/request",
+    deletionRecoveryConfirm: "/api/profile/deletion-recovery/confirm",
     // API015, API016 (task 3.5) and API119 (DEC69, its first form in task 3.5).
     me: "/api/me",
     profile: "/api/profile/me",

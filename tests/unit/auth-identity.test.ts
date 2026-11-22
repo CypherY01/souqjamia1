@@ -2,7 +2,9 @@
 // The same code runs against real sessions in tests/integration/auth-guards.test.ts.
 import { describe, expect, it } from "vitest";
 import {
+  accountOwnerDenial,
   DELETION_RECOVERY_DAYS,
+  deletionDeadline,
   limitedSessionDenial,
   memberDenial,
   memberPageRedirect,
@@ -150,6 +152,26 @@ describe("item 8: member access, in the order of app.assert_active_member()", ()
     expect(memberDenial(state({ termsAcknowledged: false }))).toBe("TERMS_NOT_ACKNOWLEDGED");
   });
 
+  it("DEC81 account_reauth: the same order without the current-terms condition", () => {
+    expect(accountOwnerDenial(state({ termsAcknowledged: false }))).toBeNull();
+    expect(accountOwnerDenial(state())).toBeNull();
+    expect(accountOwnerDenial(state({ deletionRequestedAt: new Date(), restricted: true }))).toBe(
+      "DELETION_PENDING",
+    );
+    expect(accountOwnerDenial(state({ restricted: true, termsAcknowledged: false }))).toBe(
+      "ACCOUNT_RESTRICTED",
+    );
+    expect(accountOwnerDenial(state({ emailConfirmed: false, termsAcknowledged: false }))).toBe(
+      "EMAIL_NOT_CONFIRMED",
+    );
+  });
+
+  it("FR72: the recovery period ends 30 days of elapsed UTC time after the request", () => {
+    expect(deletionDeadline(new Date("2026-03-01T21:30:00Z"))).toEqual(
+      new Date("2026-03-31T21:30:00Z"),
+    );
+  });
+
   it("member pages: guests to login with the path, restricted accounts to /restricted", () => {
     const auth = (s: SessionState, i: Identity = identity()): SessionAuth => ({
       identity: i,
@@ -174,11 +196,19 @@ describe("item 14: what /restricted shows", () => {
   it("deletion first (DEC41), then a ban, then a suspension in force; nothing otherwise", () => {
     const requested = new Date("2026-11-19T12:00:00Z");
     expect(DELETION_RECOVERY_DAYS).toBe(30);
+    const deadline = new Date("2026-12-19T12:00:00Z");
     expect(
       restrictionOf(
         state({ deletionRequestedAt: requested, accountStatus: "banned", restricted: true }),
+        deadline.getTime() - 1,
       ),
-    ).toEqual({ kind: "deletion_pending", deadline: new Date("2026-12-19T12:00:00Z") });
+    ).toEqual({ kind: "deletion_pending", deadline, recoverable: true });
+    // Task 3.7: from the deadline on, as app.deletion_deadline() (now < deadline).
+    expect(restrictionOf(state({ deletionRequestedAt: requested }), deadline.getTime())).toEqual({
+      kind: "deletion_pending",
+      deadline,
+      recoverable: false,
+    });
     expect(restrictionOf(state({ accountStatus: "banned", restricted: true }))).toEqual({
       kind: "banned",
     });

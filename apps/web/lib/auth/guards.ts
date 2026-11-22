@@ -9,6 +9,8 @@
 //   member_reauth  member, and a password check within the last 5 minutes (DEC38, task 3.6):
 //            the newest password entry in amr. A login is one; API009 opens a new session for
 //            another. Otherwise REAUTH_REQUIRED.
+//   account_reauth member_reauth without the current-terms condition, for the deletion request
+//            only (API026, DEC81, task 3.7).
 // Later levels join with their tasks: role_holder, staff and platform_owner (7.1). Writes pass the guard here and again app.assert_active_member() inside
 // the entry point: the database is the authority, the guard rejects early.
 import type { enums } from "@souq/domain";
@@ -100,17 +102,26 @@ export function memberDenial(state: SessionState): ErrorCode | null {
 /** FR72: an account awaiting deletion can be recovered for 30 days after the request. */
 export const DELETION_RECOVERY_DAYS = 30;
 
-/** What /restricted shows (FR78, DEC41), or null for an account that is not restricted. */
+/** FR72: the end of the recovery period, as app.deletion_deadline() computes it. */
+export function deletionDeadline(requestedAt: Date): Date {
+  return new Date(requestedAt.getTime() + DELETION_RECOVERY_DAYS * 864e5);
+}
+
+/**
+ * What /restricted shows (FR78, DEC41), or null for an account that is not restricted. Awaiting
+ * deletion: `recoverable` while the deadline is ahead (task 3.7); after it, until the final
+ * deletion of task 8.1, the account can still sign in but not recover.
+ */
 export type Restriction =
-  | { kind: "deletion_pending"; deadline: Date }
+  | { kind: "deletion_pending"; deadline: Date; recoverable: boolean }
   | { kind: "banned" }
   | { kind: "suspended"; until: Date };
 
 /** Deletion first: during the recovery window the account sees only that state (DEC41). */
-export function restrictionOf(state: SessionState): Restriction | null {
+export function restrictionOf(state: SessionState, nowMs = Date.now()): Restriction | null {
   if (state.deletionRequestedAt !== null) {
-    const deadline = new Date(state.deletionRequestedAt.getTime() + DELETION_RECOVERY_DAYS * 864e5);
-    return { kind: "deletion_pending", deadline };
+    const deadline = deletionDeadline(state.deletionRequestedAt);
+    return { kind: "deletion_pending", deadline, recoverable: nowMs < deadline.getTime() };
   }
   if (!state.restricted) return null;
   if (state.accountStatus === "suspended" && state.suspendedUntil !== null) {
@@ -234,6 +245,16 @@ export function reauthDenial(identity: Identity, nowSeconds: number): ErrorCode 
   return until !== null && nowSeconds <= until ? null : "REAUTH_REQUIRED";
 }
 
+/**
+ * DEC81 (task 3.7): who may request the deletion of their account. memberDenial without the
+ * current-terms condition: leaving is not a market write. A restricted account is refused and
+ * pointed to the contact address.
+ */
+export function accountOwnerDenial(state: SessionState): ErrorCode | null {
+  const denial = memberDenial(state);
+  return denial === "TERMS_NOT_ACKNOWLEDGED" ? null : denial;
+}
+
 /** x-access: member (BR01, DEC36, DEC63). */
 export async function requireMember(
   ctx: GuardContext,
@@ -256,5 +277,21 @@ export async function requireMemberReauth(
   const auth = await requireMember(ctx, options);
   const denial = reauthDenial(auth.identity, options.nowSeconds ?? Date.now() / 1000);
   if (denial !== null) throw new ApiError(denial);
+  return auth;
+}
+
+/**
+ * x-access: account_reauth (API026, DEC81): a live ordinary session, accountOwnerDenial, then the
+ * 5-minute window of DEC38. app.request_account_deletion() checks the account again.
+ */
+export async function requireAccountReauth(
+  ctx: GuardContext,
+  options: GuardOptions = {},
+): Promise<SessionAuth> {
+  const auth = await requireSession(ctx, options);
+  const denial = accountOwnerDenial(auth.state);
+  if (denial !== null) throw new ApiError(denial);
+  const window = reauthDenial(auth.identity, options.nowSeconds ?? Date.now() / 1000);
+  if (window !== null) throw new ApiError(window);
   return auth;
 }

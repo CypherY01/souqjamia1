@@ -21,6 +21,8 @@ export type AuthFailure =
   | "same_password"
   /** Task 3.4: the session is no longer at Supabase Auth (revoked, or past its limits). */
   | "session_ended"
+  /** Task 3.7: a sign-in link for an address with no account (otp_disabled, checked 22 November). */
+  | "no_account"
   | "unavailable"
   | "unexpected";
 
@@ -37,6 +39,7 @@ const BY_CODE: Readonly<Record<string, AuthFailure>> = {
   email_not_confirmed: "email_not_confirmed",
   same_password: "same_password",
   session_not_found: "session_ended",
+  otp_disabled: "no_account",
 };
 
 /** Seconds a 429 from Supabase Auth asks to wait: it sends no Retry-After of its own. */

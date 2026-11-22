@@ -162,6 +162,7 @@ function failure(
     case "email_not_confirmed":
     case "same_password":
     case "session_ended":
+    case "no_account":
     case "unexpected":
       logAuthFailure("signup", traceId, error);
       return new ApiError("INTERNAL_ERROR");

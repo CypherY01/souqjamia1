@@ -114,8 +114,8 @@ export function createSessionClient(
 
 /**
  * What the auth flows use: signup, the confirmation link, resend and sign-out (task 3.2), login
- * with the verification of the session it opens (task 3.3), and the recovery request and the
- * new password (task 3.4).
+ * with the verification of the session it opens (task 3.3), the recovery request and the new
+ * password (task 3.4), and the deletion recovery link (task 3.7).
  */
 export interface AuthFlowClient {
   auth: Pick<
@@ -128,6 +128,7 @@ export interface AuthFlowClient {
     | "getClaims"
     | "resetPasswordForEmail"
     | "updateUser"
+    | "signInWithOtp"
   >;
 }
 

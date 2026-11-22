@@ -14,7 +14,7 @@ import { Button } from "../../../components/ui/Button";
 import { TextField } from "../../../components/ui/Field";
 import { api, type ApiFailure } from "../../../lib/client/api";
 import { routes } from "../../../lib/routes";
-import { ReauthForm } from "./ReauthForm";
+import { ReauthForm } from "../../../components/account/ReauthForm";
 import styles from "./security.module.css";
 
 const EMAIL_ID = "new-email";

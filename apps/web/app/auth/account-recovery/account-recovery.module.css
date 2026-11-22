@@ -1,0 +1,11 @@
+/* The deletion recovery link page and its done page (task 3.7). */
+.page {
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

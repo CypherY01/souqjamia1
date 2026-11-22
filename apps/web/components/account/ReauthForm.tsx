@@ -1,19 +1,20 @@
 "use client";
 
-// Reauthentication (API009, task 3.6): DEC36, DEC38, RL01. The current password and Turnstile;
+// Reauthentication (API009, task 3.6): DEC36, DEC38, RL01. On the security page and, from task
+// 3.7, before the deletion request (account_reauth). The current password and Turnstile;
 // the server signs in again and the new session replaces this one, so the CSRF token is fetched
 // again afterwards (owner condition on task 1.6). A wrong password is a field error under the
 // field; RL01's wait is shown in words (formatWait).
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { formatWait, t } from "@souq/i18n";
-import { FailureAlert, fieldMessage } from "../../../components/auth/messages";
-import { Turnstile, type TurnstileHandle } from "../../../components/auth/Turnstile";
-import { Alert } from "../../../components/ui/Alert";
-import { Button } from "../../../components/ui/Button";
-import { PasswordField } from "../../../components/ui/PasswordField";
-import { api, type ApiFailure } from "../../../lib/client/api";
-import { routes } from "../../../lib/routes";
-import styles from "./security.module.css";
+import { FailureAlert, fieldMessage } from "../auth/messages";
+import { Turnstile, type TurnstileHandle } from "../auth/Turnstile";
+import { Alert } from "../ui/Alert";
+import { Button } from "../ui/Button";
+import { PasswordField } from "../ui/PasswordField";
+import { api, type ApiFailure } from "../../lib/client/api";
+import { routes } from "../../lib/routes";
+import styles from "./ReauthForm.module.css";
 
 const PASSWORD_ID = "reauth-password";
 

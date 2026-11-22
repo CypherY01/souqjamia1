@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { t, type MessageKey } from "@souq/i18n";
 import { AccountRestrictedNotice } from "../../../components/account/AccountRestrictedNotice";
+import { RequestRecoveryForm } from "../../../components/account/RequestRecoveryForm";
 import { SignOutButton } from "../../../components/auth/SignOutButton";
 import { SiteHeader } from "../../../components/layout/SiteHeader";
 import { SafeText } from "../../../components/text/SafeText";
@@ -393,9 +394,27 @@ export default function DevUiPage() {
         <h3>{t("dev.restricted.deletionPending")}</h3>
         <div className={styles.preview}>
           <AccountRestrictedNotice
-            restriction={{ kind: "deletion_pending", deadline: deletionDeadline }}
+            restriction={{
+              kind: "deletion_pending",
+              deadline: deletionDeadline,
+              recoverable: true,
+            }}
             contactEmail={sampleContactEmail}
             idPrefix="dev-deletion"
+          >
+            <RequestRecoveryForm email={sampleContactEmail} siteKey="" preview />
+          </AccountRestrictedNotice>
+        </div>
+        <h3>{t("dev.restricted.deletionExpired")}</h3>
+        <div className={styles.preview}>
+          <AccountRestrictedNotice
+            restriction={{
+              kind: "deletion_pending",
+              deadline: deletionDeadline,
+              recoverable: false,
+            }}
+            contactEmail={sampleContactEmail}
+            idPrefix="dev-deletion-expired"
           />
         </div>
       </Section>
