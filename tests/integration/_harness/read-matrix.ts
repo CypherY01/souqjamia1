@@ -43,6 +43,11 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
     thirdParty: "DEC77 app.job_queue_health(): a member's identity changes nothing",
     guest: "DEC77 app.job_queue_health(): a guest reads two counts only",
   },
+  "app.deletion_recovery_pending(text)": {
+    reads: "API027: whether a recovery link may be sent to an address, server only (task 3.7)",
+    thirdParty: "DEC77 app.deletion_recovery_pending(): a member's identity changes nothing",
+    guest: "DEC77 app.deletion_recovery_pending(): a guest reads one boolean for the given address",
+  },
   "app.rate_limit_check(text, bytea, integer, interval)": {
     reads: "the seconds left on one counter, keyed by a hash the server computes (task 2.4)",
     thirdParty: "DEC77 app.rate_limit_check(): a member's identity changes nothing",

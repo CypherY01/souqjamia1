@@ -53,7 +53,7 @@ import { isSessionCookieName } from "../supabase/session.ts";
  * DeletionInput of the contract (acknowledge: const true). Any other value is a client defect,
  * not a field the member fills in: 400 (contract 0.5.6).
  */
-export const DeletionBody = z.strictObject({ acknowledge: z.unknown() });
+export const DeletionBody = z.strictObject({ acknowledge: z.unknown().optional() });
 
 /** Where a recovered account's link leads (API028). */
 export const ACCOUNT_RECOVERY_LOCATION = routes.accountRecoveryDone;
