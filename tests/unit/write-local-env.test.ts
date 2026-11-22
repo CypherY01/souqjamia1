@@ -48,7 +48,7 @@ describe("pnpm env:local", () => {
     expect(new URL(env.DATABASE_URL).username).toBe("souq_web");
     expect(env.DATABASE_URL).toBe(webDbUrl);
     expect(env.CONTACT_EMAIL).toBe(LOCAL_CONTACT_EMAIL);
-    expect(LOCAL_CONTACT_EMAIL.endsWith("@example.test")).toBe(true);
+    expect(LOCAL_CONTACT_EMAIL.endsWith("@souqjamia1.test")).toBe(true);
   });
 
   it("task 1.6: new random server secrets on every run, no proxy locally", () => {
@@ -68,8 +68,17 @@ describe("pnpm env:local", () => {
   it("task 2.5: writes a worker env for souq_worker that passes the worker's validation", () => {
     const password = newRolePassword();
     const url = roleDatabaseUrl(localDbUrl, "souq_worker", password);
-    const env = loadWorkerEnv(parseDotenv(workerEnv(url)));
+    const env = loadWorkerEnv(parseDotenv(workerEnv(url, "http://127.0.0.1:54324")));
     expect(env.APP_ENV).toBe("development");
+    // Task 3.8: email to the local Mailpit, on the reserved souqjamia1.test name only.
+    expect(env).toMatchObject({
+      EMAIL_TRANSPORT: "mailpit",
+      MAILPIT_URL: "http://127.0.0.1:54324",
+      APP_ORIGIN: "http://localhost:3000",
+      CONTACT_EMAIL: LOCAL_CONTACT_EMAIL,
+    });
+    expect(env.EMAIL_FROM.endsWith("@souqjamia1.test>")).toBe(true);
+    expect(env.RESEND_API_KEY).toBeUndefined();
     const parsed = new URL(env.DATABASE_URL);
     expect(parsed.username).toBe("souq_worker");
     expect(parsed.password).toBe(password);

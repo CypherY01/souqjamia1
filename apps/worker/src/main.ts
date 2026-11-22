@@ -7,6 +7,7 @@
 //     and exit. A job still running is resumed after its lease by the next worker (item 12).
 import { log } from "@souq/log";
 import { createJobStore, createPool } from "./db.ts";
+import { emailSettingsFrom } from "./email/config.ts";
 import { loadWorkerEnv, type WorkerEnv } from "./env.ts";
 import { CONCURRENCY, startJobLoop } from "./loop.ts";
 import { registry } from "./registry.ts";
@@ -18,6 +19,8 @@ const STOP_GRACE_MS = 20_000;
 let env: WorkerEnv;
 try {
   env = loadWorkerEnv();
+  // Task 3.8: the email transport and sender are checked now, not at the first email.
+  emailSettingsFrom(env);
   assertScheduleKnown(SCHEDULE, registry);
 } catch (error) {
   log.error("worker.config_invalid", {

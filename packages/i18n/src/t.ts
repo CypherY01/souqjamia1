@@ -9,6 +9,8 @@ import email from "./ar/email.json" with { type: "json" };
 import errors from "./ar/errors.json" with { type: "json" };
 import format from "./ar/format.json" with { type: "json" };
 import layout from "./ar/layout.json" with { type: "json" };
+// Task 3.8: the notifications page, the in-app text of each event, and the email preferences.
+import notifications from "./ar/notifications.json" with { type: "json" };
 import ui from "./ar/ui.json" with { type: "json" };
 
 export const messages = {
@@ -20,6 +22,7 @@ export const messages = {
   errors,
   format,
   layout,
+  notifications,
   ui,
 } as const;
 

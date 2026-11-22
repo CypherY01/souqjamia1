@@ -48,6 +48,24 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
     thirdParty: "DEC77 app.deletion_recovery_pending(): a member's identity changes nothing",
     guest: "DEC77 app.deletion_recovery_pending(): a guest reads one boolean for the given address",
   },
+  "app.my_notifications(timestamp with time zone, uuid, integer)": {
+    reads: "API078: the session member's own notifications of the last 90 days (task 3.8)",
+    thirdParty:
+      "DEC77 app.my_notifications(): another member's session reads only its own notifications",
+    guest: "DEC77 app.my_notifications(): a guest is UNAUTHENTICATED",
+  },
+  "app.unread_notification_count()": {
+    reads: "API115: the session member's own unread count (task 3.8)",
+    thirdParty:
+      "DEC77 app.unread_notification_count(): another member's session counts only its own",
+    guest: "DEC77 app.unread_notification_count(): a guest is UNAUTHENTICATED",
+  },
+  "app.notification_email(uuid)": {
+    reads:
+      "email.send: the address and event of one notification if it may be sent now, worker only (task 3.8)",
+    thirdParty: "DEC77 app.notification_email(): a member's identity changes nothing",
+    guest: "DEC77 app.notification_email(): a guest reads the email of the given notification only",
+  },
   "app.rate_limit_check(text, bytea, integer, interval)": {
     reads: "the seconds left on one counter, keyed by a hash the server computes (task 2.4)",
     thirdParty: "DEC77 app.rate_limit_check(): a member's identity changes nothing",

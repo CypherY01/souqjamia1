@@ -314,6 +314,12 @@ importers:
 
   apps/worker:
     dependencies:
+      '@souq/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@souq/email':
+        specifier: workspace:*
+        version: link:../../packages/email
       '@souq/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -336,6 +342,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@souq/email':
+        specifier: workspace:*
+        version: link:../email
       '@souq/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -351,6 +360,19 @@ importers:
         version: 6.0.3
 
   packages/domain:
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  packages/email:
+    dependencies:
+      '@souq/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@souq/i18n':
+        specifier: workspace:*
+        version: link:../i18n
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -401,6 +423,9 @@ importers:
       '@souq/domain':
         specifier: workspace:*
         version: link:../packages/domain
+      '@souq/email':
+        specifier: workspace:*
+        version: link:../packages/email
       '@souq/i18n':
         specifier: workspace:*
         version: link:../packages/i18n

@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@souq/domain": "workspace:*",
+    "@souq/email": "workspace:*",
     "@souq/log": "workspace:*",
     "pg": "catalog:",
     "zod": "catalog:"

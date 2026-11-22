@@ -13,11 +13,60 @@ function isPostgresUrl(value: string): boolean {
   }
 }
 
-export const workerEnvSchema = z.object({
-  APP_ENV: z.enum(["development", "staging", "production"]),
-  // Connection for the souq_worker role (SEC02). main.ts refuses any other role.
-  DATABASE_URL: z.string().refine(isPostgresUrl),
+const origin = z.url().refine((value) => new URL(value).origin === value, {
+  message: "must be an origin only: scheme, host and optional port, without a path",
 });
+
+/** "Name <address>" or a bare address, as EMAIL_FROM is written. */
+export interface FromAddress {
+  readonly name: string | null;
+  readonly email: string;
+}
+
+const emailAddress = z.email();
+
+export function parseFromAddress(value: string): FromAddress | null {
+  const named = /^\s*(.*?)\s*<([^<>\s]+)>\s*$/.exec(value);
+  const name = named?.[1] ?? null;
+  const email = named?.[2] ?? value.trim();
+  if (!emailAddress.safeParse(email).success) return null;
+  return { name: name === null || name === "" ? null : name, email };
+}
+
+export const workerEnvSchema = z
+  .object({
+    APP_ENV: z.enum(["development", "staging", "production"]),
+    // Connection for the souq_worker role (SEC02). main.ts refuses any other role.
+    DATABASE_URL: z.string().refine(isPostgresUrl),
+    // Task 3.8 (item 1 and 2): how email.send delivers. mailpit locally and in CI (DEC62), Resend
+    // from cost stage 1. Both over HTTP with fetch, no library.
+    EMAIL_TRANSPORT: z.enum(["mailpit", "resend"]),
+    // The sender, "Name <address>". On souqjamia1.com once the domain is verified (G01).
+    EMAIL_FROM: z.string().refine((value) => parseFromAddress(value) !== null),
+    // mailpit only: the local Mailpit web address, whose HTTP API sends (http://127.0.0.1:54324).
+    MAILPIT_URL: z.url().optional(),
+    // resend only: the Resend API key (secret, ops/runbooks/secrets.md).
+    RESEND_API_KEY: z
+      .string()
+      .regex(/^re_[A-Za-z0-9_-]{8,}$/)
+      .optional(),
+    // Links in email go to fixed paths on the site (the same value as the web app).
+    APP_ORIGIN: origin,
+    // FR78: the contact address in the deletion email (the same value as the web app).
+    CONTACT_EMAIL: z.email(),
+  })
+  .refine((env) => env.EMAIL_TRANSPORT !== "mailpit" || env.MAILPIT_URL !== undefined, {
+    path: ["MAILPIT_URL"],
+    message: "MAILPIT_URL is required with EMAIL_TRANSPORT=mailpit",
+  })
+  .refine((env) => !(env.EMAIL_TRANSPORT === "mailpit" && env.APP_ENV === "production"), {
+    path: ["EMAIL_TRANSPORT"],
+    message: "EMAIL_TRANSPORT=mailpit is for local development and CI, never production",
+  })
+  .refine((env) => env.EMAIL_TRANSPORT !== "resend" || env.RESEND_API_KEY !== undefined, {
+    path: ["RESEND_API_KEY"],
+    message: "RESEND_API_KEY is required with EMAIL_TRANSPORT=resend",
+  });
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 

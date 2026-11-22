@@ -1,0 +1,58 @@
+/* The notifications list and its controls (task 3.8), mobile first (360, 768 and 1440 px). */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+}
+
+/* Unread is said in text (the badge); the thicker edge only repeats it. */
+.unread {
+  border-inline-start: 4px solid var(--color-primary);
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.when {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.unavailable {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.link {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.markAll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}

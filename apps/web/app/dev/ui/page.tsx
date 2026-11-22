@@ -8,6 +8,10 @@ import { AccountRestrictedNotice } from "../../../components/account/AccountRest
 import { RequestRecoveryForm } from "../../../components/account/RequestRecoveryForm";
 import { SignOutButton } from "../../../components/auth/SignOutButton";
 import { SiteHeader } from "../../../components/layout/SiteHeader";
+import { MarkAllRead } from "../../../components/notifications/MarkAllRead";
+import { NotificationList } from "../../../components/notifications/NotificationList";
+import { PreferencesForm } from "../../../components/notifications/PreferencesForm";
+import { RequiredEmailNotice } from "../../../components/notifications/RequiredEmailNotice";
 import { SafeText } from "../../../components/text/SafeText";
 import { Alert, SafeMeetupNotice } from "../../../components/ui/Alert";
 import { Badge, NegotiableBadge, StudentBadge } from "../../../components/ui/Badge";
@@ -82,7 +86,49 @@ const meetupAt = "2026-11-18T13:30:00Z";
 // Task 3.1: fixture restriction dates and the fixture contact address (G05 gives the real one).
 const suspendedUntil = new Date("2026-12-01T09:00:00Z");
 const deletionDeadline = new Date("2026-12-19T12:00:00Z");
-const sampleContactEmail = "contact@example.test";
+const sampleContactEmail = "contact@souqjamia1.test";
+// Task 3.8: fixture notifications with the fixed text of their events (no member text).
+const sampleNotifications = [
+  {
+    id: "00000000-0000-4000-8000-000000000001",
+    text: t("notifications.events.account.deletion_recovered"),
+    destination: routes.account.home,
+    available: true,
+    read_at: null,
+    created_at: threeHoursAgo.toISOString(),
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000002",
+    text: t("notifications.events.account.deletion_requested"),
+    destination: routes.account.home,
+    available: true,
+    read_at: null,
+    created_at: "2026-11-18T09:00:00Z",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000003",
+    text: t("notifications.events.account.deletion_recovered"),
+    destination: routes.account.home,
+    available: true,
+    read_at: "2026-11-17T10:00:00Z",
+    created_at: "2026-11-17T08:00:00Z",
+  },
+  {
+    id: "00000000-0000-4000-8000-000000000004",
+    text: t("notifications.events.unknown"),
+    destination: routes.notifications,
+    available: false,
+    read_at: "2026-11-16T10:00:00Z",
+    created_at: "2026-11-16T08:00:00Z",
+  },
+];
+const sampleGroupsOff = {
+  offers: false,
+  meetups: false,
+  deals: false,
+  reviews: false,
+  reports: false,
+};
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
@@ -371,6 +417,32 @@ export default function DevUiPage() {
         <SignOutButton preview="busy" />
         <h3>{t("dev.signOut.failed")}</h3>
         <SignOutButton preview="failed" />
+      </Section>
+
+      <Section id="notifications" title={t("dev.sections.notifications")}>
+        <p>{t("dev.notifications.intro")}</p>
+        <h3>{t("dev.notifications.list")}</h3>
+        <div className={styles.preview}>
+          <NotificationList items={sampleNotifications} preview />
+        </div>
+        <h3>{t("dev.notifications.markAll")}</h3>
+        <MarkAllRead ids={[sampleNotifications[0]?.id ?? ""]} preview />
+        <h3>{t("dev.notifications.required")}</h3>
+        <RequiredEmailNotice />
+        <h3>{t("dev.notifications.form")}</h3>
+        <PreferencesForm
+          initial={{ groups: sampleGroupsOff, version: 1 }}
+          blocked={null}
+          preview
+          idPrefix="dev-groups"
+        />
+        <h3>{t("dev.notifications.blocked")}</h3>
+        <PreferencesForm
+          initial={{ groups: sampleGroupsOff, version: 1 }}
+          blocked="TERMS_NOT_ACKNOWLEDGED"
+          preview
+          idPrefix="dev-groups-blocked"
+        />
       </Section>
 
       <Section id="account-restricted" title={t("dev.sections.restricted")}>

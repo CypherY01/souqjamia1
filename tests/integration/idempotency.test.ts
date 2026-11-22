@@ -5,17 +5,24 @@ import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { setClock } from "./_harness/clock.ts";
 import { closeDb, dbError, dbPool, rolledBack, scalar } from "./_harness/db.ts";
+import { testEvent, type TestEvent } from "./_harness/notifications.ts";
 import { withTwoConnections } from "./_harness/parallel.ts";
 import { actAs, memberClaims } from "./_harness/roles.ts";
 import { signUpMember, type TestMember } from "./_harness/users.ts";
 
-afterAll(closeDb);
-
 const ROUTE = "POST /api/test-effect";
 let member: TestMember;
+// Task 3.8: every notification names a known event; this one sends no email.
+let effectEvent: TestEvent;
 
 beforeAll(async () => {
   member = await signUpMember();
+  effectEvent = await testEvent("none");
+});
+
+afterAll(async () => {
+  await effectEvent.cleanup();
+  await closeDb();
 });
 
 /**
@@ -30,11 +37,12 @@ async function runOnce(client: pg.ClientBase, key: string, input: object): Promi
     JSON.stringify(input),
   ]);
   if (prior !== null) return prior;
-  const effect = await scalar<string>(
-    client,
-    "select app.notify($1, 'test.effect', 'account', $2, $3)",
-    [member.id, key, randomUUID()],
-  );
+  const effect = await scalar<string>(client, "select app.notify($1, $4, 'account', $2, $3)", [
+    member.id,
+    key,
+    randomUUID(),
+    effectEvent.type,
+  ]);
   const result = { notification_id: effect };
   await client.query("select app.idempotency_complete($1, $2, $3::jsonb)", [
     ROUTE,

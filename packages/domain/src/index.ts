@@ -6,6 +6,18 @@ export { parseAmount, type ParseAmountError, type ParseAmountResult } from "./mo
 export { countChars, normalizeText, stripBidiControls } from "./text.ts";
 export * as enums from "./enums.ts";
 export {
+  EMAIL_CHANNELS,
+  EMAIL_GROUPS,
+  isEmailChannel,
+  isEmailGroup,
+  isNotificationEventType,
+  NOTIFICATION_EVENTS,
+  type EmailChannel,
+  type EmailGroup,
+  type NotificationEventDefinition,
+  type NotificationEventType,
+} from "./notifications.ts";
+export {
   DISPLAY_NAME_MAX,
   DISPLAY_NAME_MIN,
   parseDisplayName,

@@ -107,6 +107,10 @@ export default async function AccountPage() {
             <p className={styles.note}>{t("account.home.sections.securityHint")}</p>
           </li>
           <li>
+            <a href={routes.account.notifications}>{t("account.home.sections.notifications")}</a>
+            <p className={styles.note}>{t("account.home.sections.notificationsHint")}</p>
+          </li>
+          <li>
             <a href={routes.account.delete}>{t("account.home.sections.delete")}</a>
             <p className={styles.note}>{t("account.home.sections.deleteHint")}</p>
           </li>

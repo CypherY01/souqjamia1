@@ -43,6 +43,8 @@ export const routes = {
     security: "/account/security",
     // Task 3.7: the deletion request (API026, DEC81).
     delete: "/account/delete",
+    // Task 3.8: the optional email groups (API029).
+    notifications: "/account/notifications",
   },
   api: {
     // API002 and API003 (task 3.3). POST only: no state change on GET (SEC05).
@@ -66,5 +68,9 @@ export const routes = {
     profile: "/api/profile/me",
     policyAcknowledgments: "/api/me/policy-acknowledgments",
     currentPolicies: "/api/policies/current",
+    // API078, API079, API115 and API029 (task 3.8).
+    notifications: "/api/notifications",
+    unreadCount: "/api/notifications/unread-count",
+    preferences: "/api/me/preferences",
   },
 } as const;

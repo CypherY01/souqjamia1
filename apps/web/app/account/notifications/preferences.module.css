@@ -1,0 +1,20 @@
+/* The email preferences (task 3.8): one narrow column, mobile first (360, 768 and 1440 px). */
+.page {
+  max-inline-size: 36rem;
+  margin-inline: auto;
+}
+
+.intro {
+  margin-block: 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.note {
+  margin-block: var(--space-5) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.back {
+  margin-block-start: var(--space-5);
+}

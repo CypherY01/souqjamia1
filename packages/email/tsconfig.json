@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The worker and the template script run this on Node; DOM types give the shared web
+    // globals (URL), as in packages/domain. No document or window here.
+    "lib": ["ES2024", "DOM"]
+  },
+  "include": ["src"]
+}

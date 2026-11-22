@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Arabic } from "next/font/google";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { t } from "@souq/i18n";
@@ -7,8 +8,12 @@ import { log } from "@souq/log";
 import { MAIN_CONTENT_ID, SkipLink } from "../components/layout/SkipLink";
 import { SiteFooter } from "../components/layout/SiteFooter";
 import { SiteHeader, type HeaderMember } from "../components/layout/SiteHeader";
+import { memberDenial } from "../lib/auth/guards";
 import { pageSession } from "../lib/auth/page";
+import { appDb } from "../lib/db/app-client";
 import { serverEnv, turnstileStubOn } from "../lib/env";
+import { traceIdOf } from "../lib/http/trace";
+import { readUnreadCount } from "../lib/notifications/list";
 import "./tokens.css";
 import "./globals.css";
 import styles from "./layout.module.css";
@@ -31,16 +36,29 @@ export const metadata: Metadata = {
  * Task 3.1 (from task 1.5): the member variant of the header for an ordinary session. A limited
  * session or a guest sees the visitor header. If the database does not answer, the header falls
  * back to the visitor variant, and the page shows its own error state where it needs the data.
- * The unread count joins with the notifications in task 3.8.
+ * Task 3.8 (API115, item 10): the unread count for a session with member access only. If the
+ * count fails, the header shows no number and the page still renders.
  */
 async function headerMember(): Promise<HeaderMember | null> {
   try {
     const auth = await pageSession();
     if (auth === null || auth.identity.limited) return null;
-    return { name: auth.state.displayName, unreadNotifications: 0 };
+    return {
+      name: auth.state.displayName,
+      unreadNotifications: memberDenial(auth.state) === null ? await unreadOf(auth) : 0,
+    };
   } catch (error) {
     log.warn("layout.session_unavailable", { name: (error as Error).name });
     return null;
+  }
+}
+
+async function unreadOf(auth: NonNullable<Awaited<ReturnType<typeof pageSession>>>) {
+  try {
+    return await readUnreadCount(appDb(), auth.identity, traceIdOf(await headers()));
+  } catch (error) {
+    log.warn("layout.unread_unavailable", { name: (error as Error).name });
+    return 0;
   }
 }
 

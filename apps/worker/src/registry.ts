@@ -17,6 +17,7 @@
 // kind queued by a migration or the schedule has no handler here.
 import type { AnyJobDefinition } from "./job.ts";
 import { auditPurge } from "./jobs/audit.purge.ts";
+import { emailSend } from "./jobs/email.send.ts";
 
 export type Registry = ReadonlyMap<string, AnyJobDefinition>;
 
@@ -29,6 +30,6 @@ export function createRegistry(definitions: readonly AnyJobDefinition[]): Regist
   return registry;
 }
 
-export const JOBS = [auditPurge] as const;
+export const JOBS = [auditPurge, emailSend] as const;
 
 export const registry: Registry = createRegistry(JOBS);

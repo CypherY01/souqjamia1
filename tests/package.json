@@ -13,6 +13,7 @@
     "@axe-core/playwright": "catalog:",
     "@playwright/test": "catalog:",
     "@souq/domain": "workspace:*",
+    "@souq/email": "workspace:*",
     "@souq/i18n": "workspace:*",
     "@souq/log": "workspace:*",
     "@types/node": "catalog:",

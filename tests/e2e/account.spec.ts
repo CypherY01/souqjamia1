@@ -41,7 +41,7 @@ test("the gallery shows the three restricted states with the contact address", a
   await expect(section.getByRole("button", { name: "أرسل رابط الاسترجاع" })).toBeVisible();
   // DEC81: the suspended and banned states point to the address for data deletion too.
   await expect(section.getByText("ولطلب حذف بياناتك من الموقع")).toHaveCount(2);
-  const links = section.locator('a[href="mailto:contact@example.test"]');
+  const links = section.locator('a[href="mailto:contact@souqjamia1.test"]');
   await expect(links).toHaveCount(4);
   await expect(links.first()).toHaveAttribute("dir", "ltr");
   await expect(section.locator("time")).toHaveCount(2);

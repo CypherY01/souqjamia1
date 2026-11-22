@@ -45,7 +45,7 @@ for (const state of STATES) {
     await page.getByRole("button", { name: "دخول", exact: true }).click();
     await expect(page).toHaveURL(/\/restricted$/);
     await expect(page.getByRole("main")).toContainText(state.text);
-    await expect(page.getByRole("main")).toContainText("contact@example.test");
+    await expect(page.getByRole("main")).toContainText("contact@souqjamia1.test");
     // Any other page sends the account back here (FR78).
     await page.goto("/login");
     await expect(page).toHaveURL(/\/restricted$/);

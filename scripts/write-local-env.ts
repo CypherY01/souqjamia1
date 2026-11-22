@@ -7,7 +7,8 @@
 // Task 2.5: a new random password for the souq_worker role on every run, set on the local
 // database only, and the worker's DATABASE_URL with it. Restart `pnpm dev:worker` afterwards.
 // Task 3.1: the same for the souq_web role and the web app's DATABASE_URL, and the fixture
-// contact address of FR78 until the owner provides the real one (G05).
+// contact address of FR78 until the owner provides the real one (G05). Task 3.8: the worker's
+// email settings, sending to the local Mailpit.
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -41,8 +42,16 @@ export function newLocalSecrets(): LocalSecrets {
  */
 export const LOCAL_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
 
-/** FR78 fixture until G05: an address in the reserved .test domain, never a real mailbox. */
-export const LOCAL_CONTACT_EMAIL = "contact@example.test";
+/**
+ * FR78 fixture until G05: an address on souqjamia1.test, a reserved .test name, never a real
+ * mailbox (owner condition on task 3.8). The real one on souqjamia1.com comes with cost stage 1.
+ */
+export const LOCAL_CONTACT_EMAIL = "contact@souqjamia1.test";
+
+/** Task 3.8: the local sender of the worker's email, on the same reserved name. */
+export const LOCAL_EMAIL_FROM = "سوق الجامعة <no-reply@souqjamia1.test>";
+
+export const LOCAL_ORIGIN = "http://localhost:3000";
 
 export function webEnv(
   stack: Pick<LocalStack, "apiUrl" | "publishableKey">,
@@ -53,7 +62,7 @@ export function webEnv(
   return [
     GENERATED_HEADER,
     "APP_ENV=development",
-    "APP_ORIGIN=http://localhost:3000",
+    `APP_ORIGIN=${LOCAL_ORIGIN}`,
     `NEXT_PUBLIC_SUPABASE_URL=${stack.apiUrl}`,
     `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${stack.publishableKey}`,
     `NEXT_PUBLIC_TURNSTILE_SITE_KEY=${LOCAL_TURNSTILE_SITE_KEY}`,
@@ -80,8 +89,19 @@ export function roleDatabaseUrl(dbUrl: string, role: string, password: string): 
   return url.toString();
 }
 
-export function workerEnv(databaseUrl: string): string {
-  return [GENERATED_HEADER, "APP_ENV=development", `DATABASE_URL=${databaseUrl}`, ""].join("\n");
+/** Task 3.8: email goes to the local Mailpit through its HTTP API (item 1 of the plan). */
+export function workerEnv(databaseUrl: string, mailpitUrl: string): string {
+  return [
+    GENERATED_HEADER,
+    "APP_ENV=development",
+    `DATABASE_URL=${databaseUrl}`,
+    "EMAIL_TRANSPORT=mailpit",
+    `EMAIL_FROM=${LOCAL_EMAIL_FROM}`,
+    `MAILPIT_URL=${mailpitUrl}`,
+    `APP_ORIGIN=${LOCAL_ORIGIN}`,
+    `CONTACT_EMAIL=${LOCAL_CONTACT_EMAIL}`,
+    "",
+  ].join("\n");
 }
 
 /**
@@ -125,7 +145,10 @@ if (import.meta.main) {
     write(webFile, webEnv(stack, emailConfirmationRequired(), webDatabaseUrl));
     const workerPassword = newRolePassword();
     await setLocalRolePassword(stack.dbUrl, "souq_worker", workerPassword);
-    write(workerFile, workerEnv(roleDatabaseUrl(stack.dbUrl, "souq_worker", workerPassword)));
+    write(
+      workerFile,
+      workerEnv(roleDatabaseUrl(stack.dbUrl, "souq_worker", workerPassword), stack.mailpitUrl),
+    );
   } catch (error) {
     console.error(`env:local: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;

@@ -54,7 +54,7 @@ function serverEnv(port: number, confirmation: boolean): Record<string, string> 
     PROBE_TOKEN: process.env.E2E_PROBE_TOKEN ?? "",
     TRUSTED_PROXY_HOPS: "0",
     DATABASE_URL: local.DATABASE_URL ?? "",
-    CONTACT_EMAIL: "contact@example.test",
+    CONTACT_EMAIL: "contact@souqjamia1.test",
     TURNSTILE_STUB: "true",
     NEXT_TELEMETRY_DISABLED: "1",
   };
