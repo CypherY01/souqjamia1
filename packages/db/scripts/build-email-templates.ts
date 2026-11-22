@@ -15,6 +15,8 @@ export const EMAIL_TEMPLATES = {
   confirmation: "/auth/confirm",
   recovery: "/auth/recover",
   email_change: "/auth/email-change",
+  // Task 3.7: Supabase's sign-in link, used only to recover an account awaiting deletion (API028).
+  magic_link: "/auth/account-recovery",
 } as const;
 
 export type EmailTemplateName = keyof typeof EMAIL_TEMPLATES;
@@ -39,6 +41,7 @@ const OWN_NOTICE: Record<EmailTemplateName, MessageKey | null> = {
   confirmation: null,
   recovery: "email.recovery.notRequested",
   email_change: "email.email_change.notRequested",
+  magic_link: "email.magic_link.notRequested",
 };
 
 /**

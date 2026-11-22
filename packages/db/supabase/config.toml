@@ -261,6 +261,13 @@ content_path = "./supabase/templates/recovery.html"
 subject = "أكّد تغيير بريدك في سوق الجامعة"
 content_path = "./supabase/templates/email_change.html"
 
+# Task 3.7: the deletion recovery link (API027), a Supabase sign-in link that our server opens
+# for API028 only. It shares one slot with the recovery link above. Supabase's public /otp
+# endpoint sends it for any account too, so the text holds for an account not awaiting deletion.
+[auth.email.template.magic_link]
+subject = "استرجاع حسابك في سوق الجامعة"
+content_path = "./supabase/templates/magic_link.html"
+
 # Use a production-ready SMTP server
 # [auth.email.smtp]
 # enabled = true

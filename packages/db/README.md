@@ -158,6 +158,21 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **المُشغّل يعتمد على أعمدة يديرها Supabase:** يُعاد فحصه مع الكود والاختبارات عند كل ترقية، بالخطوات في `ops/runbooks/supabase-upgrade.md` (شرط المالك الثاني).
 - **DEC80: لا تغيير للبريد إلا بالرابطين، حتى من الإدارة.** تغيير البريد إدارياً خارج المرحلة الأولى، وإن احتيج يُبنى إجراء خاص بسبب مسجّل وتدقيق وقرار جديد من المالك.
 
+## حذف الحساب واسترجاعه (المهمة 3.7، DEC39 وDEC41 وDEC81)
+
+`20261122130000_account_deletion.sql`، وتفاصيله في `plan/task-3.7.md`. لا جدول جديد: الطلب هو `account_control.deletion_requested_at`، ومُشغّله يضبط `profile.hidden_from_public`.
+
+| الدالة | العمل |
+| --- | --- |
+| `app.deletion_deadline(requested_at)` | داخلية: نهاية مهلة الثلاثين يوماً (FR72)، تعريف واحد لكل الدوال |
+| `app.cancel_pending_for_account(user_id, reason)` | داخلية (DEC39): تلغي المعلّق للحساب بالسبب `account_restricted`، وترجع العدد. فارغة الآن |
+| `app.request_account_deletion()` | لـ `souq_web` (API026، مستوى `account_reauth`): فحوص `app.assert_active_member()` بترتيبها بلا شرط الشروط (DEC81)، بقفل `FOR UPDATE`. ثم الطلب والإلغاء والتدقيق `account.deletion_requested` والإشعار. ترجع وقت الطلب |
+| `app.deletion_recovery_pending(email)` | لـ `souq_web` (API027): هل يُرسل رابط استرجاع لهذا البريد. الجواب لا يغادر الخادم |
+| `app.recover_account_deletion()` | لـ `souq_web` (API028): بالجلسة المحدودة من رابط الاسترجاع فقط (DEC73)، والجلسة العادية `FORBIDDEN`. حساب ليس بانتظار الحذف `LINK_INVALID_OR_EXPIRED`، وبعد المهلة `DEADLINE_PASSED`. التدقيق `account.deletion_recovered` والإشعار |
+
+- **قاعدة DEC39 للمهام القادمة:** 5.5 (العروض) و5.6 (اللقاءات) و6.1 (الصفقات) تستبدل `app.cancel_pending_for_account` بـ `create or replace`، بدءاً من آخر نسخة لها، وتضيف إلغاء جدولها بالسبب `account_restricted`. تقفل صفوفها بعد قفل `account_control` الذي أخذه المستدعي، بترتيب الفصل 07. و7.4 تستدعيها للإيقاف والحظر النهائي.
+- **رابط الاسترجاع** رابط دخول من Supabase (`magic_link`)، وهو ورابط استعادة كلمة المرور في خانة واحدة (`recovery_token`). يُعاد فحص ذلك عند كل ترقية لـ Supabase (`ops/runbooks/supabase-upgrade.md`).
+
 ## schema `rls`
 
 - دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.
