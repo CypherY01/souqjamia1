@@ -244,10 +244,16 @@ deletion:
     tags: [account]
     summary: طلب حذف الحساب مع مهلة استرجاع 30 يوماً
     description: >-
-      يلغي الجلسات، ويخفي محتوى العضو من الصفحات العامة بلا تغيير حالته (FR72، DEC41)، ويلغي
-      صفقاته وعروضه ولقاءاته المعلّقة بالسبب account_restricted (DEC39).
-    x-spec-ids: [API026, FR72, BR40, DEC38, DEC39, DEC41, TC59]
-    x-access: member_reauth
+      يبدأ مهلة 30 يوماً، ويخفي محتوى العضو من الصفحات العامة بلا تغيير حالته (FR72، DEC41)، ويلغي
+      صفقاته وعروضه ولقاءاته المعلّقة بالسبب account_restricted (DEC39)، ويسجّل
+      account.deletion_requested في التدقيق وإشعاراً للعضو. بعد الحفظ تُلغى كل جلسات العضو (SEC01)،
+      والجلسات التي يبقيها خطأ عند Supabase Auth لا ترى إلا DELETION_PENDING. الرد 202 يحذف كوكيز
+      جلسة المتصفح ويجدد ربط الزائر، فتطلب الواجهة رمز CSRF جديداً. لا يحتاج الإقرار بالنسخة الحالية
+      من الشروط (DEC81). رموز 403: REAUTH_REQUIRED بعد خمس دقائق من آخر تحقق بكلمة المرور،
+      وDELETION_PENDING لحساب بانتظار الحذف، وACCOUNT_RESTRICTED لحساب موقوف أو محظور يطلب حذف
+      بياناته عبر بريد التواصل ويُعالَج طلبه يدوياً (DEC81). acknowledge غير true 400.
+    x-spec-ids: [API026, FR72, BR40, DEC38, DEC39, DEC41, DEC81, SEC01, TC59]
+    x-access: account_reauth
     security:
       - sessionCookie: []
         csrfToken: []
@@ -260,12 +266,12 @@ deletion:
     responses:
       '202':
         $ref: '../components/responses.yaml#/Accepted'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
-      '422':
-        $ref: '../components/responses.yaml#/Unprocessable'
 
 deletionRecoveryRequest:
   post:
@@ -273,9 +279,14 @@ deletionRecoveryRequest:
     tags: [account]
     summary: طلب رابط استرجاع حساب بانتظار الحذف
     description: >-
-      رد عام بلا كشف للحساب. يُرسل رابط استرجاع صالحاً ساعة ولمرة واحدة (DEC37، DEC41).
-      الدخول خلال المهلة يفتح شاشة الاسترجاع فقط، ومنها يُطلب الرابط.
-    x-spec-ids: [API027, FR72, DEC37, DEC41, TC59]
+      رد عام بلا كشف للحساب. يُرسل رابط استرجاع صالحاً ساعة ولمرة واحدة (DEC37، DEC41)، لحساب
+      بانتظار الحذف ومهلته قائمة فقط. البريد غير المسجّل، والحساب غير المطلوب حذفه، والمهلة المنتهية،
+      ومهلة Supabase لحساب موجود، كلها تصل كالرد العام 202 بلا رسالة. الجلسة لا تُقرأ. الدخول خلال
+      المهلة يفتح شاشة الاسترجاع فقط، ومنها يُطلب الرابط ببريد الجلسة. حدود RL03 لكل بريد تُعدّ قبل أي
+      شيء، وهي نفس عدّادات API005 وAPI006 وAPI020. رابط Supabase هذا ورابط استعادة كلمة المرور في
+      خانة واحدة، فطلب أحدهما يبطل الآخر. البريد بصيغة خاطئة 422 للحقل email برمز required أو too_big
+      أو invalid_format.
+    x-spec-ids: [API027, FR72, DEC37, DEC41, DEC52, RL03, TC59]
     x-access: guest
     x-rate-limit: [RL03, supabase_auth, turnstile]
     security:
@@ -293,17 +304,29 @@ deletionRecoveryRequest:
         $ref: '../components/responses.yaml#/BadRequest'
       '403':
         $ref: '../components/responses.yaml#/Forbidden'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
       '429':
         $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 deletionRecoveryConfirm:
   post:
     operationId: api028ConfirmDeletionRecovery
     tags: [account]
     summary: استرجاع الحساب خلال المهلة
-    description: يبقى الإيقاف أو الحظر الإداري كما هو بعد الاسترجاع (FR72، DEC41، TC59).
-    x-spec-ids: [API028, FR72, DEC41, TC59]
+    description: >-
+      صفحة الرابط بطلب GET تعرض زراً فقط، وهذا الطلب POST هو الذي يستهلك الرابط مرة واحدة. الخادم
+      يتحقق منه بجلسة لا تغادره، ثم يسترجع الحساب بها، ثم ينهيها، فلا كوكي جلسة في الرد، وجلسة المتصفح
+      لا تُقرأ. يبقى الإيقاف أو الحظر الإداري كما هو بعد الاسترجاع، وما ألغاه طلب الحذف لا يعود (FR72،
+      DEC39، DEC41، TC59). يُسجَّل account.deletion_recovered في التدقيق. النجاح 303 إلى
+      /auth/account-recovery/done. الرابط المستعمل أو المنتهي (ساعة) أو الأقدم من رابط أحدث، أو رابط
+      لحساب ليس بانتظار الحذف، 422 LINK_INVALID_OR_EXPIRED. وبعد 30 يوماً كاملة من طلب الحذف 422
+      DEADLINE_PASSED.
+    x-spec-ids: [API028, FR72, DEC37, DEC39, DEC41, DEC73, TC59]
     x-access: guest
+    x-rate-limit: [supabase_auth]
     security:
       - csrfToken: []
     requestBody:
@@ -321,6 +344,10 @@ deletionRecoveryConfirm:
         $ref: '../components/responses.yaml#/Forbidden'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
 
 preferences:
   patch:
