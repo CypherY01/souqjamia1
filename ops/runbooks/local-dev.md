@@ -522,10 +522,62 @@
 
     ```sql
     select action, metadata_minimal, occurred_at from app.audit_event
-     where action like account.% order by occurred_at desc limit 10;
+     where action like 'account.%' order by occurred_at desc limit 10;
     ```
 
     `account.email_change_requested`، ثم `account.email_change_confirmed` مرتين (`current` و`new`)، ثم `account.email_changed`، و`account.password_changed`. بلا عناوين ولا رموز.
+
+## مراجعة حذف الحساب واسترجاعه (المهمة 3.7)
+
+فيها هجرة جديدة (`20261122130000_account_deletion.sql`)، وتغيير في `config.toml`: قالب «استرجاع حسابك» العربي (`magic_link`). لا متغير بيئة جديد، فلا `pnpm env:local`. الأوامر من جذر المستودع. Mailpit على <http://127.0.0.1:54324>، وStudio على <http://127.0.0.1:54323>.
+
+1. **الفرع:** `git checkout phase1/task-3.7-deletion`، ثم أوقف `pnpm dev` وشغّله من جديد.
+2. **Supabase:** على جهازك طبّقتُ الإعداد والهجرة في 22 نوفمبر 2026، فتخطَّ هذه الخطوة. على جهاز آخر:
+   - `pnpm db:stop` ثم `pnpm db:start`: يطبّق إعداد `config.toml`.
+   - `pnpm --filter @souq/db exec supabase migration up`: يطبّق الهجرة بلا مسح البيانات.
+3. **الاختبارات:** `pnpm test:integration`. تنجح كلها، ومنها `deletion.test.ts`. فيه اختبار شرطك على البند 8: «owner condition on item 8: the old session is refused at once, even when Supabase Auth cannot revoke it».
+4. **صفحة الحذف:** ادخل بحساب تجريبي، ثم «صفحة حسابي»، ثم «حذف الحساب» في «أقسام الحساب» (<http://localhost:3000/account/delete>).
+   - «ماذا يحدث عند الحذف»: ست نقاط، منها مهلة الثلاثين يوماً وطريقة الاسترجاع، وأن المعلّق يُلغى ولا يعود.
+   - «تأكيد الحذف»: «التحقق صالح حتى ...» لأنك دخلت للتو، ومربع «قرأت ما سبق، وأريد حذف حسابي»، وزر «احذف حسابي» معطّل حتى تختار المربع.
+5. **جهاز آخر (لفحص إلغاء الجلسات):** ادخل بنفس الحساب في نافذة تصفح متخفٍ، واتركها مفتوحة.
+6. **الحذف:** اختر المربع ثم «احذف حسابي».
+   - «استلمنا طلب حذف حسابك» وطريقة الاسترجاع، والمؤشر عليها.
+   - حدّث الصفحة، والنافذة المتخفية: كلتاهما خرجت من الحساب (SEC01).
+   - لا بريد في Mailpit الآن: بريد «طُلب حذف حسابك» في 3.8 (شرطك على البند 2). والإشعار داخل الموقع في Studio، جدول `public.notification`: صف `account.deletion_requested`.
+7. **الدخول خلال المهلة (DEC41):** ادخل بنفس الحساب: تصل `/restricted` وحدها.
+   - «حسابك بانتظار الحذف» وموعد نهاية المهلة (بعد 30 يوماً)، وقسم «استرجاع الحساب» ببريدك وأداة Turnstile.
+   - أي صفحة عضو أخرى، مثل `/account`، تعيدك إلى `/restricted`.
+8. **طلب الرابط:** «أرسل رابط الاسترجاع».
+   - «أرسلنا رابط الاسترجاع»، والزر ينتظر 60 ثانية. وطلب آخر من صفحة أخرى قبل دقيقة: «طلبت روابط كثيرة...» (RL03).
+   - في Mailpit رسالة «استرجاع حسابك في سوق الجامعة» بالعربية: زر «استرجاع الحساب»، وسطر المدة (ساعة)، وسطر من لم يسجّل (DEC65). كانت هذه الرسالة إنجليزية من Supabase قبل هذه المهمة.
+9. **الرابط:** اضغط زر الرسالة.
+   - صفحة `/auth/account-recovery` بلا الرمز في العنوان، وزر «استرجع حسابي». لا طلب `POST` قبل الضغط (تبويب Network).
+   - اضغط الزر: «ألغينا طلب حذف حسابك»، وزر «إلى حسابي» لأن هذا المتصفح داخل. اضغطه: «حسابي» يعمل كما كان.
+   - افتح الرابط نفسه مرة أخرى واضغط الزر: «الرابط انتهى أو استُخدم» وزر «الدخول».
+10. **الحساب الموقوف أو المحظور (DEC81):** حساب تجريبي آخر، ثم في Studio، SQL Editor (بدّل البريد):
+
+    ```sql
+    update public.account_control set status = 'banned'
+     where user_id = (select id from auth.users where email = 'you@example.test');
+    ```
+
+    ادخل به: `/restricted` تعرض «حسابك محظور» وبريد التواصل، وتحته «ولطلب حذف بياناتك من الموقع، راسلنا على نفس البريد. نعالج طلبك يدوياً.». ولا يصل صفحة الحذف.
+11. **بعد المهلة (TC59):** للحساب الأول بعد حذفه مرة أخرى (الخطوة 6):
+
+    ```sql
+    update public.account_control set deletion_requested_at = now() - interval '31 days'
+     where user_id = (select id from auth.users where email = 'you@example.test');
+    ```
+
+    ادخل به: «انتهت مهلة الاسترجاع» بلا نموذج الرابط.
+12. **سجل التدقيق:**
+
+    ```sql
+    select action, occurred_at from app.audit_event
+     where action like 'account.deletion%' order by occurred_at desc limit 10;
+    ```
+
+    `account.deletion_requested` لكل طلب، و`account.deletion_recovered` للاسترجاع. بلا عناوين ولا رموز.
 
 ## الاختبارات
 
