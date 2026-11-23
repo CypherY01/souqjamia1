@@ -26,6 +26,10 @@
   order: 3;
   display: flex;
   flex-basis: 100%;
+  /* Task 4.1: a flex item's automatic minimum is its content's width. While the web font is
+     still loading, the fallback font makes the input's natural width about 340 px, and the form
+     could not shrink below it: 113 px of horizontal scroll at 360 px (shell.spec.ts). */
+  min-inline-size: 0;
   gap: var(--space-2);
 }
 

@@ -31,6 +31,18 @@ for (const { name, path } of PAGES) {
       expect(await hasHorizontalScroll(page)).toBe(false);
     });
 
+    // Task 4.1: while the web font loads, the fallback font made the header search input about
+    // 340 px wide, and the form could not shrink below it (113 px of scroll at 360 px, one run
+    // in 30 under load). Blocking the font files keeps the fallback font for the whole test.
+    test("has no horizontal scrolling with the fallback font, before the web font loads", async ({
+      page,
+    }) => {
+      await page.route("**/_next/static/media/*", (route) => route.abort());
+      await page.goto(path);
+      expect(await page.evaluate(() => document.fonts.status)).toBeDefined();
+      expect(await hasHorizontalScroll(page)).toBe(false);
+    });
+
     test("has no WCAG 2.2 AA violations (NFR03)", async ({ page }) => {
       await page.goto(path);
       const results = await new AxeBuilder({ page }).withTags(WCAG_22_AA).analyze();
