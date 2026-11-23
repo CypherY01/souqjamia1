@@ -54,7 +54,7 @@ export const LOCAL_EMAIL_FROM = "سوق الجامعة <no-reply@souqjamia1.test
 export const LOCAL_ORIGIN = "http://localhost:3000";
 
 export function webEnv(
-  stack: Pick<LocalStack, "apiUrl" | "publishableKey">,
+  stack: Pick<LocalStack, "apiUrl" | "publishableKey" | "secretKey">,
   confirmation: boolean,
   databaseUrl: string,
   secrets: LocalSecrets = newLocalSecrets(),
@@ -72,6 +72,8 @@ export function webEnv(
     "TRUSTED_PROXY_HOPS=0",
     `DATABASE_URL=${databaseUrl}`,
     `CONTACT_EMAIL=${LOCAL_CONTACT_EMAIL}`,
+    // Task 4.1 (SEC08): the local stack's secret key, for signed Storage links (server-only).
+    `SUPABASE_SECRET_KEY=${stack.secretKey}`,
     "",
   ].join("\n");
 }
@@ -91,7 +93,7 @@ export function roleDatabaseUrl(dbUrl: string, role: string, password: string): 
 
 /** Task 3.8: email goes to the local Mailpit through its HTTP API (item 1 of the plan). */
 export function workerEnv(
-  stack: Pick<LocalStack, "apiUrl" | "publishableKey">,
+  stack: Pick<LocalStack, "apiUrl" | "publishableKey" | "secretKey">,
   databaseUrl: string,
   mailpitUrl: string,
 ): string {
@@ -102,6 +104,8 @@ export function workerEnv(
     // Task 4.0 (DEC82): the worker checks at start-up that Supabase Auth verifies Turnstile.
     `SUPABASE_URL=${stack.apiUrl}`,
     `SUPABASE_PUBLISHABLE_KEY=${stack.publishableKey}`,
+    // Task 4.1 (SEC08): Storage for image.process and media.cleanup.
+    `SUPABASE_SECRET_KEY=${stack.secretKey}`,
     "EMAIL_TRANSPORT=mailpit",
     `EMAIL_FROM=${LOCAL_EMAIL_FROM}`,
     `MAILPIT_URL=${mailpitUrl}`,

@@ -66,6 +66,12 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
     thirdParty: "DEC77 app.notification_email(): a member's identity changes nothing",
     guest: "DEC77 app.notification_email(): a guest reads the email of the given notification only",
   },
+  "app.upload_status(uuid)": {
+    reads:
+      "API039: the state of the session member's own upload and its private preview key (task 4.1)",
+    thirdParty: "DEC77 app.upload_status(): another member's session reads only its own uploads",
+    guest: "DEC77 app.upload_status(): a guest is UNAUTHENTICATED",
+  },
   "app.rate_limit_check(text, bytea, integer, interval)": {
     reads: "the seconds left on one counter, keyed by a hash the server computes (task 2.4)",
     thirdParty: "DEC77 app.rate_limit_check(): a member's identity changes nothing",

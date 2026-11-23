@@ -17,7 +17,11 @@ export interface ScheduleEntry {
 }
 
 /** Add the recurring jobs of later tasks here (8.1 retention, 5.5 offer expiry...). */
-export const SCHEDULE: readonly ScheduleEntry[] = [{ kind: "audit.purge", every: "1 day" }];
+export const SCHEDULE: readonly ScheduleEntry[] = [
+  { kind: "audit.purge", every: "1 day" },
+  // Task 4.1 (RET01, item 12): expired uploads, raw objects and the files of deleted images.
+  { kind: "media.cleanup", every: "1 hour" },
+];
 
 export const SCHEDULER_INTERVAL_MS = 15_000;
 

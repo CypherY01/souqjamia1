@@ -192,6 +192,25 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **لا نص حر في البريد (BR38):** دوال العرض لا تأخذ نص عضو أصلاً. البريد الاختياري يقول إن شيئاً تغيّر، ويفتح `/notifications`.
 - **اختبار يرسل إشعاراً بحدث تجريبي** يضيف صفاً `test.<...>` للجدول ثم يحذفه مع إشعاراته ومهامه (`tests/integration/_harness/notifications.ts`).
 
+## الصور (المهمة 4.1، DEC83)
+
+`20261123090000_media.sql`، وتفاصيله في `plan/task-4.1.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| الدلاء الثلاثة | `quarantine` (خاص، 5 MiB، والأنواع الثلاثة بالترويسة)، و`media-private` (الأصل المعالج والمقاسات لكل الأغراض)، و`media-public` (عام، فارغ حتى 4.2 و4.7). لا سياسة على `storage.objects`، فالوصول بالروابط الموقّعة من الخادم فقط |
+| `public.media_asset` و`public.media_derivative` | RLS مفعّلة وبلا منح. القيم المعلنة على الصورة، والحقيقية على المقاسات. مفاتيح الملفات الخاصة ثابتة: `<media_id>/<variant>.webp` |
+| `app.authorize_upload(...)` | لـ `souq_web` (API037): يعيد فحص القيم، ثم حصتا RL09 (60 في الساعة و200 MiB في اليوم من الحجم المعلن)، ثم صف `pending` بمسار عشوائي ومهلة خمس دقائق. الغرض `chat` مرفوض حتى 5.3 |
+| `app.complete_upload(id, checksum, expected_size)` | لـ `souq_web` (API038): الملف في الحجر بالحجم المعلن وأُنشئ قبل المهلة، ثم `uploaded` ومهمة `image.process`. بعد المهلة `DEADLINE_PASSED` (DEC83) |
+| `app.upload_status(id)` | لـ `souq_web` (API039): صورة العضو نفسه فقط، ومفتاح معاينة `w600` بعد الجاهزية، ولا معاينة لصورة البطاقة (DEC83) |
+| `app.delete_upload(id)` | لـ `souq_web` (API040): غير المرتبطة فقط. المرتبطة (`expires_at` فارغ) `STATE_CONFLICT` |
+| `app.media_begin_processing` و`app.media_processed` و`app.media_rejected` | لـ `souq_worker` (`image.process`): كلها تفحص الحالة قبل الانتقال، فالتكرار لا يغيّر شيئاً (DEC71). مجموعة المقاسات تُفحص: الأصل وحده للبطاقة (DEC45)، والأربعة لغيرها |
+| `app.media_cleanup_claim(limit)` و`app.media_cleanup_done(raw, purged)` | لـ `souq_worker` (`media.cleanup`، كل ساعة، RET01): حذف المعلّق المنتهي وغير المرتبط بعد 24 ساعة، ثم الملفات الخام بعد ساعتين من الإذن (مدة رمز الرفع، DEC83)، وملفات الصور المحذوفة |
+| `app.rate_limit_take_amount(...)` | داخلية: حصة بكمية، مثل `app.rate_limit_take` لعملية واحدة |
+
+- **ربط الصورة في المهام القادمة** (4.2 و4.7 و5.3 و7.6): دالة الربط تتحقق من المالك والغرض والسياق وأن الحالة `ready`، ثم تجعل `expires_at` فارغاً. والفك يضع `detached_at` و`expires_at` بعد 24 ساعة. والنسخ إلى `media-public` بعد التزام النشر فقط، بصف `visibility = 'public'`، وإزالته عند الإخفاء والأرشفة.
+- **الحدود في مكانين:** الهجرة و`packages/domain/src/media.ts`، واختبار التكامل يطابقهما.
+
 ## schema `rls`
 
 - دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.

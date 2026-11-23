@@ -1,6 +1,6 @@
 # ترقية Supabase: ما يُفحص بعدها
 
-يُتبع عند كل ترقية لـ Supabase CLI (الإصدار في الـ catalog في `pnpm-workspace.yaml`)، وعند كل ترقية للمشروع المستضاف أو لإصدار Auth فيه (من مرحلة التكلفة 1). شرط المالك عند اعتماد DEC79 (المهمة 3.6). وأضافت المهمة 3.7 رابط استرجاع الحساب.
+يُتبع عند كل ترقية لـ Supabase CLI (الإصدار في الـ catalog في `pnpm-workspace.yaml`)، وعند كل ترقية للمشروع المستضاف أو لإصدار Auth فيه (من مرحلة التكلفة 1). شرط المالك عند اعتماد DEC79 (المهمة 3.6). وأضافت المهمة 3.7 رابط استرجاع الحساب، والمهمة 4.1 Storage (DEC83).
 
 ## لماذا
 
@@ -19,6 +19,8 @@
 | أسماء الإعدادات في `config.toml`: `double_confirm_changes` و`secure_password_change` و`[auth.email.notification.*]` و`[auth.email.template.magic_link]` | `packages/db/supabase/config.toml` و`tests/unit/supabase-config.test.ts` | إعداد يُتجاهل بصمت بعد الترقية |
 | رابط الدخول بالبريد (`signInWithOtp` بـ `shouldCreateUser: false`) يُرسل بقالب `magic_link`، ولعنوان بلا حساب يرجع `otp_disabled` بلا إنشاء حساب | API027 في `apps/web/lib/account/deletion.ts` (المهمة 3.7) | تصل رسالة إنجليزية، أو يُنشأ حساب بلا كلمة مرور، أو يتغير الرد العام |
 | رابط الدخول ورابط استعادة كلمة المرور في خانة واحدة (`recovery_token`): كل منهما يُقبل بنوع الآخر، والأحدث يبطل الأقدم، والستون ثانية مشتركة | API027 وAPI028 (`plan/task-3.7.md`) | إن فُصلت الخانتان فلا ضرر، والاختبار الذي يثبّتها يفشل فيُحدَّث. وإن صار رابط الدخول يفتح جلسة بكلمة المرور في `amr`، يرفضه API028 (`INTERNAL_ERROR`) |
+| رمز رابط الرفع الموقّع في Storage يعيش ساعتين (`SIGNED_UPLOAD_URL_EXPIRATION_TIME`، إعداد للخادم كله)، وللإنشاء فقط بلا `upsert` | DEC83: الملف الخام يبقى حتى تنتهي مدة الرمز ثم يحذفه `media.cleanup` (`20261123090000_media.sql`، `UPLOAD_TOKEN_LIFETIME_SECONDS` في `packages/domain/src/media.ts`) | إن طالت المدة، يستطيع الرمز إنشاء الملف الخام من جديد بعد حذفه. الاختبار «DEC83 the signed upload token lives at most two hours» يفشل، فتُرفع المدة في الدالة والثابت معاً بقرار |
+| `storage.objects`: العمودان `metadata ->> 'size'` و`created_at`، وRLS مفعّلة بلا سياسات لنا، والحذف بـ SQL ممنوع (`protect_objects_delete`) | `app.complete_upload()` تقرأ الحجم ووقت الإنشاء (API038)، والعامل يحذف عبر واجهة Storage | إن تغيّر اسم المفتاح، يُرفض كل إعلان رفع (`VALIDATION_FAILED`). وإن صارت سياسة افتراضية تفتح دلواً، يفشل `storage-access.test.ts` |
 | جلسة رابط الدخول `amr` فيها `otp` فقط | `app.recover_account_deletion()` لا تقبل إلا الجلسة المحدودة (DEC73) | يفشل الاسترجاع كله |
 
 ## الخطوات
@@ -48,6 +50,7 @@
    - `reauth.test.ts` و`password-change.test.ts` و`reset.test.ts` و`auth-guards.test.ts`.
    - `deletion.test.ts` (المهمة 3.7): «Supabase: a deletion recovery link and a recovery link share one slot» يثبّت سلوك الخانة المشتركة، والرابط الحقيقي من Mailpit يسترجع الحساب، والرد العام في API027.
    - `supabase-local.test.ts` و`tests/unit/supabase-config.test.ts`.
+   - `storage-access.test.ts` و`media-upload.test.ts` (المهمة 4.1): لا وصول مباشر لأي دلو، ومدة رمز الرفع، وحجم الملف في `storage.objects`.
 5. **E2E:** `pnpm db:e2e`، ثم `pnpm build` و`pnpm test:e2e`، ومنها `security.spec.ts` و`deletion.spec.ts`، ثم `pnpm db:restart`.
    - **فحص Turnstile عند التشغيل (DEC82):** يعتمد على رمزي خطأ من Supabase Auth: `captcha_failed` لطلب دخول بلا رمز والتحقق مفعّل، و`invalid_credentials` لحساب غير موجود والتحقق معطل. يثبتهما `supabase-local.test.ts` (التحقق مفعّل) و`tests/e2e/global-setup.ts` (معطل). إن تغيّر أحدهما يرفض الموقع والعامل التشغيل (`check: unknown`)، فيُحدَّث `classifyCaptchaProbe` في `packages/domain/src/auth-captcha.ts` بقرار.
 6. **المشروع المستضاف (من مرحلة التكلفة 1):** نفس الخطوتين 2 و3 على قاعدته، ثم المراجعة اليدوية في القسم «مراجعة إعادة التحقق وتغيير البريد وكلمة المرور (المهمة 3.6)» في `local-dev.md` على staging.

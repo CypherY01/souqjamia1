@@ -68,6 +68,10 @@ export const serverEnvSchema = publicEnvSchema
     // Task 3.1, FR78: the contact address shown to restricted accounts for objections (section 3
     // of the addendum). The real address comes with G05; locally a fixture.
     CONTACT_EMAIL: z.email(),
+    // Task 4.1 (SEC08): the Supabase secret key (sb_secret_...), server-only, to sign upload links
+    // to the quarantine bucket and 60-second private links. Never NEXT_PUBLIC_: pnpm check:bundle
+    // fails if it reaches a browser file. ops/runbooks/secrets.md: a separate key once hosted.
+    SUPABASE_SECRET_KEY: z.string().regex(/^sb_secret_[A-Za-z0-9_-]{16,}$/),
     // DEC74: RL02 signups per client address and hour (a shared campus network counts as one
     // address). Optional: unset or empty means 300. Reviewed after the load test (task 8.4).
     SIGNUP_IP_LIMIT_PER_HOUR: z

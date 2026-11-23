@@ -30,6 +30,8 @@ export const routes = {
   sell: "/sell",
   messages: "/messages",
   notifications: "/notifications",
+  // Task 4.1: the upload test page (dev only, 404 with APP_ENV=production, like /dev/ui).
+  devUpload: "/dev/upload",
   account: {
     // Task 3.5: the account page (API015) and the profile edit (API016).
     home: "/account",
@@ -72,5 +74,9 @@ export const routes = {
     notifications: "/api/notifications",
     unreadCount: "/api/notifications/unread-count",
     preferences: "/api/me/preferences",
+    // API037 to API040 (task 4.1).
+    uploadsAuthorize: "/api/uploads/authorize",
+    upload: (id: string) => `/api/uploads/${encodeURIComponent(id)}`,
+    uploadComplete: (id: string) => `/api/uploads/${encodeURIComponent(id)}/complete`,
   },
 } as const;

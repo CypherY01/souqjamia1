@@ -46,3 +46,23 @@ export {
   type PasswordError,
   type PasswordHints,
 } from "./account/password.ts";
+export {
+  declaredImageProblem,
+  IMAGE_MAX_BYTES,
+  IMAGE_MAX_PIXELS,
+  IMAGE_MIME_TYPES,
+  isImageMime,
+  MEDIA_BUCKETS,
+  PRIVATE_LINK_SECONDS,
+  privateObjectKey,
+  RL09_BYTES_PER_DAY,
+  RL09_UPLOADS_PER_HOUR,
+  UNATTACHED_LIFETIME_HOURS,
+  UPLOAD_PURPOSES,
+  UPLOAD_TOKEN_LIFETIME_SECONDS,
+  UPLOAD_WINDOW_SECONDS,
+  VARIANT_EDGES,
+  variantsFor,
+  type DeclaredImage,
+  type ImageMime,
+} from "./media.ts";

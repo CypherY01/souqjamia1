@@ -17,7 +17,15 @@ export function serverLogFile(port: number): string {
 }
 
 export function localWebEnv(): Record<string, string> {
-  const file = join(REPO_ROOT, "apps", "web", ".env.local");
+  return readEnvFile(join(REPO_ROOT, "apps", "web", ".env.local"));
+}
+
+/** Task 4.1: apps/worker/.env.local, for the worker that processes the uploads of /dev/upload. */
+export function localWorkerEnv(): Record<string, string> {
+  return readEnvFile(join(REPO_ROOT, "apps", "worker", ".env.local"));
+}
+
+function readEnvFile(file: string): Record<string, string> {
   if (!existsSync(file)) {
     throw new Error("E2E needs the local Supabase stack: run pnpm db:e2e, then pnpm env:local.");
   }

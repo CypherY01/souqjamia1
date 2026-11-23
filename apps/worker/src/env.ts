@@ -71,6 +71,10 @@ export const workerEnvSchema = z
     // app's NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
     SUPABASE_URL: z.url(),
     SUPABASE_PUBLISHABLE_KEY: z.string().startsWith("sb_publishable_"),
+    // Task 4.1 (SEC08): Storage with the secret key (sb_..., server-only), to read the raw upload,
+    // write the private derivatives and remove files (image.process, media.cleanup).
+    // ops/runbooks/secrets.md: a separate key for the worker once hosted.
+    SUPABASE_SECRET_KEY: z.string().regex(/^sb_secret_[A-Za-z0-9_-]{16,}$/),
   })
   .refine((env) => env.EMAIL_TRANSPORT !== "mailpit" || env.MAILPIT_URL !== undefined, {
     path: ["MAILPIT_URL"],

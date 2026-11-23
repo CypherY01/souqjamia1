@@ -12,7 +12,9 @@
     "@souq/domain": "workspace:*",
     "@souq/email": "workspace:*",
     "@souq/log": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "pg": "catalog:",
+    "sharp": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

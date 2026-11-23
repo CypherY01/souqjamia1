@@ -33,6 +33,8 @@ export interface JobDefinition<P = unknown> {
   readonly kind: string;
   readonly payload: z.ZodType<P>;
   readonly timeoutMs: number;
+  /** At most this many jobs of this kind run at once (task 4.1). Unset: only the loop's limit. */
+  readonly concurrency?: number;
   readonly run: (payload: P, context: JobContext) => Promise<JobResult | undefined>;
 }
 
@@ -41,6 +43,7 @@ export interface AnyJobDefinition {
   readonly kind: string;
   readonly payload: z.ZodType;
   readonly timeoutMs: number;
+  readonly concurrency?: number;
   readonly run: (payload: never, context: JobContext) => Promise<JobResult | undefined>;
 }
 
@@ -60,12 +63,17 @@ export function defineJob<P>(definition: {
   kind: string;
   payload: z.ZodType<P>;
   timeoutMs?: number;
+  concurrency?: number;
   run: (payload: P, context: JobContext) => Promise<JobResult | undefined>;
 }): JobDefinition<P> {
   const timeoutMs = definition.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   if (!JOB_KIND.test(definition.kind)) throw new Error(`invalid job kind: ${definition.kind}`);
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT_MS) {
     throw new Error(`job ${definition.kind}: timeout must be 1 ms to 4 minutes`);
+  }
+  const { concurrency } = definition;
+  if (concurrency !== undefined && (!Number.isInteger(concurrency) || concurrency < 1)) {
+    throw new Error(`job ${definition.kind}: concurrency must be a positive integer`);
   }
   return { ...definition, timeoutMs };
 }

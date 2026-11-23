@@ -2,6 +2,8 @@
 // kinds, runs each handler with its timeout outside any transaction, then marks the attempt done
 // or failed. Delivery is at least once (DEC71, see registry.ts).
 //  - Up to four jobs at a time. A claim asks for as many jobs as there are free slots.
+//  - A kind with its own limit (concurrency in defineJob, task 4.1: image.process runs two at a
+//    time, SEC08) is claimed on its own, for its free slots only; the other kinds share the rest.
 //  - After a claim that found jobs, ask again at once. After an empty one, wait: one second
 //    first, then one second longer each time, up to five (owner's improvement on item 5).
 //  - Stopping: no new claims, wait for running jobs up to the grace period. A job still running
@@ -67,6 +69,7 @@ export interface JobLoop {
 }
 
 interface Running {
+  readonly kind: string;
   readonly promise: Promise<void>;
   readonly controller: AbortController;
 }
@@ -79,7 +82,10 @@ export function startJobLoop(options: LoopOptions): JobLoop {
   const { store, registry, db } = options;
   const logger = options.logger ?? defaultLog;
   const concurrency = options.concurrency ?? CONCURRENCY;
-  const kinds = [...registry.keys()];
+  const limited = [...registry.values()].filter((d) => d.concurrency !== undefined);
+  const shared = [...registry.values()]
+    .filter((d) => d.concurrency === undefined)
+    .map((d) => d.kind);
   const running = new Map<string, Running>();
   let stopping = false;
   // Set at the end of the grace period: abandoned jobs no longer touch the database.
@@ -210,7 +216,36 @@ export function startJobLoop(options: LoopOptions): JobLoop {
       running.delete(job.id);
       wake();
     });
-    running.set(job.id, { promise, controller });
+    running.set(job.id, { kind: job.kind, promise, controller });
+  }
+
+  function runningOf(kind: string): number {
+    let count = 0;
+    for (const entry of running.values()) if (entry.kind === kind) count += 1;
+    return count;
+  }
+
+  /**
+   * One claim per kind with its own limit, then one for the shared kinds. Jobs already claimed
+   * are returned even if a later claim fails, so they run now instead of waiting for their lease.
+   */
+  async function claimFree(free: number): Promise<ClaimedJob[]> {
+    const jobs: ClaimedJob[] = [];
+    let left = free;
+    try {
+      for (const definition of limited) {
+        const slots = Math.min(left, (definition.concurrency ?? 0) - runningOf(definition.kind));
+        if (slots <= 0) continue;
+        const claimed = await store.claim([definition.kind], slots);
+        jobs.push(...claimed);
+        left -= claimed.length;
+      }
+      if (left > 0 && shared.length > 0) jobs.push(...(await store.claim(shared, left)));
+    } catch (error) {
+      if (jobs.length === 0) throw error;
+      logger.error("worker.db_error", { error });
+    }
+    return jobs;
   }
 
   async function claimLoop(): Promise<void> {
@@ -223,7 +258,7 @@ export function startJobLoop(options: LoopOptions): JobLoop {
       }
       let jobs: ClaimedJob[];
       try {
-        jobs = await store.claim(kinds, free);
+        jobs = await claimFree(free);
       } catch (error) {
         logger.error("worker.db_error", { error });
         idleMs = IDLE_MAX_MS;

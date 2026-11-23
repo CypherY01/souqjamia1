@@ -27,6 +27,8 @@ function parseDotenv(text: string): Record<string, string> {
 const stack = {
   apiUrl: "http://127.0.0.1:54321",
   publishableKey: "sb_publishable_localdevelopmentkey",
+  // Built at run time: no committed secret-like string (CLAUDE.md).
+  secretKey: ["sb", "secret", randomBytes(16).toString("hex")].join("_"),
 };
 
 const webDbUrl = roleDatabaseUrl(localDbUrl, "souq_web", newRolePassword());
@@ -49,6 +51,14 @@ describe("pnpm env:local", () => {
     expect(env.DATABASE_URL).toBe(webDbUrl);
     expect(env.CONTACT_EMAIL).toBe(LOCAL_CONTACT_EMAIL);
     expect(LOCAL_CONTACT_EMAIL.endsWith("@souqjamia1.test")).toBe(true);
+  });
+
+  it("task 4.1: the web app and the worker get the local stack's secret key for Storage", () => {
+    const web = loadServerEnv(parseDotenv(webEnv(stack, false, webDbUrl)));
+    expect(web.SUPABASE_SECRET_KEY).toBe(stack.secretKey);
+    const url = roleDatabaseUrl(localDbUrl, "souq_worker", newRolePassword());
+    const worker = loadWorkerEnv(parseDotenv(workerEnv(stack, url, "http://127.0.0.1:54324")));
+    expect(worker.SUPABASE_SECRET_KEY).toBe(stack.secretKey);
   });
 
   it("task 1.6: new random server secrets on every run, no proxy locally", () => {

@@ -18,6 +18,8 @@
 import type { AnyJobDefinition } from "./job.ts";
 import { auditPurge } from "./jobs/audit.purge.ts";
 import { emailSend } from "./jobs/email.send.ts";
+import { imageProcess } from "./jobs/image.process.ts";
+import { mediaCleanup } from "./jobs/media.cleanup.ts";
 
 export type Registry = ReadonlyMap<string, AnyJobDefinition>;
 
@@ -30,6 +32,6 @@ export function createRegistry(definitions: readonly AnyJobDefinition[]): Regist
   return registry;
 }
 
-export const JOBS = [auditPurge, emailSend] as const;
+export const JOBS = [auditPurge, emailSend, imageProcess, mediaCleanup] as const;
 
 export const registry: Registry = createRegistry(JOBS);

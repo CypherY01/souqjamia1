@@ -23,6 +23,7 @@
     "pg": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "sharp": "catalog:",
     "smol-toml": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",

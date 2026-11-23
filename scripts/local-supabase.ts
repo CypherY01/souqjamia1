@@ -15,7 +15,10 @@ export const CONFIG_TOML = join(DB_DIR, "supabase", "config.toml");
 export interface LocalStack {
   readonly apiUrl: string;
   readonly publishableKey: string;
-  /** Local-only key, used by integration tests for admin calls. Never written to app env files. */
+  /**
+   * The local stack's own secret key: integration tests use it for admin calls, and since task 4.1
+   * pnpm env:local writes it for the web app and the worker (Storage, SEC08). Local only.
+   */
   readonly secretKey: string;
   readonly mailpitUrl: string;
   /** postgres role on the local database (task 2.1). Integration tests only. */

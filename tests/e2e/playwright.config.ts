@@ -11,6 +11,7 @@
 // Task 3.5: both run with TURNSTILE_STUB, the local stand-in for the Turnstile widget, so no test
 // waits on Cloudflare in the browser (2 to 8 seconds per solve, task 3.4). The owner's local
 // review uses the real widget.
+// Task 4.1: a worker runs beside them (worker() below), for the uploads of upload.spec.ts.
 // Task 4.0 (DEC82): Supabase Auth does not verify the token either. E2E runs against local
 // Supabase started with `pnpm db:e2e` (in CI, SUPABASE_AUTH_CAPTCHA_ENABLED=false), and
 // global-setup.ts refuses a stack that still verifies. The servers run with APP_ENV=test, the
@@ -21,7 +22,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineConfig } from "@playwright/test";
-import { localWebEnv } from "./local-env.ts";
+import { localWebEnv, localWorkerEnv } from "./local-env.ts";
 import { CONFIRM_PORT, PORT } from "./ports.ts";
 
 // Server secrets for this run (task 1.6): random, set once in the main process; the test workers
@@ -46,6 +47,8 @@ function serverEnv(port: number, confirmation: boolean): Record<string, string> 
     TRUSTED_PROXY_HOPS: "0",
     DATABASE_URL: local.DATABASE_URL ?? "",
     CONTACT_EMAIL: "contact@souqjamia1.test",
+    // Task 4.1: signed Storage links (upload.spec.ts).
+    SUPABASE_SECRET_KEY: local.SUPABASE_SECRET_KEY ?? "",
     TURNSTILE_STUB: "true",
     NEXT_TELEMETRY_DISABLED: "1",
   };
@@ -61,6 +64,20 @@ function server(port: number, confirmation: boolean) {
     timeout: 60_000,
     // Variables checked at start-up (OPS05). The public values were inlined by `pnpm build`.
     env: serverEnv(port, confirmation),
+  };
+}
+
+// Task 4.1: one worker, as `pnpm dev:worker` runs it, so the uploads of /dev/upload are processed
+// (upload.spec.ts). APP_ENV=test because Supabase Auth does not verify Turnstile here (DEC82).
+// It also sends the email jobs that tests leave queued, to the local Mailpit only.
+function worker() {
+  return {
+    command: "node apps/worker/src/main.ts",
+    cwd: "../..",
+    wait: { stdout: /worker.started/ },
+    reuseExistingServer: false,
+    timeout: 60_000,
+    env: { ...localWorkerEnv(), APP_ENV: "test" },
   };
 }
 
@@ -82,5 +99,5 @@ export default defineConfig({
     { name: "tablet-768", use: { viewport: { width: 768, height: 1024 } } },
     { name: "desktop-1440", use: { viewport: { width: 1440, height: 900 } } },
   ],
-  webServer: [server(PORT, false), server(CONFIRM_PORT, true)],
+  webServer: [server(PORT, false), server(CONFIRM_PORT, true), worker()],
 });

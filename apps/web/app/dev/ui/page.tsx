@@ -8,6 +8,7 @@ import { AccountRestrictedNotice } from "../../../components/account/AccountRest
 import { RequestRecoveryForm } from "../../../components/account/RequestRecoveryForm";
 import { SignOutButton } from "../../../components/auth/SignOutButton";
 import { SiteHeader } from "../../../components/layout/SiteHeader";
+import { UploadStatus, type UploadStatusState } from "../../../components/media/UploadStatus";
 import { MarkAllRead } from "../../../components/notifications/MarkAllRead";
 import { NotificationList } from "../../../components/notifications/NotificationList";
 import { PreferencesForm } from "../../../components/notifications/PreferencesForm";
@@ -88,6 +89,25 @@ const meetupAt = "2026-11-18T13:30:00Z";
 const suspendedUntil = new Date("2026-12-01T09:00:00Z");
 const deletionDeadline = new Date("2026-12-19T12:00:00Z");
 const sampleContactEmail = "contact@souqjamia1.test";
+
+// Task 4.1: every state of one upload (FR80). The ready preview uses a data URL (no Storage call).
+const uploadIdle = { reason: null, failure: null, retryAfter: null, previewUrl: null } as const;
+const sampleUploadPreview =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='120'><rect width='160' height='120' fill='%230B3B2D'/></svg>";
+const uploadStates: readonly { id: string; state: UploadStatusState }[] = [
+  { id: "checking", state: { ...uploadIdle, phase: "checking" } },
+  { id: "uploading", state: { ...uploadIdle, phase: "uploading" } },
+  { id: "processing", state: { ...uploadIdle, phase: "processing" } },
+  { id: "ready", state: { ...uploadIdle, phase: "ready", previewUrl: sampleUploadPreview } },
+  { id: "rejected", state: { ...uploadIdle, phase: "rejected", reason: "unsupported_type" } },
+  { id: "animated", state: { ...uploadIdle, phase: "rejected", reason: "animated" } },
+  { id: "failed", state: { ...uploadIdle, phase: "failed", failure: "network" } },
+  {
+    id: "limited",
+    state: { ...uploadIdle, phase: "failed", failure: "rateLimited", retryAfter: 600 },
+  },
+  { id: "expired", state: { ...uploadIdle, phase: "expired" } },
+];
 // Task 3.8: fixture notifications with the fixed text of their events (no member text).
 const sampleNotifications = [
   {
@@ -449,6 +469,30 @@ export default function DevUiPage() {
           preview
           idPrefix="dev-groups-blocked"
         />
+      </Section>
+
+      <Section id="uploads" title={t("dev.sections.upload")}>
+        <p>{t("dev.upload.galleryIntro")}</p>
+        <p>
+          <a href={routes.devUpload}>{t("dev.upload.galleryLink")}</a>
+        </p>
+        <div className={styles.states}>
+          {uploadStates.map(({ id, state }) => (
+            <UploadStatus
+              key={id}
+              state={state}
+              fileName={t("dev.upload.sampleName")}
+              purpose="listing"
+              preview
+            />
+          ))}
+          <UploadStatus
+            state={{ ...uploadIdle, phase: "ready" }}
+            fileName={t("dev.upload.sampleName")}
+            purpose="student_card"
+            preview
+          />
+        </div>
       </Section>
 
       <Section id="account-restricted" title={t("dev.sections.restricted")}>

@@ -113,6 +113,8 @@ describe("task 4.0: the web server at start-up", () => {
       TRUSTED_PROXY_HOPS: "0",
       DATABASE_URL: "postgresql://souq_web@127.0.0.1:54322/postgres",
       CONTACT_EMAIL: "contact@souqjamia1.test",
+      // Task 4.1. Built at run time: no committed secret-like string.
+      SUPABASE_SECRET_KEY: ["sb", "secret", "k".repeat(24)].join("_"),
     });
     const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(respond()));
     vi.stubGlobal("fetch", fetch);

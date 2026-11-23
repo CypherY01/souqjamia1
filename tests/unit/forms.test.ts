@@ -88,6 +88,7 @@ describe("task 4.0 (item D, owner's request): a POST that arrives before hydrati
       TRUSTED_PROXY_HOPS: "0",
       DATABASE_URL: "postgresql://souq_web@127.0.0.1:54322/postgres",
       CONTACT_EMAIL: "contact@souqjamia1.test",
+      SUPABASE_SECRET_KEY: ["sb", "secret", randomBytes(16).toString("hex")].join("_"),
     };
     for (const [name, value] of Object.entries(values)) vi.stubEnv(name, value);
     const network = vi.fn<typeof fetch>();

@@ -18,6 +18,8 @@ const validWeb = {
   // Task 3.1. No password: nothing connects in these tests.
   DATABASE_URL: "postgresql://souq_web@127.0.0.1:54322/postgres",
   CONTACT_EMAIL: "contact@souqjamia1.test",
+  // Task 4.1. Built at run time: no committed secret-like string.
+  SUPABASE_SECRET_KEY: ["sb", "secret", randomBytes(16).toString("hex")].join("_"),
 };
 
 function errorOf(fn: () => unknown): EnvError {
@@ -156,6 +158,8 @@ describe("OPS05 worker environment", () => {
     // Task 4.0 (DEC82): for the start-up check of Supabase Auth's Turnstile verification.
     SUPABASE_URL: "http://127.0.0.1:54321",
     SUPABASE_PUBLISHABLE_KEY: "sb_publishable_localdevelopmentkey",
+    // Task 4.1: Storage for image.process and media.cleanup. Built at run time.
+    SUPABASE_SECRET_KEY: ["sb", "secret", randomBytes(16).toString("hex")].join("_"),
   };
   // Built at run time: the repository never holds a secret-like string.
   const resendKey = `re_${randomBytes(12).toString("hex")}`;
@@ -167,7 +171,7 @@ describe("OPS05 worker environment", () => {
       ...mailpit,
     });
     expect(() => loadWorkerEnv({})).toThrow(
-      "Invalid or missing environment variables: APP_ENV, APP_ORIGIN, CONTACT_EMAIL, DATABASE_URL, EMAIL_FROM, EMAIL_TRANSPORT, SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL.",
+      "Invalid or missing environment variables: APP_ENV, APP_ORIGIN, CONTACT_EMAIL, DATABASE_URL, EMAIL_FROM, EMAIL_TRANSPORT, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY, SUPABASE_URL.",
     );
   });
 
