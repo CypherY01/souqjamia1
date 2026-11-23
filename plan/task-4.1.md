@@ -1,6 +1,6 @@
 # المهمة 4.1 — خط معالجة الصور
 
-الحالة: **الخطة معتمدة (23 نوفمبر 2026)، والتنفيذ جارٍ على الفرع `phase1/task-4.1-media` من `main` (82ef3c1).** لا دمج قبل اعتماد المالك الصريح بعد CI أخضر ومراجعته المحلية.
+الحالة: **الخطة معتمدة (23 نوفمبر 2026)، ومنفّذة على الفرع `phase1/task-4.1-media` من `main` (82ef3c1). CI أخضر على 645a99c، بانتظار مراجعة المالك المحلية.** لا دمج قبل اعتماد المالك الصريح بعد CI أخضر ومراجعته المحلية.
 
 ## قرارات المالك عند الاعتماد
 
@@ -228,4 +228,5 @@
 - **التكامل** (`pnpm test:integration`، بعد `pnpm db:reset`): 33 ملفاً و457 اختباراً، كلها ناجحة، ومنها الفحص الشامل ومصفوفة القراءة. الملفات الأربعة الجديدة: `media-upload` 19، و`media-processing` 20، و`media-cleanup` 8، و`storage-access` 4.
 - **E2E** (`pnpm db:e2e` ثم `pnpm build` ثم `pnpm test:e2e`): 221 ناجحاً و16 متخطى (من قبل)، بلا فشل، بعد الإصلاح في البند 13. و`upload.spec.ts` 15 من 15 (خمسة اختبارات بالعروض الثلاثة). ثم `pnpm db:restart`.
 - `pnpm lint` و`pnpm typecheck` و`pnpm format:check` و`pnpm check:css` و`pnpm db:lint` (لا أخطاء) و`pnpm check:migrations` و`pnpm contract:lint` و`pnpm check:contract-ids` و`pnpm emails:check` و`pnpm check:supabase-images` (9 صور) و`pnpm build` و`pnpm check:bundle` (لا أسرار في ملفات المتصفح) و`pnpm secrets:scan`: كلها ناجحة.
+- **CI** على commit 645a99c (التشغيل [45148731131](https://github.com/CypherY01/souqjamia1/actions/runs/45148731131)): المهام الأربع خضراء. الفحوص والبناء 87 ثانية، والتكامل 146 (تشغيل Supabase مع Storage 49)، وE2E 316 (تشغيل Supabase 62)، وgitleaks 16.
 - **فحص Storage قبل الكود:** رمز الرفع يعيش 7200 ثانية، والرفع الثاني بنفس الرمز يُرفض (409)، وما فوق 5 MiB يُرفض (413)، وGIF بالترويسة يُرفض (415)، والحجم في `storage.objects.metadata`، ولا وصول للزائر، والرمز نفسه يعيد إنشاء ملف محذوف (لهذا يبقى الخام حتى تنتهي مدته، DEC83).
