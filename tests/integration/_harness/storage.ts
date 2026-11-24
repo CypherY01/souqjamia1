@@ -207,7 +207,7 @@ export async function assetRow(id: string): Promise<Record<string, unknown> | un
 export const failingStorage: StorageFactory = () => {
   const fail = (): Promise<never> =>
     Promise.reject(Object.assign(new Error("down"), { code: "STORAGE_FAILED" }));
-  const storage: MediaStorage = { download: fail, upload: fail, remove: fail };
+  const storage: MediaStorage = { download: fail, upload: fail, remove: fail, copy: fail };
   return storage;
 };
 
@@ -218,6 +218,7 @@ export const uploadFailsStorage: StorageFactory = (signal) => {
     download: (bucket, key) => real.download(bucket, key),
     upload: () => Promise.reject(Object.assign(new Error("down"), { code: "STORAGE_FAILED" })),
     remove: (bucket, keys) => real.remove(bucket, keys),
+    copy: (from, key, to, toKey) => real.copy(from, key, to, toKey),
   };
 };
 

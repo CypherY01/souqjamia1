@@ -20,6 +20,7 @@ import { SubmitButton } from "../../components/ui/SubmitButton";
 import { Checkbox, Select, TextField } from "../../components/ui/Field";
 import { PasswordField } from "../../components/ui/PasswordField";
 import { api, type ApiFailure } from "../../lib/client/api";
+import { clearSellDraft } from "../../lib/client/sell-draft";
 import { routes } from "../../lib/routes";
 import styles from "./signup.module.css";
 
@@ -142,6 +143,8 @@ export function SignupForm({ siteKey, policies: initialPolicies, colleges }: Sig
     if (result.ok && result.status === 200) {
       // DEC63: signed in. The CSRF binding changed (task 1.6), and a full load shows the header.
       api.resetCsrfToken();
+      // TC82 (task 4.2): the tab's wizard draft never outlives the session that wrote it.
+      clearSellDraft();
       window.location.assign(result.data.next);
       return;
     }

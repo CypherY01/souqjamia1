@@ -43,6 +43,7 @@ const textPairs: [string, string][] = [
   ["on-accent", "accent"], // student badge
   ["text", "subtle-gold"],
   ["text", "subtle-green"],
+  ["text-muted", "subtle-green"], // task 4.2: a selected choice card's hint
   ["text", "warning-bg"],
   ["warning-text", "warning-bg"],
   ["danger", "card"], // field errors, danger alert
@@ -56,6 +57,7 @@ const boundaryPairs: [string, string][] = [
   ["control-border", "page"],
   ["primary", "card"], // focus ring
   ["primary", "page"],
+  ["primary", "subtle-green"], // task 4.2: a selected choice card, the current step
   ["on-surface-dark", "surface-dark"], // focus ring in the footer
 ];
 

@@ -35,8 +35,10 @@ export function TextArea({
   const [count, setCount] = useState(() =>
     countChars(typeof defaultValue === "string" ? defaultValue : ""),
   );
+  // Task 4.2: a controlled field (the wizard restores its text) counts its value.
+  const shown = typeof rest.value === "string" ? countChars(rest.value) : count;
   const counterId = `${id}-counter`;
-  const over = count > maxChars;
+  const over = shown > maxChars;
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional}>
       <textarea
@@ -53,7 +55,7 @@ export function TextArea({
         }}
       />
       <p id={counterId} className={styles.counter}>
-        {t("ui.charCount", { count, max: maxChars })}
+        {t("ui.charCount", { count: shown, max: maxChars })}
       </p>
     </FieldFrame>
   );

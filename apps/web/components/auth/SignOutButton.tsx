@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { t } from "@souq/i18n";
 import { api } from "../../lib/client/api";
+import { clearSellDraft } from "../../lib/client/sell-draft";
 import { routes } from "../../lib/routes";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
@@ -30,6 +31,8 @@ export function SignOutButton({ preview }: SignOutButtonProps) {
     const result = await api.request(routes.api.logout);
     if (result.ok || result.status === 401) {
       api.resetCsrfToken();
+      // TC82 (task 4.2): the tab's wizard draft never outlives the session that wrote it.
+      clearSellDraft();
       window.location.assign(routes.home);
       return;
     }

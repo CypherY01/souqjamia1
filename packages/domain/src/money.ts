@@ -1,5 +1,6 @@
 // Money is integer halalas (SAR x 100). Never use floats, and never round silently (CLAUDE.md).
-// Price and offer bounds arrive with their rules in tasks 4.2 and 5.5.
+// The listing price bound is parseListingPrice in listing.ts (task 4.2); the offer bound comes
+// with task 5.5.
 import { normalizeDigits } from "./digits.ts";
 
 export type ParseAmountError = "empty" | "invalid" | "too_many_decimals" | "too_large";

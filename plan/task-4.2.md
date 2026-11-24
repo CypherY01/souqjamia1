@@ -360,3 +360,36 @@
 12. **API030:** `Cache-Control` خمس دقائق، لأن القائمة عامة وتتغير نادراً، والنشر يعيد فحص المرجع على أي حال.
 13. **مكوّنان مشتركان جديدان:** `Stepper` و`ChoiceCards` في `components/ui` ومعرض `/dev/ui`، لأن طلبات الشراء (4.6) وغيرها ستحتاجهما.
 14. **لا قرار DEC جديد متوقع:** البنود كلها تطبيق للمواصفات والملحق. إن غيّرت أحدها بما يخالفهما، يصير DEC84.
+
+## التنفيذ
+
+### ما بُني
+
+- **القاعدة** (`20261124090000_listings.sql`): `pg_trgm` في `extensions`، والجدولان بـ RLS وبلا منح، والمُشغّل المؤجل لصورة واحدة على الأقل، ودالة النشر، وأربع دوال قراءة لـ `souq_web`، ودالتا العامل. القواعد في `packages/db/README.md` (قسم «الإعلانات»).
+- **الموقع:**
+  - المساران `app/api/listings/route.ts` (POST) و`app/api/catalog/route.ts` (GET، خمس دقائق).
+  - `lib/listings/{publish,owner}.ts` و`lib/catalog.ts` و`lib/http/idempotency.ts` و`lib/media/public.ts`.
+  - في المتصفح: `lib/client/sell-draft.ts`، و`idempotencyKey` في `api.request()`، و`followUpload` في `lib/client/upload.ts`.
+  - الصفحة `app/sell/page.tsx`، و`components/sell/*` (المعالج والخطوات و`ListingImages` و`useListingImages` و`wizard.ts`).
+  - `components/ui/Stepper.tsx` و`ChoiceCards.tsx` في معرض `/dev/ui`، ورابط «أضف إعلاناً» للعضو في الشريط العلوي.
+- **العامل:** `jobs/media.publish.ts` في `registry.ts`، و`copy` في `media/storage.ts` (نسخ داخل Storage).
+- **المشترك:** `packages/domain/src/listing.ts` (الحدود والتحقق وخريطة الحقل إلى الخطوة)، و`packages/i18n/src/ar/{listing,sell}.json`.
+- **العقد** 0.5.7: رموز حقول API034 ووصف API030، والإضافات 40 و41 في `contracts/README.md`.
+- **الاختبارات:**
+  - تكامل: `listings-publish.test.ts` و`listing-public-copies.test.ts` و`catalog.test.ts`، والأداة `_harness/listings.ts`، وخمس دوال جديدة في `read-matrix.ts`.
+  - وحدة: `listing.test.ts` و`sell-draft.test.ts` و`sell-wizard.test.ts` و`idempotency-key.test.ts`، وزوجان جديدان في `design-tokens.test.ts`.
+  - E2E: `sell.spec.ts`.
+- **الوثائق:** قسم المراجعة في `ops/runbooks/local-dev.md`، وفحصان في `ops/runbooks/supabase-upgrade.md`.
+
+### اختلافات عن الخطة
+
+1. **اسم دالة العامل الأولى** `app.media_publish_files` بدل `app.media_publish_claim`: لا تحجز شيئاً، بل تقرأ (STABLE)، فسُجّلت في مصفوفة القراءة باختباري الطرف الثالث والزائر.
+2. **المعالج يُركَّب بعد ربط React:** قاعدة ESLint في React 19 تمنع `setState` داخل `useEffect`، فالمسودة تُقرأ من `sessionStorage` في قيمة أولية كسولة داخل جزء لا يُرسم إلا في المتصفح. وقبل الربط نموذج فيه الخطوات وزر «التالي» معطّل بـ «جارٍ التحميل» (المهمة 4.0).
+3. **تعديلات صغيرة على مكوّنات مشتركة لم تذكرها الخطة:**
+   - `TextField` يقبل `maxChars` لعدّاد حي، و`TextArea` يعدّ القيمة المتحكَّم بها.
+   - `UploadStatus` يقبل `expiredText` لرسالة الصورة المؤقتة المنتهية (TC33).
+   - `followUpload` في `lib/client/upload.ts` للصور المستعادة من المسودة ولتجديد المعاينات (60 ثانية).
+4. **نصوص الخطوات المشتركة** في `ui.json` (`ui.stepper.*`)، لأن `Stepper` مكوّن مشترك. وتنبيه الخطوة 4 هو `SafeMeetupNotice` القائم (BR10) بدل نص جديد.
+5. **مسح المسودة أيضاً بعد طلب حذف الحساب** (`DeleteAccountForm`)، مع الخروج والدخول والتسجيل (TC82).
+6. **رموز الحقول في القاعدة:** `invalid_value` لحالة الغرض، و`not_allowed` للتفاوض مع الصفر، و`duplicate` لصورة مكررة، و`invalid` و`not_ready` مع رمزي الصور. وُثّقت في العقد مع `unavailable`.
+7. **الاختبارات لا تضيف نقاط لقاء:** `reference-data.test.ts` يثبت أن صفوف `seed.sql` وحدها في الجدول، فاختبارات DEC28 تعطّل نقاط البيانات الأولية مؤقتاً ثم تعيدها. ونظّفتُ من القاعدة المحلية خمس نقاط تركتها محاولة سابقة في نفس الجلسة.

@@ -30,6 +30,11 @@ interface UploadStatusProps {
   readonly removing?: boolean;
   /** The /dev/ui preview: the buttons are shown and do nothing. */
   readonly preview?: boolean;
+  /**
+   * Task 4.2 (TC33): the text of the expired state, when the screen knows why (a temporary image
+   * of the tab's draft whose 24 hours ran out). Defaults to the upload's own five minutes.
+   */
+  readonly expiredText?: string;
 }
 
 const PHASE_LABEL: Record<UploadPhase, MessageKey> = {
@@ -65,6 +70,7 @@ export function UploadStatus({
   onRemove,
   removing = false,
   preview = false,
+  expiredText,
 }: UploadStatusProps) {
   const busy = BUSY.includes(state.phase);
   const canRetry = state.phase === "failed" || state.phase === "expired";
@@ -99,7 +105,11 @@ export function UploadStatus({
         <Alert variant="warning" title={failureText(state)} live={!preview} />
       )}
       {state.phase === "expired" && (
-        <Alert variant="warning" title={t("media.failures.expired")} live={!preview} />
+        <Alert
+          variant="warning"
+          title={expiredText ?? t("media.failures.expired")}
+          live={!preview}
+        />
       )}
       {(canRetry || (!busy && remove !== undefined)) && (
         <div className={styles.actions}>

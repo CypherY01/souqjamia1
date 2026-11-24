@@ -1,0 +1,244 @@
+/* Task 4.2: the publication wizard, mobile first (360, 768 and 1440 px). Logical properties only
+   (RTL), and colors, radii, spacing and sizes from tokens.css. */
+.wizard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.draft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.stepHeading {
+  margin: 0;
+}
+
+.intro {
+  margin: 0;
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Step 1: the images. */
+.images {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pickerLabel {
+  font-weight: 600;
+}
+
+.fileInput {
+  max-inline-size: 100%;
+  min-block-size: var(--target-size);
+  padding: var(--space-2);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-card);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.fileInput[aria-invalid="true"] {
+  border-width: 2px;
+  border-color: var(--color-danger);
+}
+
+.fileInput:disabled {
+  cursor: not-allowed;
+}
+
+.count {
+  margin: 0;
+  font-weight: 600;
+}
+
+.imageList {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .imageList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .imageList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.imageItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.imageHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.imagePosition {
+  font-weight: 600;
+}
+
+.order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Step 4: the search over the suggested places. */
+.search {
+  margin-block-end: var(--space-2);
+}
+
+/* Step 5: the review. */
+.reviewBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+.reviewBlock p,
+.reviewBlock h3,
+.reviewBlock h4 {
+  margin: 0;
+}
+
+.reviewHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.editLink {
+  min-block-size: var(--target-size);
+  padding-inline: var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.reviewTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reviewSub {
+  font-size: var(--text-base);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--color-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.description {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thumb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  font-size: var(--text-sm);
+}
+
+.thumb img {
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-control);
+  object-fit: cover;
+}
+
+.thumbNote {
+  font-weight: 600;
+}

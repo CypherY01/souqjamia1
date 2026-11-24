@@ -211,6 +211,24 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **ربط الصورة في المهام القادمة** (4.2 و4.7 و5.3 و7.6): دالة الربط تتحقق من المالك والغرض والسياق وأن الحالة `ready`، ثم تجعل `expires_at` فارغاً. والفك يضع `detached_at` و`expires_at` بعد 24 ساعة. والنسخ إلى `media-public` بعد التزام النشر فقط، بصف `visibility = 'public'`، وإزالته عند الإخفاء والأرشفة.
 - **الحدود في مكانين:** الهجرة و`packages/domain/src/media.ts`، واختبار التكامل يطابقهما.
 
+## الإعلانات (المهمة 4.2)
+
+`20261124090000_listings.sql`، وتفاصيله في `plan/task-4.2.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| `pg_trgm` | في schema `extensions`. مع `search_path = ''` تُكتب دواله ومشغّلاته بمخططها (`extensions.gin_trgm_ops`، و`operator(extensions.%)`)، و`ILIKE` يستعمل الفهرس بلا ذلك |
+| `public.listing` | RLS مفعّلة وبلا منح ولا سياسات. النص محفوظ بعد NFC والقص (قيد مثل `display_name`)، والعنوان سطر واحد، والوصف يحفظ LF وTAB. `search_text` عمود محسوب من `app.search_normalize(title \|\| ' ' \|\| description)` (DEC67) بفهرس GIN. `location_id` الفارغ «حسب الاتفاق» (DEC28). قيد `listing_free_not_negotiable` (BR08) |
+| `public.listing_image` | الموضع من 1 إلى 10 (الأول الرئيسية)، والصورة في إعلان واحد (`listing_image_media_once`). وصورة واحدة على الأقل لكل إعلان عند الالتزام: المُشغّل المؤجل `listing_images_required` |
+| `app.active_categories()` و`app.active_meeting_points()` | لـ `souq_web` (API030): الصفوف النشطة بترتيب العرض. قائمة النقاط قد تكون فارغة (G02) |
+| `app.publish_listing(key, input)` | لـ `souq_web` (API034). بالترتيب: `assert_active_member`، والبنية (`BAD_REQUEST`)، و`idempotency_claim`، وRL05 (`RL05:hour` و`RL05:day`، مشتركان مع طلبات الشراء في 4.6)، وقفل صف `profile` للبائع ثم حد 200 (`LIMIT_REACHED`)، والحقول، والصور مقفلة بترتيب المعرّف (`MEDIA_INVALID` و`MEDIA_NOT_READY` بالحقل `media_ids.<n>`)، ثم الإدراج و`expires_at` فارغ للصور ومهمة `media.publish`. ترجع `(listing_id, created)` |
+| `app.owner_listing(id)` و`app.owner_listing_images(id)` | لـ `souq_web`: إعلان العضو نفسه وصوره، و`public_ready` حين توجد المقاسات العامة الثلاثة |
+| `app.media_publish_files(listing)` و`app.media_published(listing)` | لـ `souq_worker` (`media.publish`، SEC08): المقاسات الخاصة لإعلان نشط غير مخفي، ثم تسجيل صفوف `public` بعد النسخ تحت قفل الإعلان، أو مفاتيح النسخ التي تُحذف إن لم يعد مؤهلاً. الأصل لا يُنسخ أبداً |
+
+- **مفاتيح الملفات العامة** هي مفاتيح الخاصة نفسها (`<media_id>/<variant>.webp`) في `media-public`. العنوان يُبنى فقط حين `public_ready` (ملاحظة المالك 2 على 4.2: «الصور قيد التجهيز» في 4.3).
+- **إزالة النسخ العامة** عند الأرشفة والإخفاء في 4.4 و7.5، بنفس المفاتيح الثابتة.
+- **اختبار يطابق الحدود** بين الهجرة و`packages/domain/src/listing.ts` في `listings-publish.test.ts`.
+
 ## schema `rls`
 
 - دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.

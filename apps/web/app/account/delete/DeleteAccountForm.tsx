@@ -14,6 +14,7 @@ import { Alert } from "../../../components/ui/Alert";
 import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { Checkbox } from "../../../components/ui/Field";
 import { api, type ApiFailure } from "../../../lib/client/api";
+import { clearSellDraft } from "../../../lib/client/sell-draft";
 import { routes } from "../../../lib/routes";
 import styles from "./delete.module.css";
 
@@ -48,6 +49,8 @@ export function DeleteAccountForm({ siteKey, reauthUntil, blockedReason }: Delet
     if (result.ok) {
       // The session has ended: the token bound to it no longer works (task 1.6).
       api.resetCsrfToken();
+      // TC82 (task 4.2): the tab's wizard draft never outlives the session that wrote it.
+      clearSellDraft();
       setDone(true);
       return;
     }

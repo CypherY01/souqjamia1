@@ -19,6 +19,7 @@ import { Badge, NegotiableBadge, StudentBadge } from "../../../components/ui/Bad
 import { Button, LinkButton } from "../../../components/ui/Button";
 import { SubmitButton } from "../../../components/ui/SubmitButton";
 import { Card } from "../../../components/ui/Card";
+import { ChoiceCards } from "../../../components/ui/ChoiceCards";
 import { Dialog } from "../../../components/ui/Dialog";
 import {
   DateText,
@@ -31,6 +32,8 @@ import {
 import { AmountField, Checkbox, RadioGroup, Select, TextField } from "../../../components/ui/Field";
 import { PasswordField } from "../../../components/ui/PasswordField";
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";
+import { Stepper } from "../../../components/ui/Stepper";
+import { conditionOptions } from "../../../components/sell/wizard";
 import { TextArea } from "../../../components/ui/TextArea";
 import { devGalleryEnabled } from "../../../lib/dev-gallery";
 import { serverEnv } from "../../../lib/env";
@@ -220,6 +223,14 @@ export default function DevUiPage() {
             label={t("dev.fields.title")}
             hint={t("dev.fields.titleHint")}
           />
+          <TextField
+            id="dev-title-counter"
+            label={t("dev.fields.title")}
+            hint={t("dev.fields.titleHint")}
+            value={t("dev.fields.counterValue")}
+            maxChars={100}
+            readOnly
+          />
           <TextArea
             id="dev-description"
             label={t("dev.fields.description")}
@@ -259,6 +270,70 @@ export default function DevUiPage() {
             label={t("auth.signup.terms.label")}
             error={t("auth.fields.terms.required")}
             extra={<a href={routes.terms}>{t("auth.signup.terms.link")}</a>}
+          />
+        </div>
+      </Section>
+
+      <Section id="stepper" title={t("dev.sections.stepper")}>
+        {(
+          [
+            [1, "dev.stepper.first"],
+            [3, "dev.stepper.middle"],
+            [5, "dev.stepper.last"],
+          ] as const
+        ).map(([current, label]) => (
+          <div key={current}>
+            <h3>{t(label)}</h3>
+            <Stepper
+              label={t(label)}
+              steps={[
+                t("sell.steps.images"),
+                t("sell.steps.details"),
+                t("sell.steps.price"),
+                t("sell.steps.place"),
+                t("sell.steps.review"),
+              ]}
+              current={current}
+            />
+          </div>
+        ))}
+      </Section>
+
+      <Section id="choices" title={t("dev.sections.choices")}>
+        <div className={styles.form}>
+          <ChoiceCards
+            name="dev-choice-selected"
+            legend={t("dev.choices.selected")}
+            options={conditionOptions()}
+            defaultValue="good"
+          />
+          <ChoiceCards
+            name="dev-choice-error"
+            legend={t("dev.choices.error")}
+            options={conditionOptions()}
+            error={t("dev.choices.errorText")}
+          />
+          <ChoiceCards
+            name="dev-choice-place"
+            legend={t("dev.choices.place")}
+            options={[
+              {
+                value: "agreement",
+                label: t("listing.location.byAgreement"),
+                hint: t("sell.place.byAgreementHint"),
+              },
+              {
+                value: "campus",
+                label: t("dev.fields.categoryBooks"),
+                hint: t("listing.location.kind.campus"),
+              },
+              {
+                value: "city",
+                label: t("dev.fields.categoryElectronics"),
+                hint: t("listing.location.kind.city"),
+              },
+            ]}
+            defaultValue="agreement"
           />
         </div>
       </Section>

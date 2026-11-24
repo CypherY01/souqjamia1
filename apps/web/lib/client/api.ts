@@ -29,6 +29,11 @@ export type ApiResult<T> = ApiSuccess<T> | ApiFailure;
 export interface ApiRequestInit {
   method?: "POST" | "PATCH" | "PUT" | "DELETE" | "GET";
   body?: unknown;
+  /**
+   * Task 4.2 (BR32, NFR09): the Idempotency-Key of a creation. The caller keeps it for every
+   * retry of the same logical request, so the server returns the first result.
+   */
+  idempotencyKey?: string;
 }
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
@@ -118,6 +123,7 @@ export function createApiClient(fetchFn: Fetch): ApiClient {
       }
     }
     if (init.body !== undefined) headers["content-type"] = "application/json";
+    if (init.idempotencyKey !== undefined) headers["idempotency-key"] = init.idempotencyKey;
     try {
       return await fetchFn(path, {
         method,

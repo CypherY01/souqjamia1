@@ -1,0 +1,14 @@
+/* /sell (task 4.2): one column, wider than the account forms for the image grid. */
+.page {
+  max-inline-size: 60rem;
+  margin-inline: auto;
+}
+
+.intro {
+  margin-block: 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.action {
+  margin-block-start: var(--space-4);
+}

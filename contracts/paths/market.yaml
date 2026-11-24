@@ -5,7 +5,10 @@ catalog:
     operationId: api030GetCatalog
     tags: [catalog]
     summary: الفئات والكليات ونقاط اللقاء النشطة
-    description: نقاط اللقاء اقتراحات لأماكن عامة داخل الجامعة وفي المدينة (DEC28).
+    description: >-
+      نقاط اللقاء اقتراحات لأماكن عامة داخل الجامعة وفي المدينة (DEC28)، والقائمة قد تكون فارغة
+      حتى يضيفها المالك (G02)، فيبقى «حسب الاتفاق» وحده. الصفوف النشطة فقط، بترتيب العرض. الرد
+      يحمل Cache-Control: public, max-age=300 (المهمة 4.2)، والنشر يعيد فحص المرجع على أي حال.
     x-spec-ids: [API030, FR08, FR20, FR55, BR03, DEC28]
     x-access: public
     security: []
@@ -64,9 +67,17 @@ listings:
     tags: [listings]
     summary: نشر إعلان من المعالج
     description: >-
-      الخادم يعيد التحقق من كل الحقول وملكية الصور وجاهزيتها. المحاولة المنطقية المكررة
-      ترجع نفس الإعلان (FR22). أخطاء الحقول ترجع في field_errors ليعود المعالج لخطوتها (القسم 6.3).
-      الحد 200 إعلان نشط للعضو (RL05).
+      الخادم يعيد التحقق من كل الحقول وملكية الصور وجاهزيتها. المحاولة المنطقية المكررة بنفس
+      Idempotency-Key ترجع نفس الإعلان بالحالة 200 ولا تُعدّ في الحد (FR22)، وبحمولة مختلفة
+      IDEMPOTENCY_CONFLICT. والمحاولة التي فشلت لا تحجز المفتاح. بلا Idempotency-Key: 400.
+      أخطاء الحقول ترجع في field_errors ليعود المعالج لخطوتها (القسم 6.3):
+      title وdescription: required وtoo_small وtoo_big وinvalid_format (بنقاط الترميز بعد NFC والقص).
+      category_id وlocation_id: invalid_format، وunavailable لمرجع معطّل أو غير موجود.
+      condition: invalid_value. price_minor: too_small وtoo_big. is_negotiable: not_allowed مع السعر صفر (BR08).
+      media_ids: too_small وtoo_big وduplicate، وmedia_ids.<n> (من الصفر) مع MEDIA_INVALID
+      (صورة غير موجودة أو لعضو آخر أو بغرض آخر أو مرتبطة أو مرفوضة أو منتهية) أو MEDIA_NOT_READY.
+      RL05: 5 في الساعة و20 في اليوم مع طلبات الشراء (429)، و200 إعلان نشط (LIMIT_REACHED).
+      الرد OwnerListing، وimage فيه null حتى تُنسخ المقاسات العامة بعد النشر (SEC08).
     x-spec-ids: [API034, FR16, FR17, FR18, FR19, FR20, FR21, FR22, BR05, BR06, BR07, BR08, DEC28, TC07, TC08, TC09, TC25, TC64, TC65]
     x-access: member
     x-rate-limit: [RL05]

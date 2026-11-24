@@ -20,6 +20,7 @@ import { SubmitButton } from "../../components/ui/SubmitButton";
 import { TextField } from "../../components/ui/Field";
 import { PasswordField } from "../../components/ui/PasswordField";
 import { api, type ApiFailure } from "../../lib/client/api";
+import { clearSellDraft } from "../../lib/client/sell-draft";
 import { routes } from "../../lib/routes";
 import styles from "./login.module.css";
 
@@ -104,6 +105,8 @@ export function LoginForm({ siteKey, next }: LoginFormProps) {
     if (result.ok) {
       // The CSRF binding changed (task 1.6), and a full load draws the header for the member.
       api.resetCsrfToken();
+      // TC82 (task 4.2): the tab's wizard draft never outlives the session that wrote it.
+      clearSellDraft();
       window.location.assign(result.data.next);
       return;
     }

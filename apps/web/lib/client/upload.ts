@@ -39,6 +39,7 @@ interface Upload {
   status: enums.MediaStatus;
   rejection_reason: enums.MediaRejectionReason | null;
   preview: { url: string; expires_at: string } | null;
+  expires_at: string | null;
 }
 
 export interface UploadDeps {
@@ -196,4 +197,46 @@ export async function removeUpload(
 ): Promise<boolean> {
   const result = await deps.api.request(routes.api.upload(uploadId), { method: "DELETE" });
   return result.ok;
+}
+
+/**
+ * Task 4.2 (FR21, FR60, TC33): the state of an upload this page did not start, such as one kept
+ * in the tab's draft before a reload, or a ready one whose 60-second preview needs a new link.
+ * API039 until the worker decides. An upload that is gone (deleted after its 24 hours, RET01),
+ * past its expiry, or never sent before the reload (still pending) is expired: the member picks
+ * the file again, and the text stays.
+ */
+export async function followUpload(
+  uploadId: string,
+  onState: (state: UploadState) => void,
+  deps: Pick<UploadDeps, "api" | "sleep"> = browserUploadDeps,
+  nowMs: () => number = Date.now,
+): Promise<UploadState> {
+  let state: UploadState = { ...initial, phase: "processing", uploadId };
+  const set = (next: Partial<UploadState>): UploadState => {
+    state = { ...state, ...next };
+    onState(state);
+    return state;
+  };
+  for (let waited = 0; ; waited += POLL_INTERVAL_MS) {
+    const polled = await deps.api.request<Upload>(routes.api.upload(uploadId), { method: "GET" });
+    if (!polled.ok) {
+      if (polled.code === "NOT_FOUND") return set({ phase: "expired" });
+      return set({ phase: "failed", ...failureOf(polled) });
+    }
+    const upload = polled.data;
+    const expired = upload.expires_at !== null && Date.parse(upload.expires_at) <= nowMs();
+    if (upload.status === "deleted" || upload.status === "pending" || expired) {
+      return set({ phase: "expired" });
+    }
+    if (upload.status === "ready") {
+      return set({ phase: "ready", previewUrl: upload.preview?.url ?? null });
+    }
+    if (upload.status === "rejected") {
+      return set({ phase: "rejected", reason: upload.rejection_reason ?? "processing_failed" });
+    }
+    if (waited >= POLL_LIMIT_MS) return set({ phase: "failed", failure: "slow" });
+    if (waited === 0) set({ phase: "processing" });
+    await deps.sleep(POLL_INTERVAL_MS);
+  }
 }

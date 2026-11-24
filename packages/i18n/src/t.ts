@@ -9,10 +9,14 @@ import email from "./ar/email.json" with { type: "json" };
 import errors from "./ar/errors.json" with { type: "json" };
 import format from "./ar/format.json" with { type: "json" };
 import layout from "./ar/layout.json" with { type: "json" };
+// Task 4.2: listing values shared by the wizard and the market (conditions, places).
+import listing from "./ar/listing.json" with { type: "json" };
 // Task 4.1: image upload states and the safe rejection reasons (API039, FR80).
 import media from "./ar/media.json" with { type: "json" };
 // Task 3.8: the notifications page, the in-app text of each event, and the email preferences.
 import notifications from "./ar/notifications.json" with { type: "json" };
+// Task 4.2: the publication wizard (/sell).
+import sell from "./ar/sell.json" with { type: "json" };
 import ui from "./ar/ui.json" with { type: "json" };
 
 export const messages = {
@@ -24,8 +28,10 @@ export const messages = {
   errors,
   format,
   layout,
+  listing,
   media,
   notifications,
+  sell,
   ui,
 } as const;
 

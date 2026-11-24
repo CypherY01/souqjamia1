@@ -72,6 +72,34 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
     thirdParty: "DEC77 app.upload_status(): another member's session reads only its own uploads",
     guest: "DEC77 app.upload_status(): a guest is UNAUTHENTICATED",
   },
+  "app.active_categories()": {
+    reads: "API030: the active categories for pick lists, public (task 4.2)",
+    thirdParty: "DEC77 app.active_categories(): a member gets the same public rows as a guest",
+    guest: "DEC77 app.active_categories(): a guest reads the active categories only",
+  },
+  "app.active_meeting_points()": {
+    reads: "API030: the active suggested meeting points, public (task 4.2, DEC28)",
+    thirdParty: "DEC77 app.active_meeting_points(): a member gets the same public rows as a guest",
+    guest: "DEC77 app.active_meeting_points(): a guest reads the active meeting points only",
+  },
+  "app.owner_listing(uuid)": {
+    reads: "API034: the session member's own listing (OwnerListing, task 4.2)",
+    thirdParty:
+      "DEC77 app.owner_listing(): another member's session reads no row of a listing it does not own",
+    guest: "DEC77 app.owner_listing(): a guest is UNAUTHENTICATED",
+  },
+  "app.owner_listing_images(uuid)": {
+    reads: "API034: the images of the session member's own listing (task 4.2)",
+    thirdParty:
+      "DEC77 app.owner_listing_images(): another member's session reads no image of a listing it does not own",
+    guest: "DEC77 app.owner_listing_images(): a guest is UNAUTHENTICATED",
+  },
+  "app.media_publish_files(uuid)": {
+    reads:
+      "media.publish: the private variants of an active listing to copy, worker only (task 4.2)",
+    thirdParty: "DEC77 app.media_publish_files(): a member's identity changes nothing",
+    guest: "DEC77 app.media_publish_files(): a guest reads the files of an active listing only",
+  },
   "app.rate_limit_check(text, bytea, integer, interval)": {
     reads: "the seconds left on one counter, keyed by a hash the server computes (task 2.4)",
     thirdParty: "DEC77 app.rate_limit_check(): a member's identity changes nothing",

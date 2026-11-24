@@ -1,0 +1,73 @@
+/* Task 4.2: the steps of a multi-step form, mobile first (360, 768 and 1440 px). */
+.stepper {
+  margin-block-end: var(--space-5);
+}
+
+.progress {
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-card);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-card);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.label {
+  overflow-wrap: anywhere;
+}
+
+/* Done: a filled number and normal text. Never by color alone: the state is also in text. */
+.done {
+  color: var(--color-text);
+}
+
+.done .number {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* Current: a thicker border and bold text, besides aria-current and the hidden text. */
+.current {
+  border-width: 2px;
+  border-color: var(--color-primary);
+  background-color: var(--color-subtle-green);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.current .number {
+  border-color: var(--color-primary);
+}

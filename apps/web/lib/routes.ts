@@ -78,5 +78,8 @@ export const routes = {
     uploadsAuthorize: "/api/uploads/authorize",
     upload: (id: string) => `/api/uploads/${encodeURIComponent(id)}`,
     uploadComplete: (id: string) => `/api/uploads/${encodeURIComponent(id)}/complete`,
+    // API030 and API034 (task 4.2).
+    catalog: "/api/catalog",
+    listings: "/api/listings",
   },
 } as const;

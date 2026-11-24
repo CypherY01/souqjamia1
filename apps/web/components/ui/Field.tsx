@@ -1,6 +1,7 @@
 // Form fields: every control has a visible label, and hints and errors are linked with
 // aria-describedby (WCAG 2.2 AA, chapter 02). Server-side validation stays the authority.
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { countChars } from "@souq/domain";
 import { t } from "@souq/i18n";
 import { Icon } from "./Icon";
 import { cx } from "../../lib/cx";
@@ -53,6 +54,12 @@ interface TextFieldProps extends InputProps {
   error?: string;
   optional?: boolean;
   type?: "text" | "email" | "password" | "search" | "tel" | "url";
+  /**
+   * Task 4.2: shows a live counter of the value against this limit, counted like the server
+   * (code points after NFC and trimming). The browser never cuts the text (no maxLength: it
+   * counts UTF-16 units). Needs a controlled `value`.
+   */
+  maxChars?: number;
 }
 
 export function TextField({
@@ -62,8 +69,15 @@ export function TextField({
   error,
   optional,
   type = "text",
+  maxChars,
   ...rest
 }: TextFieldProps) {
+  const counterId = `${id}-counter`;
+  const count =
+    maxChars === undefined ? 0 : countChars(typeof rest.value === "string" ? rest.value : "");
+  const described = [describedBy(id, hint, error), maxChars === undefined ? undefined : counterId]
+    .filter(Boolean)
+    .join(" ");
   return (
     <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional}>
       <input
@@ -72,9 +86,16 @@ export function TextField({
         type={type}
         className={styles.control}
         required={optional !== true}
-        aria-invalid={error === undefined ? undefined : true}
-        aria-describedby={describedBy(id, hint, error)}
+        aria-invalid={
+          error !== undefined || (maxChars !== undefined && count > maxChars) ? true : undefined
+        }
+        aria-describedby={described === "" ? undefined : described}
       />
+      {maxChars !== undefined && (
+        <p id={counterId} className={styles.counter}>
+          {t("ui.charCount", { count, max: maxChars })}
+        </p>
+      )}
     </FieldFrame>
   );
 }

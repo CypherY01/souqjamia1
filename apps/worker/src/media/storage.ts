@@ -14,6 +14,12 @@ export interface MediaStorage {
   upload(bucket: string, key: string, data: Buffer, contentType: string): Promise<void>;
   /** Removes the objects; missing ones are not an error. */
   remove(bucket: string, keys: readonly string[]): Promise<void>;
+  /**
+   * Task 4.2 (SEC08): copies an object to another bucket inside Storage, with its metadata
+   * (type and Cache-Control). A destination already there is a copy a previous attempt made from
+   * the same fixed key (DEC71), not an error.
+   */
+  copy(fromBucket: string, key: string, toBucket: string, toKey: string): Promise<void>;
 }
 
 export interface StorageSettings {
@@ -24,6 +30,12 @@ export interface StorageSettings {
 export class StorageError extends Error {
   override name = "StorageError";
   readonly code = "STORAGE_FAILED";
+}
+
+/** Storage answers an existing destination with statusCode "409" ("The resource already exists"). */
+function isAlreadyThere(error: Error): boolean {
+  const { status, statusCode } = error as { status?: number; statusCode?: string };
+  return status === 409 || statusCode === "409" || /already exists|duplicate/i.test(error.message);
 }
 
 /** Storage answers a missing object with 400 and statusCode "404" ("Object not found"). */
@@ -61,6 +73,12 @@ export function createMediaStorage(settings: StorageSettings, signal: AbortSigna
       if (keys.length === 0) return;
       const { error } = await client.storage.from(bucket).remove([...keys]);
       if (error !== null) throw new StorageError("remove failed");
+    },
+    async copy(fromBucket, key, toBucket, toKey) {
+      const { error } = await client.storage
+        .from(fromBucket)
+        .copy(key, toKey, { destinationBucket: toBucket });
+      if (error !== null && !isAlreadyThere(error)) throw new StorageError("copy failed");
     },
   };
 }

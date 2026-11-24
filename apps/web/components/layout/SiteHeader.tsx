@@ -131,6 +131,10 @@ function MemberActions({ member, preview }: { member: HeaderMember; preview: boo
           <Link href={routes.account.favorites}>{t("layout.header.member.favorites")}</Link>
         </li>
       </ul>
+      {/* Task 4.2: the wizard, for members too. */}
+      <LinkButton href={routes.sell} variant="primary">
+        {t("layout.header.member.addListing")}
+      </LinkButton>
       <Disclosure
         kind="account"
         buttonContent={
