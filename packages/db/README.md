@@ -229,6 +229,21 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **إزالة النسخ العامة** عند الأرشفة والإخفاء في 4.4 و7.5، بنفس المفاتيح الثابتة.
 - **اختبار يطابق الحدود** بين الهجرة و`packages/domain/src/listing.ts` في `listings-publish.test.ts`.
 
+## السوق (المهمة 4.3، DEC84)
+
+`20261125090000_market.sql`، وتفاصيله في `plan/task-4.3.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| فهارس السوق | جزئية على `status = 'active' and moderation_hidden_at is null`: `listing_market_newest` (`created_at desc, id desc`)، و`listing_market_price` (`price_minor, id`، للاتجاهين)، و`listing_market_category_newest`، و`listing_search_compact_trgm` (GIN على `replace(search_text, ' ', '')`) |
+| `app.market_listings(q, category, condition, location, sort, after_tier, after_value, after_id, limit)` | لـ `souq_web` (API031، والرئيسية، و`/market`). النشط فقط (المباع لا يظهر، DEC84)، بلا المخفي، وصاحبه غير مخفي ولا محذوف. `match_tier` 1 «مطابقة» (كل كلمة جزء من `search_text`، أو العبارة بلا مسافات جزء منه بلا مسافات) و2 «قريبة» (`<%` بحد 0.5 مضبوط على الدالة). الترتيب: المجموعة، ثم `sort`، ثم المعرّف. `force_custom_plan` حتى يرى المخطط المعاملات فتسقط فروع الفلتر الغائب. أخطاء الحقول `q` و`sort` و`limit` و`location` (`unavailable` لنقطة غير نشطة)، و`INVALID_CURSOR` |
+| `app.public_listing(id)` و`app.public_listing_images(id)` | لـ `souq_web` (API032). النشط أو المباع، بلا المخفي والمؤرشف وإعلان الحساب المقيّد: وإلا لا صف (404 عامة). القدرات من هوية المعاملة بأول سبب: `sign_in_required` ثم `own_content` ثم `account_restricted` ثم `context_closed`، ثم للعرض `free_item` و`not_negotiable`. حقول البائع القادمة ثابتة: الشارة `false` حتى 7.6، والتقييمات صفر حتى 6.2 |
+| `app.public_viewer()` و`app.public_listing_visible(id)` | داخليتان بلا منح: قارئ الصفحة العامة (الجلسة المنتهية أو المحدودة زائر، بلا خطأ)، وما يظهر للعامة من إعلان |
+
+- **5.5 و5.7** تضيفان سببي العرض المعلّق والحظر إلى `app.public_listing` بنسخة جديدة منها، من آخر نسخة.
+- **RL04** يُعدّ في الخادم على اتصال منفصل قبل القراءة (`lib/listings/limits.ts`)، لأن دالة القراءة STABLE لا تكتب.
+- **مجموعة R11** في `tests/integration/search-quality.test.ts`: أي تغيير في قواعد DEC67 أو DEC84 أو الحد يغيّر جدولها، ويحتاج قراراً جديداً.
+
 ## schema `rls`
 
 - دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.

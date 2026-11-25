@@ -94,6 +94,27 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
       "DEC77 app.owner_listing_images(): another member's session reads no image of a listing it does not own",
     guest: "DEC77 app.owner_listing_images(): a guest is UNAUTHENTICATED",
   },
+  "app.market_listings(text, category_key, item_condition, uuid, text, smallint, text, uuid, integer)":
+    {
+      reads:
+        "API031: public market cards (active, not hidden, visible seller), with the DEC84 match tier (task 4.3)",
+      thirdParty: "DEC77 app.market_listings(): a member gets the same public cards as a guest",
+      guest: "DEC77 app.market_listings(): a guest reads public cards only",
+    },
+  "app.public_listing(uuid)": {
+    reads:
+      "API032: a public listing, its seller's public fields and the reader's capabilities (task 4.3)",
+    thirdParty:
+      "DEC77 app.public_listing(): a member reads the same public listing as a guest, with its own capabilities",
+    guest:
+      "DEC77 app.public_listing(): a guest reads a public listing with sign_in_required and nothing of a hidden one",
+  },
+  "app.public_listing_images(uuid)": {
+    reads:
+      "API032: the images of a public listing and whether their public copies exist (task 4.3)",
+    thirdParty: "DEC77 app.public_listing_images(): a member reads the same images as a guest",
+    guest: "DEC77 app.public_listing_images(): a guest reads the images of a public listing only",
+  },
   "app.media_publish_files(uuid)": {
     reads:
       "media.publish: the private variants of an active listing to copy, worker only (task 4.2)",

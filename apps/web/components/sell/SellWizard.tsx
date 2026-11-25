@@ -62,11 +62,14 @@ interface SellWizardProps {
 }
 
 interface Published {
+  /** Task 4.3: the listing page that the result links to. */
+  id: string;
   title: string;
   priceMinor: number;
 }
 
 interface ListingData {
+  id: string;
   title: string;
   price_minor: number;
 }
@@ -287,7 +290,7 @@ function Wizard({ owner, catalog }: SellWizardProps) {
       removeDraft(store);
       setPublished({
         listing: result.ok
-          ? { title: result.data.title, priceMinor: result.data.price_minor }
+          ? { id: result.data.id, title: result.data.title, priceMinor: result.data.price_minor }
           : null,
         earlier,
       });
@@ -374,7 +377,17 @@ function Wizard({ owner, catalog }: SellWizardProps) {
           <p>{published.earlier ? t("sell.result.earlier") : t("sell.result.body")}</p>
         </Alert>
         <div className={styles.nav}>
-          <Button onClick={startAgain}>{t("sell.result.another")}</Button>
+          {published.listing !== null && (
+            <LinkButton href={routes.listing(published.listing.id)}>
+              {t("sell.result.view")}
+            </LinkButton>
+          )}
+          <Button
+            onClick={startAgain}
+            variant={published.listing === null ? "primary" : "secondary"}
+          >
+            {t("sell.result.another")}
+          </Button>
           <LinkButton href={routes.home} variant="secondary">
             {t("sell.result.home")}
           </LinkButton>

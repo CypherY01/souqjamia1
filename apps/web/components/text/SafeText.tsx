@@ -11,10 +11,17 @@ interface SafeTextProps {
   text: string;
   /** Screen-reader hint for links that open in a new tab, from t("ui.newTab"). */
   newTabLabel: string;
+  /**
+   * Task 4.3: false inside a link of our own (a listing card's title), where another link would
+   * be invalid HTML. The text stays plain, URLs included.
+   */
+  links?: boolean;
 }
 
-export function SafeText({ text, newTabLabel }: SafeTextProps) {
-  const parts = linkify(stripBidiControls(text));
+export function SafeText({ text, newTabLabel, links = true }: SafeTextProps) {
+  const clean = stripBidiControls(text);
+  if (!links) return <bdi className={styles.text}>{clean}</bdi>;
+  const parts = linkify(clean);
   return (
     // <bdi> isolates the member's text direction from the surrounding interface (NFR02).
     <bdi className={styles.text}>

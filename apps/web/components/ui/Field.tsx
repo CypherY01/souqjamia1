@@ -13,6 +13,8 @@ interface FieldFrameProps {
   hint?: string | undefined;
   error?: string | undefined;
   optional?: boolean | undefined;
+  /** Task 4.3: false hides «(اختياري)» where every field is optional (the market filters). */
+  optionalMark?: boolean | undefined;
   children: ReactNode;
 }
 
@@ -22,12 +24,22 @@ export function describedBy(id: string, hint?: string, error?: string): string |
   return joined === "" ? undefined : joined;
 }
 
-export function FieldFrame({ id, label, hint, error, optional, children }: FieldFrameProps) {
+export function FieldFrame({
+  id,
+  label,
+  hint,
+  error,
+  optional,
+  optionalMark = true,
+  children,
+}: FieldFrameProps) {
   return (
     <div className={styles.field}>
       <label htmlFor={id} className={styles.label}>
         {label}
-        {optional === true && <span className={styles.optional}> {t("ui.optional")}</span>}
+        {optional === true && optionalMark && (
+          <span className={styles.optional}> {t("ui.optional")}</span>
+        )}
       </label>
       {hint !== undefined && (
         <p id={`${id}-hint`} className={styles.hint}>
@@ -53,6 +65,7 @@ interface TextFieldProps extends InputProps {
   hint?: string;
   error?: string;
   optional?: boolean;
+  optionalMark?: boolean;
   type?: "text" | "email" | "password" | "search" | "tel" | "url";
   /**
    * Task 4.2: shows a live counter of the value against this limit, counted like the server
@@ -68,6 +81,7 @@ export function TextField({
   hint,
   error,
   optional,
+  optionalMark,
   type = "text",
   maxChars,
   ...rest
@@ -79,7 +93,14 @@ export function TextField({
     .filter(Boolean)
     .join(" ");
   return (
-    <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional}>
+    <FieldFrame
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      optional={optional}
+      optionalMark={optionalMark}
+    >
       <input
         {...rest}
         id={id}
@@ -136,6 +157,7 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "id"
   hint?: string;
   error?: string;
   optional?: boolean;
+  optionalMark?: boolean;
   /** The first, empty option, e.g. "اختر الفئة". */
   placeholder: string;
   options: readonly { value: string; label: string }[];
@@ -147,12 +169,20 @@ export function Select({
   hint,
   error,
   optional,
+  optionalMark,
   placeholder,
   options,
   ...rest
 }: SelectProps) {
   return (
-    <FieldFrame id={id} label={label} hint={hint} error={error} optional={optional}>
+    <FieldFrame
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      optional={optional}
+      optionalMark={optionalMark}
+    >
       <select
         {...rest}
         id={id}

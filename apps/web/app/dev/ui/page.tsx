@@ -38,6 +38,7 @@ import { TextArea } from "../../../components/ui/TextArea";
 import { devGalleryEnabled } from "../../../lib/dev-gallery";
 import { serverEnv } from "../../../lib/env";
 import { routes } from "../../../lib/routes";
+import { ListingsGallery } from "./ListingsGallery";
 import styles from "./page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -405,6 +406,10 @@ export default function DevUiPage() {
             <RelativeDate value={threeHoursAgo} now={now} />
           </p>
         </Card>
+      </Section>
+
+      <Section id="listings" title={t("dev.sections.listings")}>
+        <ListingsGallery now={now} />
       </Section>
 
       <Section id="states" title={t("dev.sections.states")}>

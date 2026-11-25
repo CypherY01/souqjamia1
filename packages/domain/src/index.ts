@@ -29,6 +29,26 @@ export {
   type ListingTextResult,
   type SellStep,
 } from "./listing.ts";
+export {
+  DEFAULT_LISTING_SORT,
+  HOME_CATEGORY_KEYS,
+  HOME_RECENT_COUNT,
+  LISTING_SORTS,
+  MARKET_QUERY_MAX,
+  MARKET_QUERY_RAW_MAX,
+  MATCH_KINDS,
+  MATCH_THRESHOLD,
+  marketSearchParams,
+  matchKindOf,
+  parseMarketParams,
+  RL04_ADDRESS_PER_MINUTE,
+  RL04_SESSION_PER_MINUTE,
+  type ListingSort,
+  type MarketFilters,
+  type MarketParamError,
+  type MarketParamsResult,
+  type MatchKind,
+} from "./market.ts";
 export { countChars, normalizeText, stripBidiControls } from "./text.ts";
 export * as enums from "./enums.ts";
 export {

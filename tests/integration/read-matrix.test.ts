@@ -135,7 +135,9 @@ describe("DEC77: app.rate_limit_check()", () => {
     const [asMember] = await asCaller<{ wait: number }>(identity, CHECK, ["DEC77:probe", used]);
     const [asGuest] = await asCaller<{ wait: number }>(null, CHECK, ["DEC77:probe", used]);
     expect(asMember?.wait).toBeGreaterThan(0);
-    expect(asMember).toEqual(asGuest);
+    // Two transactions, two clocks: the seconds to the end of the window may cross a second
+    // between them (42497 and 42496 in task 4.3's run). Same counter, so at most one apart.
+    expect(Math.abs((asMember?.wait ?? 0) - (asGuest?.wait ?? 0))).toBeLessThanOrEqual(1);
     // Another key reads nothing of this one.
     expect(await asCaller(identity, CHECK, ["DEC77:probe", key()])).toEqual([{ wait: 0 }]);
   });

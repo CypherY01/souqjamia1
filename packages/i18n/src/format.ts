@@ -69,6 +69,22 @@ export function formatDate(value: Date | string): string {
   return dateFormat.format(toDate(value));
 }
 
+const monthFormat = new Intl.DateTimeFormat(DATE_LOCALE, {
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/**
+ * A month of the contract (`joined_month`, "2026-11") as "نوفمبر 2026" (task 4.3, the seller's
+ * join month). The value is already a calendar month, so no time zone moves it.
+ */
+export function formatMonth(month: string): string {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month);
+  if (match === null) throw new RangeError("formatMonth expects YYYY-MM");
+  return monthFormat.format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 15)));
+}
+
 /** "الأربعاء، 18 نوفمبر 2026 في 4:30 م", in Riyadh time (meetups, FR38). */
 export function formatDateTime(value: Date | string): string {
   return dateTimeFormat.format(toDate(value));

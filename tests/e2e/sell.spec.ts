@@ -9,6 +9,7 @@ import pg from "pg";
 import { assertLocalUrl, readLocalStack } from "../../scripts/local-supabase.ts";
 import { png } from "../fixtures/images/index.ts";
 import { logIn, newEmail, openAccountMenu, signUpThroughApi, WCAG_22_AA } from "./auth-helpers.ts";
+import { brokenImages } from "./market-helpers.ts";
 
 const DRAFT_KEY = "souq.sell-draft";
 const ONE_WIDTH = "mobile-360";
@@ -170,6 +171,28 @@ test("TC24 TC68 FR16 every step is right to left, without horizontal scrolling o
   expect(await listingsOf(userId)).toBe(1);
   // The draft is gone once the listing is published.
   expect(await page.evaluate((key) => sessionStorage.getItem(key), DRAFT_KEY)).toBeNull();
+
+  // Task 4.3: the result opens the listing page. Its images appear once the worker's
+  // media.publish has run, with «الصور قيد التجهيز» until then and never a broken image (owner
+  // note on task 4.2).
+  const broken = brokenImages(page);
+  await page.getByRole("link", { name: "اعرض إعلانك" }).click();
+  await expect(page).toHaveURL(/\/listing\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("مكتب دراسة خشبي");
+  const image = page.getByRole("img", { name: /^صورة 1 من 1/ });
+  await expect(async () => {
+    if ((await image.count()) === 0) {
+      await expect(page.getByText("الصور قيد التجهيز")).toBeVisible();
+      await page.reload();
+    }
+    await expect(image).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 30_000 });
+  await expect
+    .poll(() =>
+      image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  expect(broken).toEqual([]);
 });
 
 test.describe("at one width", () => {
@@ -344,7 +367,11 @@ test.describe("at one width", () => {
     });
     expect(post.status()).toBe(403);
     expect(((await post.json()) as { code: string }).code).toBe("CSRF_FAILED");
-    expect((await request.get("/api/listings")).status()).toBe(405);
+    // Task 4.3: GET is API031, the public search. It reads only (one RL04 count), so a GET still
+    // changes no listing.
+    const before = await request.get("/api/listings?limit=1");
+    expect(before.status()).toBe(200);
+    expect(((await before.json()) as { data: unknown[] }).data.length).toBeLessThanOrEqual(1);
     const catalog = await request.get("/api/catalog");
     expect(catalog.status()).toBe(200);
     expect(catalog.headers()["cache-control"]).toBe("public, max-age=300");

@@ -12,6 +12,9 @@ const paths = {
   search:
     "M10 2a8 8 0 0 1 6.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z",
   chevron: "M7 10l5 5 5-5H7Z",
+  // Task 4.3: the place of a picture that is not ready yet («الصور قيد التجهيز»).
+  image:
+    "M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-5.5-7-3 3.9-2-2.4L6 17h12l-4.5-5Z",
 } as const;
 
 export type IconName = keyof typeof paths;

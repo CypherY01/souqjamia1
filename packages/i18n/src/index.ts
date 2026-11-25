@@ -5,6 +5,7 @@ export {
   formatDate,
   formatDateTime,
   formatMoney,
+  formatMonth,
   formatNumber,
   formatPrice,
   formatRelative,

@@ -11,6 +11,8 @@ import format from "./ar/format.json" with { type: "json" };
 import layout from "./ar/layout.json" with { type: "json" };
 // Task 4.2: listing values shared by the wizard and the market (conditions, places).
 import listing from "./ar/listing.json" with { type: "json" };
+// Task 4.3: the home page, the market and the listing page.
+import market from "./ar/market.json" with { type: "json" };
 // Task 4.1: image upload states and the safe rejection reasons (API039, FR80).
 import media from "./ar/media.json" with { type: "json" };
 // Task 3.8: the notifications page, the in-app text of each event, and the email preferences.
@@ -29,6 +31,7 @@ export const messages = {
   format,
   layout,
   listing,
+  market,
   media,
   notifications,
   sell,

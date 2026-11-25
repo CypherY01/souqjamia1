@@ -24,6 +24,7 @@
     "db:e2e": "node scripts/db-restart.ts --e2e",
     "db:lint": "pnpm --filter @souq/db db:lint",
     "env:local": "node scripts/write-local-env.ts",
+    "review:listings": "node scripts/review-listings.ts",
     "emails:check": "pnpm --filter @souq/db emails:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

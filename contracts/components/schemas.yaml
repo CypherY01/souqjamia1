@@ -855,6 +855,10 @@ ListingCard:
     is_favorite:
       type: boolean
       description: يظهر للعضو المسجّل فقط.
+    match:
+      type: string
+      enum: [exact, close]
+      description: في API031 مع q فقط (DEC84). close نتيجة قريبة تُعرض بعد المطابقة تحت عنوانها.
     created_at:
       $ref: '#/Timestamp'
 

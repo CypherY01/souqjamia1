@@ -44,11 +44,16 @@ describe("task 4.0 (item D): forms never submit their fields in the address", ()
     const all = forms();
     const posted = all.filter(({ head }) => head.includes('method="post"'));
     const others = all.filter(({ head }) => !head.includes('method="post"'));
+    // Task 4.3: the market's search and filters are a GET search form too (FR07 to FR12: the
+    // filters live in the URL), with no secret in them and working without JavaScript.
     expect(others.map(({ file, head }) => [file, /method="(\w+)"/.exec(head)?.[1]])).toEqual([
       ["components/layout/SiteHeader.tsx", "get"],
+      ["components/listings/MarketFilters.tsx", "get"],
       ["components/ui/Dialog.tsx", "dialog"],
     ]);
-    expect(others[0]?.head).toContain('role="search"');
+    for (const form of others.filter(({ head }) => head.includes('method="get"'))) {
+      expect(form.head).toContain('role="search"');
+    }
     // The thirteen forms of tasks 3.2 to 3.8; later tasks only add to this.
     expect(posted.length).toBeGreaterThanOrEqual(13);
   });

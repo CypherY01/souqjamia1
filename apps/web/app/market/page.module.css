@@ -1,0 +1,20 @@
+/* /market (task 4.3). */
+.page h1 {
+  margin-block: 0 var(--space-2);
+}
+
+.resultsFor {
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+/* The visitor's query in Arabic quotation marks, isolated from the sentence (NFR02). */
+.query {
+  quotes: "«" "»";
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.results {
+  min-inline-size: 0;
+}

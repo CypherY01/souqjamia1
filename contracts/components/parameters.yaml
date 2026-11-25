@@ -24,10 +24,12 @@ Query:
   name: q
   in: query
   required: false
-  description: عبارة بحث حتى 100 محرف بعد التطبيع (FR07).
+  description: >-
+    عبارة بحث حتى 100 محرف بعد التطبيع (FR07، DEC67)، و400 محرف قبله. الفارغة بعد التطبيع كأنها
+    غير موجودة.
   schema:
     type: string
-    maxLength: 100
+    maxLength: 400
 
 Id:
   name: id

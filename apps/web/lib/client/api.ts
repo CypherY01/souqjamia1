@@ -12,6 +12,8 @@ export interface ApiSuccess<T> {
   data: T;
   /** A 303 the browser followed (API004): the local path it led to. */
   location: string | null;
+  /** Task 4.3: the contract's `meta` when the answer has one (a page's next_cursor). */
+  meta?: Record<string, unknown>;
 }
 
 export interface ApiFailure {
@@ -147,14 +149,21 @@ export function createApiClient(fetchFn: Fetch): ApiClient {
       }
       if (response.ok) {
         let data = undefined as T;
+        let meta: Record<string, unknown> | undefined;
         if (response.status !== 204) {
           try {
-            data = ((await response.json()) as { data: T }).data;
+            const body = (await response.json()) as { data: T; meta?: unknown };
+            data = body.data;
+            if (typeof body.meta === "object" && body.meta !== null) {
+              meta = body.meta as Record<string, unknown>;
+            }
           } catch {
             data = undefined as T;
           }
         }
-        return { ok: true, status: response.status, data, location: null };
+        return meta === undefined
+          ? { ok: true, status: response.status, data, location: null }
+          : { ok: true, status: response.status, data, location: null, meta };
       }
       const failure = await readFailure(response);
       if (failure.code === "CSRF_FAILED" && attempt === 0) {

@@ -24,9 +24,17 @@ listings:
     tags: [listings]
     summary: البحث في الإعلانات العامة
     description: >-
-      الفلاتر تتقاطع (FR09). تُستبعد الإعلانات المخفية والمؤرشفة وإعلانات الحسابات المقيّدة أو
-      بانتظار الحذف. البحث على search_text المطبّع (القسم 6.3).
-    x-spec-ids: [API031, FR06, FR07, FR08, FR09, FR10, FR11, FR12, NFR14, TC04, TC29, TC81]
+      الفلاتر تتقاطع (FR09). يظهر النشط فقط: تُستبعد الإعلانات المباعة (DEC84) والمخفية والمؤرشفة
+      وإعلانات الحسابات المقيّدة أو بانتظار الحذف. البحث على search_text المطبّع (القسم 6.3، DEC67)
+      بمجموعتين (DEC84): exact حين تكون كل كلمة جزءاً من نسخة البحث أو العبارة بلا مسافات جزءاً منها
+      بلا مسافات، ثم close بتشابه pg_trgm (word_similarity) لا يقل عن 0.5. الترتيب: exact قبل close،
+      ثم sort داخل كل منهما، ثم المعرّف (FR11). ومع q تحمل كل بطاقة match.
+      رموز 400: q بالرمز too_big (أكثر من 100 محرف بعد التطبيع، أو 400 قبله)، وcategory وcondition
+      وsort بالرمز invalid_value، وlocation بالرمز invalid_format أو unavailable (نقطة غير نشطة)،
+      وlimit بالرمز invalid_type أو out_of_range، وINVALID_CURSOR لمؤشر مزوّر أو لفلاتر تغيّرت.
+      RL04: 120 في الدقيقة للجلسة (معرّف العضو أو كوكي الزائر، DEC84) و1200 للعنوان، ثم 429 مع
+      Retry-After. الرد Cache-Control: no-store.
+    x-spec-ids: [API031, FR06, FR07, FR08, FR09, FR10, FR11, FR12, NFR14, RL04, DEC84, TC04, TC29, TC81]
     x-access: public
     x-rate-limit: [RL04]
     security: []
@@ -119,8 +127,14 @@ listing:
     operationId: api032GetListing
     tags: [listings]
     summary: تفاصيل إعلان
-    description: الإعلان المخفي أو المحذوف يرجع 404 عاماً. المباع يظهر بحالته مع تعطيل التفاوض (UC04).
-    x-spec-ids: [API032, FR13, TC05, TC31]
+    description: >-
+      الإعلان المخفي أو المؤرشف أو المحذوف، أو إعلان حساب مقيّد أو بانتظار الحذف، يرجع نفس 404
+      العامة. المباع يظهر بحالته مع تعطيل التفاوض (UC04، DEC84). images فيها الصور التي نُسخت
+      مقاساتها العامة فقط، وprimary_image فارغة قبل ذلك («الصور قيد التجهيز»). capabilities بأول سبب
+      ينطبق: sign_in_required للزائر، ثم own_content لصاحب الإعلان، ثم account_restricted، ثم
+      context_closed للمباع، ثم للعرض وحده free_item وnot_negotiable. وفي البائع: avatar فارغة حتى 4.7،
+      وstudent_badge خطأ حتى 7.6، وrating بالعدد صفر حتى 6.2.
+    x-spec-ids: [API032, FR13, DEC84, TC05, TC31]
     x-access: public
     security: []
     parameters:

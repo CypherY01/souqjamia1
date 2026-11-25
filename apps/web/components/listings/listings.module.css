@@ -1,0 +1,343 @@
+/* Task 4.3: listing cards, «الصور قيد التجهيز», the market's results and filters, and the image
+   gallery. Tokens only (apps/web/app/tokens.css), logical properties only (RTL). */
+
+/* ---------- cards ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.item {
+  min-inline-size: 0;
+  border-radius: var(--radius-card);
+}
+
+.item:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The whole card is the title link's target, so its boundary is a control border. */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+.card:focus-within {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.media {
+  aspect-ratio: 4 / 3;
+  background-color: var(--color-subtle-green);
+}
+
+.image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  min-inline-size: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-heading);
+  overflow-wrap: anywhere;
+}
+
+.link {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  outline: none;
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.price {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  margin: auto 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- «الصور قيد التجهيز» ---------- */
+
+.pendingCompact,
+.pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  color: var(--color-primary);
+  text-align: center;
+}
+
+.pendingCompact {
+  block-size: 100%;
+}
+
+.pending {
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--color-control-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-subtle-green);
+}
+
+.pendingTitle {
+  margin: 0;
+  font-weight: 600;
+}
+
+.pendingBody {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+/* ---------- market results ---------- */
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.close h2 {
+  margin-block: 0 var(--space-1);
+  font-size: var(--text-xl);
+}
+
+.closeHint {
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.end {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* ---------- market filters ---------- */
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+.query {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.query > :first-child {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
+.filterPanel {
+  border-block-start: 1px solid var(--color-divider);
+  padding-block-start: var(--space-3);
+}
+
+.summary {
+  min-block-size: var(--target-size);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .filterGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.filterActions {
+  margin-block: var(--space-3) 0;
+}
+
+.resetLine {
+  margin: 0;
+}
+
+.reset {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target-size);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.reset:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- gallery ---------- */
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.strip {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  scroll-snap-type: inline mandatory;
+  list-style: none;
+  border-radius: var(--radius-card);
+  background-color: var(--color-subtle-green);
+}
+
+.strip:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-margin-block-start: var(--space-8);
+}
+
+.slideImage {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+}
+
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thumb {
+  display: block;
+  inline-size: 4.5rem;
+  overflow: hidden;
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+}
+
+.thumb:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.thumbImage {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}

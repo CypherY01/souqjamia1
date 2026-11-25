@@ -14,7 +14,8 @@ import type { AppDb } from "../db/app-client.ts";
 import { ApiError } from "./errors.ts";
 import { deriveKey } from "./keys.ts";
 
-export type FingerprintKind = "ip" | "email" | "guest";
+/** "member" (task 4.3, RL04 and DEC84): a member's search counts by the member id. */
+export type FingerprintKind = "ip" | "email" | "guest" | "member";
 
 /** One limit of SEC07, e.g. { scope: "RL01:email", limit: 5, window: "15 minutes" }. */
 export interface FailureLimit {

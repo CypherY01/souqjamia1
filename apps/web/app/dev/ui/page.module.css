@@ -158,3 +158,18 @@
 .chip[data-token="--color-text-muted"] {
   background-color: var(--color-text-muted);
 }
+
+/* Task 4.3: listing cards and media in the gallery. */
+.listingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.listingMedia {
+  max-inline-size: 36rem;
+  margin-block-end: var(--space-5);
+}

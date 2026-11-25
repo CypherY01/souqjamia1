@@ -28,6 +28,8 @@ export const routes = {
   // FR78, task 3.1: the state of a restricted or deletion-pending account.
   restricted: "/restricted",
   sell: "/sell",
+  // Task 4.3: a listing's public page (API032), shared as a deep link (TC81).
+  listing: (id: string) => `/listing/${encodeURIComponent(id)}`,
   messages: "/messages",
   notifications: "/notifications",
   // Task 4.1: the upload test page (dev only, 404 with APP_ENV=production, like /dev/ui).
@@ -78,8 +80,9 @@ export const routes = {
     uploadsAuthorize: "/api/uploads/authorize",
     upload: (id: string) => `/api/uploads/${encodeURIComponent(id)}`,
     uploadComplete: (id: string) => `/api/uploads/${encodeURIComponent(id)}/complete`,
-    // API030 and API034 (task 4.2).
+    // API030 and API034 (task 4.2), API031 and API032 (task 4.3).
     catalog: "/api/catalog",
     listings: "/api/listings",
+    listing: (id: string) => `/api/listings/${encodeURIComponent(id)}`,
   },
 } as const;

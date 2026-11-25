@@ -163,4 +163,22 @@ describe("createApiClient", () => {
       location: "/login?confirmed=1",
     });
   });
+
+  it("task 4.3: a page's meta comes back with its data (API031's next_cursor)", async () => {
+    const { fetchFn } = fakeFetch([
+      () => json({ data: [{ id: "a" }], meta: { next_cursor: "c2" } }),
+      () => json({ data: { id: "b" } }),
+    ]);
+    const api = createApiClient(fetchFn);
+    const page = await api.request<{ id: string }[]>("/api/listings?q=x", { method: "GET" });
+    expect(page).toEqual({
+      ok: true,
+      status: 200,
+      data: [{ id: "a" }],
+      location: null,
+      meta: { next_cursor: "c2" },
+    });
+    const one = await api.request("/api/listings/b", { method: "GET" });
+    expect(one).not.toHaveProperty("meta");
+  });
 });
