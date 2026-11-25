@@ -240,6 +240,7 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 | `app.public_listing(id)` و`app.public_listing_images(id)` | لـ `souq_web` (API032). النشط أو المباع، بلا المخفي والمؤرشف وإعلان الحساب المقيّد: وإلا لا صف (404 عامة). القدرات من هوية المعاملة بأول سبب: `sign_in_required` ثم `own_content` ثم `account_restricted` ثم `context_closed`، ثم للعرض `free_item` و`not_negotiable`. حقول البائع القادمة ثابتة: الشارة `false` حتى 7.6، والتقييمات صفر حتى 6.2 |
 | `app.public_viewer()` و`app.public_listing_visible(id)` | داخليتان بلا منح: قارئ الصفحة العامة (الجلسة المنتهية أو المحدودة زائر، بلا خطأ)، وما يظهر للعامة من إعلان |
 
+- **`listing_search_compact_trgm`** ثلاثياته كثيفة (نص بلا مسافات)، فعلى سوق صغير يفضّل المخطط المسح أو فهرساً آخر. `search-quality.test.ts` يثبت أنه يخدم الشرط، لا أنه المختار دائماً.
 - **5.5 و5.7** تضيفان سببي العرض المعلّق والحظر إلى `app.public_listing` بنسخة جديدة منها، من آخر نسخة.
 - **RL04** يُعدّ في الخادم على اتصال منفصل قبل القراءة (`lib/listings/limits.ts`)، لأن دالة القراءة STABLE لا تكتب.
 - **مجموعة R11** في `tests/integration/search-quality.test.ts`: أي تغيير في قواعد DEC67 أو DEC84 أو الحد يغيّر جدولها، ويحتاج قراراً جديداً.

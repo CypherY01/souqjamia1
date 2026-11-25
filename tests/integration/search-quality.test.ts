@@ -181,12 +181,6 @@ describe("R11 Arabic search quality (DEC67, DEC84)", () => {
       expect(
         await plan(
           client,
-          `select id from public.listing where ${shown} and pg_catalog.replace(search_text, ' ', '') like '%لابتوب%'`,
-        ),
-      ).toContain("listing_search_compact_trgm");
-      expect(
-        await plan(
-          client,
           "select id from public.listing where 'لابتوت' operator(extensions.<%) search_text",
         ),
       ).toContain("listing_search_trgm");
@@ -210,6 +204,24 @@ describe("R11 Arabic search quality (DEC67, DEC84)", () => {
             order by created_at desc, id desc limit 20`,
         ),
       ).toContain("listing_market_category_newest");
+
+      // The space-less copy: its GIN entries are dense (no word boundaries), so on a small
+      // market the planner prefers another partial index (CI's first run). The test proves the
+      // index can serve the form: the other indexes on the listing's state go with the rollback.
+      for (const other of [
+        "listing_seller_active",
+        "listing_market_newest",
+        "listing_market_price",
+        "listing_market_category_newest",
+      ]) {
+        await client.query(`drop index public.${other}`);
+      }
+      expect(
+        await plan(
+          client,
+          `select id from public.listing where ${shown} and pg_catalog.replace(search_text, ' ', '') like '%لابتوب%'`,
+        ),
+      ).toContain("listing_search_compact_trgm");
     });
   });
 });
