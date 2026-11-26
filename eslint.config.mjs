@@ -20,6 +20,8 @@ export default defineConfig([
     "docs/",
     "contracts/",
     "plan/",
+    // Third-party Claude Code skills, not project code.
+    ".claude/skills/",
   ]),
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
