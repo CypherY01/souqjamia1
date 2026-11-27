@@ -49,8 +49,10 @@ alter table public.listing add constraint listing_lifecycle_columns check (
   end
 );
 
--- API033: a member's listings by tab, newest first by the tab's time.
-create index listing_seller_status on public.listing (seller_id, status);
+-- API033: a member's listings by tab, newest first by the tab's time. On seller_id alone: an
+-- index that leads with or contains status would also serve the market's status = 'active'
+-- condition and compete with the market's own indexes (search-quality.test.ts, EXPLAIN).
+create index listing_seller on public.listing (seller_id);
 
 -- 2. BR27: an owner archive of an active listing can be restored until archived_at + 90 days.
 -- Anything else (an archived sale, sold_auto, account_deletion, not archived) has no deadline.
