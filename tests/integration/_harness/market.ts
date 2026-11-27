@@ -54,10 +54,11 @@ export async function fixtureListing(sellerId: string, item: FixtureListing): Pr
     await client.query(
       `insert into public.listing
          (id, seller_id, category_id, location_id, title, description, condition, price_minor,
-          is_negotiable, status, sold_at, archive_reason, archived_at, moderation_hidden_at,
-          created_at, updated_at)
+          is_negotiable, status, sold_at, previous_status, archive_reason, archived_at,
+          moderation_hidden_at, created_at, updated_at)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::public.listing_status,
                case when $10::public.listing_status = 'sold' then $11::timestamptz end,
+               case when $10::public.listing_status = 'archived' then 'active'::public.listing_status end,
                case when $10::public.listing_status = 'archived' then 'owner'::public.archive_reason end,
                case when $10::public.listing_status = 'archived' then $11::timestamptz end,
                case when $12::boolean then $11::timestamptz end,

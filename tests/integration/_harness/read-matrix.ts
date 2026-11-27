@@ -94,6 +94,11 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
       "DEC77 app.owner_listing_images(): another member's session reads no image of a listing it does not own",
     guest: "DEC77 app.owner_listing_images(): a guest is UNAUTHENTICATED",
   },
+  "app.my_listings(listing_status, text, uuid, integer)": {
+    reads: "API033: one status tab of the session member's own listings (task 4.4)",
+    thirdParty: "DEC77 app.my_listings(): another member's session reads only its own listings",
+    guest: "DEC77 app.my_listings(): a guest is UNAUTHENTICATED",
+  },
   "app.market_listings(text, category_key, item_condition, uuid, text, smallint, text, uuid, integer)":
     {
       reads:
@@ -120,6 +125,13 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
       "media.publish: the private variants of an active listing to copy, worker only (task 4.2)",
     thirdParty: "DEC77 app.media_publish_files(): a member's identity changes nothing",
     guest: "DEC77 app.media_publish_files(): a guest reads the files of an active listing only",
+  },
+  "app.media_unpublish_files(uuid, uuid[])": {
+    reads:
+      "media.publish: the public copies to remove for a listing and its detached images, worker only (task 4.4)",
+    thirdParty: "DEC77 app.media_unpublish_files(): a member's identity changes nothing",
+    guest:
+      "DEC77 app.media_unpublish_files(): a guest reads the keys of images no longer eligible only",
   },
   "app.rate_limit_check(text, bytea, integer, interval)": {
     reads: "the seconds left on one counter, keyed by a hash the server computes (task 2.4)",

@@ -597,7 +597,9 @@ describe("RL05: publications per hour and day, and active listings", () => {
     const refused = await publishOutcome(db, member.identity, await listingInput([image]));
     expect(refused).toMatchObject({ status: 422, code: "LIMIT_REACHED" });
     await dbPool().query(
-      `update public.listing set status = 'archived'
+      `update public.listing
+          set status = 'archived', previous_status = 'active', archive_reason = 'owner',
+              archived_at = now()
         where id = (select id from public.listing where seller_id = $1 limit 1)`,
       [member.id],
     );

@@ -10,6 +10,13 @@ import {
   type ListingContext,
   type Published,
 } from "../../../apps/web/lib/listings/publish.ts";
+import {
+  readMyListings,
+  transitionListing,
+  updateListing,
+  type MyListingsContext,
+} from "../../../apps/web/lib/listings/manage.ts";
+import { myListingsRequest, type OwnerListingPage } from "../../../apps/web/lib/listings/owner.ts";
 import { createMediaPublish } from "../../../apps/worker/src/jobs/media.publish.ts";
 import type { StorageFactory } from "../../../apps/worker/src/jobs/image.process.ts";
 import { png } from "../../fixtures/images/index.ts";
@@ -23,6 +30,7 @@ import {
   uploadImage,
   type JobRun,
 } from "./storage.ts";
+import { TEST_APP_SECRET } from "./market.ts";
 import { captureLogger, workerPool } from "./worker.ts";
 
 /** One of the seven categories of the migration (BR03). */
@@ -102,22 +110,29 @@ export function publishOutcome(
   });
 }
 
-/** Runs one media.publish job with the worker's role. */
+/** Runs one media.publish job with the worker's role (task 4.4: with the detached images). */
 export async function runMediaPublish(
   listingId: string,
   storage: StorageFactory = realStorage,
+  detachedMediaIds?: readonly string[],
 ): Promise<JobRun> {
   const logs = captureLogger();
   const pool = workerPool();
   const job = createMediaPublish(storage);
   try {
-    const result = await job.run(job.payload.parse({ listing_id: listingId }), {
-      jobId: "0",
-      attempt: 1,
-      idempotencyKey: `job:test-publish-${listingId}`,
-      signal: new AbortController().signal,
-      db: pool,
-    });
+    const result = await job.run(
+      job.payload.parse({
+        listing_id: listingId,
+        ...(detachedMediaIds === undefined ? {} : { detached_media_ids: [...detachedMediaIds] }),
+      }),
+      {
+        jobId: "0",
+        attempt: 1,
+        idempotencyKey: `job:test-publish-${listingId}`,
+        signal: new AbortController().signal,
+        db: pool,
+      },
+    );
     return { result: result ?? {}, lines: logs.lines };
   } catch (error) {
     return { error, lines: logs.lines };
@@ -145,6 +160,90 @@ export async function resetRl05(memberId: string): Promise<void> {
   await dbPool().query(
     `delete from app.rate_limit_bucket
       where scope in ('RL05:hour', 'RL05:day') and key_hash = sha256(convert_to($1::text, 'UTF8'))`,
+    [memberId],
+  );
+}
+
+/** Task 4.4: the contexts and outcomes of API033, API035 and API036 with the real server code. */
+export function manageContext(db: AppDb, identity: Identity | null): MyListingsContext {
+  return { ...listingContext(db, identity), appSecret: TEST_APP_SECRET };
+}
+
+function patchRequest(id: string, body: unknown): Request {
+  const request = jsonRequest(`/api/listings/${id}`, body);
+  return new Request(request, { method: "PATCH" });
+}
+
+/** API035: 200 with the listing, or the contract error. */
+export function editOutcome(
+  db: AppDb,
+  identity: Identity | null,
+  id: string,
+  body: unknown,
+): Promise<Outcome> {
+  return outcome(async () =>
+    Response.json({
+      data: await updateListing(patchRequest(id, body), id, manageContext(db, identity)),
+    }),
+  );
+}
+
+/** API036: 200 with the listing, or the contract error. */
+export function transitionOutcome(
+  db: AppDb,
+  identity: Identity | null,
+  id: string,
+  body: unknown,
+): Promise<Outcome> {
+  return outcome(async () =>
+    Response.json({
+      data: await transitionListing(
+        jsonRequest(`/api/listings/${id}/transition`, body),
+        id,
+        manageContext(db, identity),
+      ),
+    }),
+  );
+}
+
+/** API033 as the route reads its query. */
+export function myListings(
+  db: AppDb,
+  identity: Identity | null,
+  query: Record<string, string> = {},
+): Promise<OwnerListingPage> {
+  return readMyListings(manageContext(db, identity), myListingsRequest(new URLSearchParams(query)));
+}
+
+/** The listing as postgres sees it: the lifecycle columns and the version. */
+export async function listingRow(id: string): Promise<Record<string, unknown>> {
+  const result = await dbPool().query<Record<string, unknown>>(
+    `select status::text as status, previous_status::text as previous_status,
+            archive_reason::text as archive_reason, sold_at, archived_at, version,
+            title, price_minor, created_at, updated_at
+       from public.listing where id = $1`,
+    [id],
+  );
+  const row = result.rows[0];
+  if (row === undefined) throw new Error(`no listing ${id}`);
+  return row;
+}
+
+/** The media.publish jobs queued for a listing, by dedupe key. */
+export async function publishJobs(listingId: string): Promise<{ key: string; payload: unknown }[]> {
+  const result = await dbPool().query<{ key: string; payload: unknown }>(
+    `select dedupe_key as key, payload from app.job
+      where kind = 'media.publish' and payload ->> 'listing_id' = $1 order by id`,
+    [listingId],
+  );
+  return result.rows;
+}
+
+/** Lets a member edit again within the hour (DEC85 counts every successful edit). */
+export async function resetDec85(memberId: string): Promise<void> {
+  await dbPool().query(
+    `delete from app.rate_limit_bucket
+      where scope = 'DEC85:hour' and key_hash = sha256(convert_to($1::text, 'UTF8'))`,
     [memberId],
   );
 }

@@ -42,6 +42,8 @@ export interface E2eListing {
   status?: "active" | "sold" | "archived";
   /** Seconds before now, so a test controls the order. */
   ageSeconds?: number;
+  /** Task 4.4: hidden by moderation. */
+  hidden?: boolean;
 }
 
 export async function insertListing(sellerId: string, item: E2eListing): Promise<string> {
@@ -67,12 +69,15 @@ export async function insertListings(
       await client.query(
         `insert into public.listing
          (id, seller_id, category_id, title, description, condition, price_minor, is_negotiable,
-          status, sold_at, archive_reason, archived_at, created_at, updated_at)
+          status, sold_at, previous_status, archive_reason, archived_at, moderation_hidden_at,
+          created_at, updated_at)
        values ($1, $2, (select id from public.category where key = $3), $4, $5,
                $6::public.item_condition, $7, $7 > 0, $8::public.listing_status,
                case when $8::text = 'sold' then now() end,
+               case when $8::text = 'archived' then 'active'::public.listing_status end,
                case when $8::text = 'archived' then 'owner'::public.archive_reason end,
                case when $8::text = 'archived' then now() end,
+               case when $10::boolean then now() end,
                now() - make_interval(secs => $9), now() - make_interval(secs => $9))`,
         [
           id,
@@ -84,6 +89,7 @@ export async function insertListings(
           item.priceMinor ?? 35_000,
           status,
           item.ageSeconds ?? 0,
+          item.hidden ?? false,
         ],
       );
       await client.query(

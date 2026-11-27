@@ -68,7 +68,9 @@ beforeAll(async () => {
 afterAll(async () => {
   // The fixtures leave the local market (some have public image rows without files).
   await dbPool().query(
-    `update public.listing set status = 'archived', archive_reason = 'owner', archived_at = now()
+    `update public.listing
+        set status = 'archived', archive_reason = 'owner', archived_at = now(),
+            previous_status = case when sold_at is null then 'active' else 'sold' end::public.listing_status
       where seller_id = any($1::uuid[]) and status <> 'archived'`,
     [[seller.id, other.id]],
   );
