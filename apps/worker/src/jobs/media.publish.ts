@@ -1,14 +1,21 @@
-// Task 4.2 (SEC08, DEC08, DEC71, item 6): the public copies of a published listing's images.
-// app.publish_listing() queues one job per listing in the publication's transaction, so it runs
-// only after the commit (SEC08: listing variants become public after publication only).
-//  1. app.media_publish_files(): the private w150, w600 and w1200 files of the listing's images,
-//     only while the listing is active and not hidden. No row: nothing to do, a success.
-//  2. Each one is copied inside Storage to the same fixed key in media-public, with its type and
+// Tasks 4.2 and 4.4 (SEC08, DEC08, DEC71, item 1 of plan/task-4.4.md): the public copies of a
+// listing's images follow the listing's state. Queued in the transaction that changes it:
+// publication (4.2), an edit of the images (API035, with the images it detached), archive and
+// restore (API036). The dedupe key carries the listing's version, so every change queues one job.
+// An image may be public while its listing is active or sold and not hidden by moderation.
+//  1. app.media_unpublish_files(): the fixed public keys of the images in scope that are not
+//     eligible (the listing's, and the detached ones). Removed; a missing file is a success.
+//  2. app.media_unpublished() with the images removed: under their locks, their public rows are
+//     marked deleted, and the keys of those that became eligible meanwhile (attached to another
+//     listing whose sync already ran) come back: they are copied again.
+//  3. app.media_publish_files(): the private w150, w600 and w1200 files of an active listing not
+//     hidden, copied inside Storage to the same fixed key in media-public, with their type and
 //     Cache-Control (one hour, task 4.1). A copy a previous attempt made is kept (DEC71).
-//  3. app.media_published() checks the listing again under its lock and records the public rows.
-//     If it was archived or hidden meanwhile, nothing is recorded and the copies it lists are
-//     removed again. The master is never copied.
-// Removing the public copies when a listing is archived or hidden comes with tasks 4.4 and 7.5.
+//  4. app.media_published() checks the listing again under its lock and records the public rows
+//     (reviving one an archive removed). If the listing changed meanwhile, nothing is recorded and
+//     the copies it lists are removed again. The master is never copied.
+// Each step decides from the state at that moment, so jobs that run in any order end with what
+// the current state allows. Removing the copies of a listing hidden by moderation comes with 7.5.
 // Logs carry the listing id and the counts only.
 import { MEDIA_BUCKETS } from "@souq/domain";
 import { z } from "zod";
@@ -16,9 +23,7 @@ import { defineJob, type JobResult } from "../job.ts";
 import { createMediaStorage, storageSettings } from "../media/storage.ts";
 import type { StorageFactory } from "./image.process.ts";
 
-interface FileRow {
-  media_id: string;
-  variant: string;
+interface KeyRow {
   object_key: string;
 }
 
@@ -27,34 +32,69 @@ const defaultStorage: StorageFactory = (signal) => createMediaStorage(storageSet
 export function createMediaPublish(storageFactory: StorageFactory = defaultStorage) {
   return defineJob({
     kind: "media.publish",
-    payload: z.strictObject({ listing_id: z.uuid() }),
+    payload: z.strictObject({
+      listing_id: z.uuid(),
+      detached_media_ids: z.array(z.uuid()).max(10).optional(),
+    }),
     timeoutMs: 60_000,
-    async run({ listing_id }, { db, signal }): Promise<JobResult> {
-      const files = await db.query<FileRow>(
-        `select media_id, variant::text as variant, object_key
-           from app.media_publish_files($1)`,
-        [listing_id],
+    async run({ listing_id, detached_media_ids }, { db, signal }): Promise<JobResult> {
+      const detached = detached_media_ids ?? [];
+      let storage: ReturnType<StorageFactory> | null = null;
+      const store = () => (storage ??= storageFactory(signal));
+      let copied = 0;
+      let removed = 0;
+
+      const stale = await db.query<KeyRow & { media_id: string }>(
+        "select media_id, object_key from app.media_unpublish_files($1, $2::uuid[])",
+        [listing_id, detached],
       );
-      if (files.rows.length === 0) return { copied: 0 };
-      const storage = storageFactory(signal);
+      if (stale.rows.length > 0) {
+        await store().remove(
+          MEDIA_BUCKETS.public,
+          stale.rows.map((row) => row.object_key),
+        );
+        removed += stale.rows.length;
+        const again = await db.query<KeyRow>(
+          "select object_key from app.media_unpublished($1::uuid[])",
+          [[...new Set(stale.rows.map((row) => row.media_id))]],
+        );
+        for (const row of again.rows) {
+          signal.throwIfAborted();
+          await store().copy(
+            MEDIA_BUCKETS.private,
+            row.object_key,
+            MEDIA_BUCKETS.public,
+            row.object_key,
+          );
+          copied += 1;
+        }
+      }
+
+      const files = await db.query<KeyRow>("select object_key from app.media_publish_files($1)", [
+        listing_id,
+      ]);
+      if (files.rows.length === 0) return { copied, removed };
       for (const file of files.rows) {
         signal.throwIfAborted();
-        await storage.copy(
+        await store().copy(
           MEDIA_BUCKETS.private,
           file.object_key,
           MEDIA_BUCKETS.public,
           file.object_key,
         );
+        copied += 1;
       }
-      const removed = await db.query<{ object_key: string }>(
-        "select object_key from app.media_published($1)",
-        [listing_id],
-      );
-      await storage.remove(
-        MEDIA_BUCKETS.public,
-        removed.rows.map((row) => row.object_key),
-      );
-      return { copied: files.rows.length, removed: removed.rows.length };
+      const after = await db.query<KeyRow>("select object_key from app.media_published($1)", [
+        listing_id,
+      ]);
+      if (after.rows.length > 0) {
+        await store().remove(
+          MEDIA_BUCKETS.public,
+          after.rows.map((row) => row.object_key),
+        );
+        removed += after.rows.length;
+      }
+      return { copied, removed };
     },
   });
 }

@@ -226,7 +226,7 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 | `app.media_publish_files(listing)` و`app.media_published(listing)` | لـ `souq_worker` (`media.publish`، SEC08): المقاسات الخاصة لإعلان نشط غير مخفي، ثم تسجيل صفوف `public` بعد النسخ تحت قفل الإعلان، أو مفاتيح النسخ التي تُحذف إن لم يعد مؤهلاً. الأصل لا يُنسخ أبداً |
 
 - **مفاتيح الملفات العامة** هي مفاتيح الخاصة نفسها (`<media_id>/<variant>.webp`) في `media-public`. العنوان يُبنى فقط حين `public_ready` (ملاحظة المالك 2 على 4.2: «الصور قيد التجهيز» في 4.3).
-- **إزالة النسخ العامة** عند الأرشفة والإخفاء في 4.4 و7.5، بنفس المفاتيح الثابتة.
+- **إزالة النسخ العامة** عند الأرشفة وحذف الصور في 4.4 (قسم «إدارة الإعلانات»)، وعند الإخفاء في 7.5، بنفس المفاتيح الثابتة.
 - **اختبار يطابق الحدود** بين الهجرة و`packages/domain/src/listing.ts` في `listings-publish.test.ts`.
 
 ## السوق (المهمة 4.3، DEC84)
@@ -244,6 +244,28 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **5.5 و5.7** تضيفان سببي العرض المعلّق والحظر إلى `app.public_listing` بنسخة جديدة منها، من آخر نسخة.
 - **RL04** يُعدّ في الخادم على اتصال منفصل قبل القراءة (`lib/listings/limits.ts`)، لأن دالة القراءة STABLE لا تكتب.
 - **مجموعة R11** في `tests/integration/search-quality.test.ts`: أي تغيير في قواعد DEC67 أو DEC84 أو الحد يغيّر جدولها، ويحتاج قراراً جديداً.
+
+## إدارة الإعلانات (المهمة 4.4، DEC85)
+
+`20261127090000_owner_listings.sql`، وتفاصيله في `plan/task-4.4.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| `listing_lifecycle_columns` | قيد CHECK: النشط بلا أعمدة بيع وأرشفة، والمباع له `sold_at`، والمؤرشف له `previous_status` (نشط أو مباع، و`sold_at` موجود إن كان مباعاً) و`archive_reason` و`archived_at`. كل دالة لاحقة (6.1 و7.5 و8.1) تكتب الحالة كاملة. أكملت الهجرة صفوف الاختبارات القديمة قبله |
+| `app.listing_restorable_until(...)` | داخلية: `archived_at + 90 days` لأرشفة المالك من حالة نشطة، وإلا null (BR27) |
+| `app.owner_listing(id)` | أُعيد إنشاؤها بعمود `restorable_until` |
+| `app.my_listings(status, after_key, after_id, limit)` | لـ `souq_web` (API033): تبويب واحد لإعلانات العضو، فيه المخفي إدارياً في «النشط». الترتيب بوقت التبويب (`created_at` أو `sold_at` أو `archived_at`) ثم المعرّف، والمؤشر `(sort_key, id)`. الصور مصفوفتان بترتيبها |
+| `app.update_listing(id, expected_version, patch)` | لـ `souq_web` (API035): `assert_active_member`، والبنية، وقفل الإعلان (`NOT_FOUND` لغير صاحبه، و`FORBIDDEN` للمخفي، و`STATE_CONFLICT` لغير النشط وللنسخة)، والحقول بعد الدمج (الفئة والنقطة المعطّلتان تبقيان ما لم تتغيرا)، والصور (قائمة كاملة، والجديدة بقواعد النشر)، و«لا تغيير» بلا عدّ، ثم حد DEC85 (`DEC85:hour`، 30) والحفظ. الصورة المفصولة `expires_at` بعد 24 ساعة (RET01)، ومهمة `media.publish` حين تتغير الصور |
+| `app.transition_listing(id, action, expected_version)` | لـ `souq_web` (API036): `mark_sold` (نشط إلى مباع)، و`archive` (نشط أو مباع، ويحفظ `previous_status`)، و`restore` (أرشفة المالك من نشط، قبل 90 يوماً وإلا `DEADLINE_PASSED`، وسقف 200 تحت قفل صف `profile` وإلا `LIMIT_REACHED`). كل إجراء على المخفي `FORBIDDEN`. الأرشفة والاسترجاع تُنشئان مهمة `media.publish` |
+| `app.media_unpublish_files(listing, detached)` و`app.media_unpublished(removed)` | لـ `souq_worker`: مفاتيح النسخ العامة لصور لم تعد مؤهلة (صور إعلان غير نشط وغير مباع أو مخفي، والصور المفصولة غير المرتبطة بإعلان مؤهل)، ثم تحت أقفال الصور تُكتب `deleted_at` لصفوفها العامة، وترجع مفاتيح ما صار مؤهلاً في الأثناء ليُنسخ ثانية |
+| `app.media_published(listing)` | تعيد الصف العام المزال نفسه عند الاسترجاع (القيد الفريد `(media_id, variant, visibility)`) |
+| `app.media_public_eligible(media)` | داخلية: صورة إعلان نشط أو مباع غير مخفي |
+
+- **مفتاح منع التكرار** لمهمة `media.publish` بعد النشر فيه نسخة الإعلان: `media.publish:<listing_id>:<version>`. فهرس `job_dedupe` دائم، فالمفتاح بلا نسخة لا يُنشئ مهمة ثانية أبداً. والنشر (4.2) يبقى `media.publish:<listing_id>`.
+- **المزامنة بأي ترتيب (DEC71):** كل خطوة تقرر من الحالة لحظتها، فمهمة قديمة لا تزيل نسخ إعلان استُرجع، ولا تسجّل نسخ إعلان أُرشف.
+- **BR41:** المهمة 5.5 تضيف إلغاء العروض المعلّقة إلى `app.update_listing` (`price_changed` و`made_free_or_fixed`) و`app.transition_listing` (`context_closed` للبيع والأرشفة)، بنسخة جديدة من آخر نسخة.
+- **7.5** تضيف مهمة `media.publish` عند الإخفاء ورفعه، و`app.media_public_eligible` يستبعد المخفي من الآن.
+- **اختبار يطابق الحدود** بين الهجرة و`packages/domain/src/listing-lifecycle.ts` في `listings-manage.test.ts`.
 
 ## schema `rls`
 
