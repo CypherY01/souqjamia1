@@ -15,6 +15,8 @@ import listing from "./ar/listing.json" with { type: "json" };
 import market from "./ar/market.json" with { type: "json" };
 // Task 4.1: image upload states and the safe rejection reasons (API039, FR80).
 import media from "./ar/media.json" with { type: "json" };
+// Task 4.4: the seller's listings (/account/listings) and the edit page.
+import myListings from "./ar/my-listings.json" with { type: "json" };
 // Task 3.8: the notifications page, the in-app text of each event, and the email preferences.
 import notifications from "./ar/notifications.json" with { type: "json" };
 // Task 4.2: the publication wizard (/sell).
@@ -33,6 +35,7 @@ export const messages = {
   listing,
   market,
   media,
+  myListings,
   notifications,
   sell,
   ui,

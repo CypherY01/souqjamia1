@@ -4,6 +4,7 @@
 // seller. A sold listing keeps its page with its state (DEC84). Anything the public may not see
 // is the generic «غير متاح» page, the same for every reason. The contact button and the guest's
 // sign-in come with task 5.1 (owner item 6): the capabilities are already computed (API032).
+// Task 4.4: the seller's note links to «إعلاناتي».
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -64,6 +65,11 @@ export default async function ListingPage({ params }: Props) {
           {listing.capabilities.disabled_reason === "own_content" && (
             <Alert variant="info" title={t("market.listing.ownTitle")}>
               <p>{t("market.listing.ownBody")}</p>
+              <p>
+                <LinkButton href={routes.account.listings} variant="secondary">
+                  {t("market.listing.manage")}
+                </LinkButton>
+              </p>
             </Alert>
           )}
           <dl className={styles.facts} aria-label={t("market.listing.facts")}>

@@ -1,0 +1,185 @@
+/* Task 4.4: «إعلاناتي» and «تعديل إعلان». Tokens only (apps/web/app/tokens.css), logical
+   properties only (RTL), mobile first (360, 768 and 1440 px). */
+
+/* ---------- the tabs ---------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target-size);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-card);
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The current tab: a filled background and a heavier border, not color alone (aria-current). */
+.tab[aria-current="page"] {
+  border-width: 2px;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ---------- the list ---------- */
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  border-radius: var(--radius-card);
+}
+
+.item:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+@media (min-width: 768px) {
+  .card {
+    flex-direction: row;
+  }
+}
+
+.media {
+  flex: none;
+  aspect-ratio: 4 / 3;
+  background-color: var(--color-subtle-green);
+}
+
+@media (min-width: 768px) {
+  .media {
+    inline-size: 12rem;
+  }
+}
+
+.image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+  line-height: var(--leading-heading);
+  overflow-wrap: anywhere;
+}
+
+.price {
+  margin: 0;
+  font-weight: 700;
+}
+
+.meta,
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.hidden {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.inline {
+  display: contents;
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.end {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* ---------- the edit page ---------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.part {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+.part h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

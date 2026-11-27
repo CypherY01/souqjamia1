@@ -149,10 +149,18 @@ listing:
     tags: [listings]
     summary: تعديل إعلان نشط ظاهر
     description: >-
-      لصاحب الإعلان فقط. تغيير السعر يلغي العروض المعلّقة بالسبب price_changed، وجعله مجانياً
-      أو غير قابل للتفاوض يلغيها بالسبب made_free_or_fixed (BR41، الفصل 06).
-    x-spec-ids: [API035, FR23, BR27, BR41, TC10, TC35]
+      لصاحب الإعلان فقط، والإعلان نشط وغير مخفي إدارياً. الحقول المرسلة وحدها تتغير، وcreated_at ثابت.
+      إعلان عضو آخر أو غير موجود 404 NOT_FOUND بلا كشف لوجوده (TC10). المخفي إدارياً 403 FORBIDDEN
+      لكل إجراء حتى قرار المشرف (TC35). غير النشط أو expected_version قديم 409 STATE_CONFLICT.
+      رموز الحقول كما في API034، وBR08 على الإعلان بعد الدمج. الفئة أو نقطة اللقاء المعطّلة تبقى ما لم
+      تتغير، واختيارها الآن unavailable. media_ids القائمة الكاملة بالترتيب: الباقية من صور الإعلان،
+      والجديدة بقواعد API034، والمفصولة تُحذف بعد 24 ساعة ما لم تُرفق ثانية (RET01)، ونسخها العامة
+      تُزال (SEC08). طلب لا يغيّر شيئاً يرجع 200 بلا زيادة النسخة ولا يُعدّ. حد DEC85: 30 تعديلاً ناجحاً
+      في الساعة لكل عضو. تغيير السعر يلغي العروض المعلّقة بالسبب price_changed، وجعله مجانياً أو غير
+      قابل للتفاوض يلغيها بالسبب made_free_or_fixed (BR41، المهمة 5.5).
+    x-spec-ids: [API035, FR23, BR05, BR06, BR08, BR27, BR41, DEC85, RET01, TC10, TC35]
     x-access: resource_owner
+    x-rate-limit: [DEC85]
     security:
       - sessionCookie: []
         csrfToken: []
@@ -179,13 +187,19 @@ listing:
         $ref: '../components/responses.yaml#/Conflict'
       '422':
         $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
 
 myListings:
   get:
     operationId: api033ListMyListings
     tags: [listings]
     summary: إعلاناتي حسب الحالة
-    x-spec-ids: [API033, FR23, FR24]
+    description: >-
+      تبويب واحد من إعلانات العضو: active افتراضياً، وفيه المخفي إدارياً بـ moderation_hidden. الترتيب
+      الأحدث أولاً بوقت التبويب (created_at للنشط، وsold_at للمباع، وarchived_at للمؤرشف) ثم المعرّف.
+      المؤشر موقّع ومربوط بالتبويب، ومؤشر تبويب آخر INVALID_CURSOR. وstatus غير معروف 400.
+    x-spec-ids: [API033, FR23, FR24, BR27]
     x-access: member
     parameters:
       - name: status
@@ -211,9 +225,14 @@ listingTransition:
     tags: [listings]
     summary: تحديد كمباع أو أرشفة أو استرجاع
     description: >-
-      المباع لا يرجع نشطاً أبداً، والاسترجاع خلال 90 يوماً للأرشفة من حالة نشطة فقط،
-      والمالك لا يرفع الإخفاء الإداري (BR27، TC34، TC35). الأرشفة والبيع يلغيان العروض المعلّقة.
-    x-spec-ids: [API036, FR24, BR27, BR28, DEC09, TC34, TC35]
+      mark_sold من نشط إلى مباع، نهائي: المباع لا يرجع نشطاً أبداً. archive من نشط أو مباع، ويحفظ
+      previous_status وarchive_reason=owner وarchived_at (DEC09). restore لأرشفة المالك من حالة نشطة
+      فقط، قبل restorable_until (90 يوماً، BR27)، وبعدها 422 DEADLINE_PASSED بلا حذف (TC34)، وسقف 200
+      إعلان نشط 422 LIMIT_REACHED. أي انتقال آخر من الحالة الحالية أو expected_version قديم 409
+      STATE_CONFLICT. إعلان عضو آخر 404، والمخفي إدارياً 403 FORBIDDEN لكل إجراء (TC35). الأرشفة
+      تزيل النسخ العامة للصور والاسترجاع يعيدها (SEC08)، والمباع يبقيها (DEC84). بلا حد عدد (DEC85).
+      الأرشفة والبيع يلغيان العروض المعلّقة بالسبب context_closed (BR41، المهمة 5.5).
+    x-spec-ids: [API036, FR24, BR27, BR28, DEC09, DEC85, TC34, TC35]
     x-access: resource_owner
     security:
       - sessionCookie: []
@@ -229,6 +248,8 @@ listingTransition:
     responses:
       '200':
         $ref: '../components/responses.yaml#/OwnerListingOk'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
       '401':
         $ref: '../components/responses.yaml#/Unauthorized'
       '403':

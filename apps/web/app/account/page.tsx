@@ -103,6 +103,10 @@ export default async function AccountPage() {
             <p className={styles.note}>{t("account.home.sections.profileHint")}</p>
           </li>
           <li>
+            <a href={routes.account.listings}>{t("account.home.sections.listings")}</a>
+            <p className={styles.note}>{t("account.home.sections.listingsHint")}</p>
+          </li>
+          <li>
             <a href={routes.account.security}>{t("account.home.sections.security")}</a>
             <p className={styles.note}>{t("account.home.sections.securityHint")}</p>
           </li>

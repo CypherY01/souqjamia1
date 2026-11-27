@@ -8,6 +8,9 @@
 //    An expired one (24 hours, RET01) shows why and is removed by the member; the text stays.
 //  - Private previews live 60 seconds (BR26): refreshPreviews() asks for new links before the
 //    images are shown again (the images and review steps).
+//  - Task 4.4, the edit page: the listing's current images come in as attached. They show their
+//    public w150 copy (or none while it is prepared), are never asked again, and removing one only
+//    takes it out of the list: the edit detaches it when saved (API035), never API040.
 import { LISTING_IMAGES_MAX } from "@souq/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { followUpload, removeUpload, uploadImage, type UploadState } from "../../lib/client/upload";
@@ -26,6 +29,15 @@ export interface ImageItem {
   /** What API034 said about this image (MEDIA_INVALID, MEDIA_NOT_READY). */
   readonly serverProblem: ServerProblem | null;
   readonly restored: boolean;
+  /** Task 4.4: one of the listing's current images (removed from the list only, never deleted). */
+  readonly attached: boolean;
+}
+
+/** Task 4.4: an image the listing already has, with its public thumbnail if it exists. */
+export interface AttachedImage {
+  readonly mediaId: string;
+  readonly label: string;
+  readonly previewUrl: string | null;
 }
 
 /** An image kept in the tab's draft. */
@@ -88,13 +100,34 @@ function restoredItems(images: readonly RestoredImage[]): ImageItem[] {
     previewAt: null,
     serverProblem: null,
     restored: true,
+    attached: false,
   }));
 }
 
-export function useListingImages(initial: readonly RestoredImage[]): ListingImages {
-  const [items, setItems] = useState<readonly ImageItem[]>(() => restoredItems(initial));
+function attachedItems(images: readonly AttachedImage[], first: number): ImageItem[] {
+  return images.slice(0, LISTING_IMAGES_MAX).map((image, index) => ({
+    key: first + index,
+    file: null,
+    fileName: image.label,
+    state: { ...CHECKING, phase: "ready", uploadId: image.mediaId, previewUrl: image.previewUrl },
+    removing: false,
+    previewAt: null,
+    serverProblem: null,
+    restored: false,
+    attached: true,
+  }));
+}
+
+export function useListingImages(
+  initial: readonly RestoredImage[],
+  attached: readonly AttachedImage[] = [],
+): ListingImages {
+  const [items, setItems] = useState<readonly ImageItem[]>(() => [
+    ...restoredItems(initial),
+    ...attachedItems(attached, LISTING_IMAGES_MAX),
+  ]);
   const latest = useRef<readonly ImageItem[]>(items);
-  const nextKey = useRef(LISTING_IMAGES_MAX);
+  const nextKey = useRef(LISTING_IMAGES_MAX * 2);
   const queue = useRef<Queue>({ active: 0, waiting: [] });
 
   useEffect(() => {
@@ -160,6 +193,7 @@ export function useListingImages(initial: readonly RestoredImage[]): ListingImag
           previewAt: null,
           serverProblem: null,
           restored: false,
+          attached: false,
         };
       });
       latest.current = [...latest.current, ...added];
@@ -187,7 +221,8 @@ export function useListingImages(initial: readonly RestoredImage[]): ListingImag
     async (item: ImageItem) => {
       const id = item.state.uploadId;
       // An expired upload is gone already: removing it is only the member's way to clear it.
-      if (id !== null && item.state.phase !== "expired") {
+      // An attached image stays the listing's until the edit is saved (task 4.4).
+      if (id !== null && item.state.phase !== "expired" && !item.attached) {
         update(item.key, { removing: true });
         const removed = await removeUpload(id);
         if (!removed && item.state.phase === "ready") {
@@ -226,6 +261,7 @@ export function useListingImages(initial: readonly RestoredImage[]): ListingImag
       const id = item.state.uploadId;
       if (
         id !== null &&
+        !item.attached &&
         item.state.phase === "ready" &&
         (item.previewAt === null || now - item.previewAt > PREVIEW_FRESH_MS)
       ) {

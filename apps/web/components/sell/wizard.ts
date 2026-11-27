@@ -169,6 +169,16 @@ export function priceOf(fields: SellDraftFields): number | null {
   return price.ok ? price.halalas : null;
 }
 
+/**
+ * Task 4.4: a stored price as the riyals the member typed (Western digits, two decimals only when
+ * there are halalas), so the edit page starts from it and parseListingPrice reads it back exactly.
+ */
+export function priceTextOf(halalas: number): string {
+  const riyals = Math.trunc(halalas / 100);
+  const rest = halalas % 100;
+  return rest === 0 ? String(riyals) : `${String(riyals)}.${String(rest).padStart(2, "0")}`;
+}
+
 /** Step 4: a suggested point still in the list, or «حسب الاتفاق» (DEC28). */
 export function placeErrors(fields: SellDraftFields, catalog: SellCatalog): SellErrors {
   if (fields.place === AGREEMENT) return {};

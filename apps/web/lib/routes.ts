@@ -39,6 +39,8 @@ export const routes = {
     home: "/account",
     profile: "/account/profile",
     listings: "/account/listings",
+    // Task 4.4: the edit page of one of the member's listings (API035).
+    listingEdit: (id: string) => `/account/listings/${encodeURIComponent(id)}/edit`,
     wanted: "/account/wanted",
     favorites: "/account/favorites",
     // Task 3.4: the new password, for the recovery session only (API008, DEC38).
@@ -84,5 +86,8 @@ export const routes = {
     catalog: "/api/catalog",
     listings: "/api/listings",
     listing: (id: string) => `/api/listings/${encodeURIComponent(id)}`,
+    // API033 and API036 (task 4.4).
+    myListings: "/api/me/listings",
+    listingTransition: (id: string) => `/api/listings/${encodeURIComponent(id)}/transition`,
   },
 } as const;

@@ -388,6 +388,9 @@ function Wizard({ owner, catalog }: SellWizardProps) {
           >
             {t("sell.result.another")}
           </Button>
+          <LinkButton href={routes.account.listings} variant="secondary">
+            {t("sell.result.myListings")}
+          </LinkButton>
           <LinkButton href={routes.home} variant="secondary">
             {t("sell.result.home")}
           </LinkButton>

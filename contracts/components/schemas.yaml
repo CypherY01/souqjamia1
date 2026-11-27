@@ -944,7 +944,9 @@ OwnerListing:
           anyOf:
             - $ref: '#/Timestamp'
             - type: 'null'
-          description: نهاية مهلة الاسترجاع 90 يوماً للأرشفة من حالة نشطة فقط (BR27).
+          description: >-
+            archived_at + 90 يوماً لأرشفة المالك من حالة نشطة فقط، وnull لغيرها (BR27). تُرجع حتى بعد
+            مرورها، والواجهة تكتب «انتهت مهلة الاسترجاع».
         moderation_hidden:
           type: boolean
         version:
@@ -988,7 +990,9 @@ ListingPatch:
   type: object
   additionalProperties: false
   required: [expected_version]
-  description: تعديل السعر يلغي العروض المعلّقة بالسبب price_changed (BR41).
+  description: >-
+    الحقول المرسلة فقط تتغير. media_ids القائمة الكاملة بالترتيب. تعديل السعر يلغي العروض المعلّقة
+    بالسبب price_changed (BR41).
   properties:
     title:
       $ref: '#/ListingTitle'
