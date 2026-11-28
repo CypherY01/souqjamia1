@@ -1,14 +1,19 @@
 // Task 4.3 in the component gallery: listing cards in each state, «الصور قيد التجهيز», the image
 // gallery, the market filters and results (exact and close), and the market's page states.
+// Task 4.5: the favorite control in each state (unsaved, saved, sending, guest, failures) and
+// the favorites list with an available and an unavailable item.
 // The pictures are inline SVG data (img-src allows data:), so the gallery needs no Storage.
+import { favoriteView } from "@souq/domain";
 import { formatWait, t } from "@souq/i18n";
+import { FavoriteButton } from "../../../components/listings/FavoriteButton";
+import { FavoritesList } from "../../../components/listings/FavoritesList";
 import { ImageGallery } from "../../../components/listings/ImageGallery";
 import { ImagesPending } from "../../../components/listings/ImagesPending";
 import { ListingCard } from "../../../components/listings/ListingCard";
 import { MarketFilters } from "../../../components/listings/MarketFilters";
 import { MarketResults } from "../../../components/listings/MarketResults";
 import { Alert } from "../../../components/ui/Alert";
-import { LinkButton } from "../../../components/ui/Button";
+import { Button, LinkButton } from "../../../components/ui/Button";
 import { EmptyState, ErrorState } from "../../../components/ui/States";
 import type { CatalogRef, MeetingPointRef } from "../../../lib/catalog";
 import type { ListingCard as Card } from "../../../lib/listings/public";
@@ -25,6 +30,9 @@ function imageSet(background: string, shape: string): ImageSet {
   const src = picture(background, shape);
   return { w150: src, w600: src, w1200: src };
 }
+
+/** Task 4.5: a listing id no listing has (the gallery's buttons answer «غير متاح»). */
+const DEV_ID = "00000000-0000-4000-8000-000000000199";
 
 const GREEN = imageSet("#EAF2EE", "#0B3B2D");
 const GOLD = imageSet("#F5EFE0", "#C59B27");
@@ -100,7 +108,11 @@ export function ListingsGallery({ now }: { now: Date }) {
       <ul className={styles.listingGrid}>
         {cards.map((item) => (
           <li key={item.id}>
-            <ListingCard card={item} now={now} />
+            <ListingCard
+              card={item}
+              now={now}
+              favorite={{ mode: "member", returnTo: routes.market }}
+            />
           </li>
         ))}
       </ul>
@@ -128,7 +140,76 @@ export function ListingsGallery({ now }: { now: Date }) {
       />
 
       <h3>{t("dev.listings.results")}</h3>
-      <MarketResults initialCards={results} initialCursor={null} query="" now={now.toISOString()} />
+      <MarketResults
+        initialCards={results}
+        initialCursor={null}
+        query=""
+        now={now.toISOString()}
+        favorite={{ mode: "guest", returnTo: routes.market }}
+      />
+
+      <h3>{t("dev.favorites.button")}</h3>
+      <div className={styles.states}>
+        <FavoriteButton
+          listingId={DEV_ID}
+          title={t("dev.listings.ready")}
+          saved={false}
+          mode="member"
+          returnTo={routes.market}
+          size="page"
+        />
+        <FavoriteButton
+          listingId={DEV_ID}
+          title={t("dev.listings.ready")}
+          saved
+          mode="member"
+          returnTo={routes.market}
+          size="page"
+        />
+        <Button variant="secondary" loading loadingLabel={t("favorites.button.pending")}>
+          {t("favorites.button.saveLong")}
+        </Button>
+        <FavoriteButton
+          listingId={DEV_ID}
+          title={t("dev.listings.ready")}
+          saved={false}
+          mode="guest"
+          returnTo={routes.market}
+          size="page"
+        />
+        <FavoriteButton
+          listingId={DEV_ID}
+          title={t("dev.listings.ready")}
+          saved={false}
+          mode="member"
+          returnTo={routes.market}
+          size="page"
+          initialProblem={{ kind: "failed" }}
+        />
+        <FavoriteButton
+          listingId={DEV_ID}
+          title={t("dev.listings.ready")}
+          saved={false}
+          mode="member"
+          returnTo={routes.market}
+          size="page"
+          initialProblem={{ kind: "rate", wait: 600 }}
+        />
+      </div>
+
+      <h3>{t("dev.favorites.list")}</h3>
+      <FavoritesList
+        initialItems={[
+          favoriteView(cards[0]?.id ?? DEV_ID, hoursAgo(2).toISOString(), {
+            ...(cards[0] as Card),
+            is_favorite: true,
+          }),
+          favoriteView<Card>(DEV_ID, hoursAgo(48).toISOString(), null),
+        ]}
+        initialCursor={null}
+        now={now.toISOString()}
+        here={routes.account.favorites}
+      />
 
       <h3>{t("dev.listings.states")}</h3>
       <div className={styles.states}>

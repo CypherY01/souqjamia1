@@ -1,0 +1,79 @@
+/* Task 4.5: the favorite control and /account/favorites. Tokens only (apps/web/app/tokens.css),
+   logical properties only (RTL). */
+
+/* On a card the control sits over the image, above the title link's stretched target
+   (.link::after in listings.module.css), so a press never opens the listing. */
+.favorite.card {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  max-inline-size: calc(100% - 2 * var(--space-2));
+}
+
+.favorite.page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.favorite form {
+  margin: 0;
+}
+
+.heart {
+  flex: none;
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2;
+}
+
+.heart.filled {
+  fill: var(--color-primary);
+}
+
+.problem {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-card);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+/* ---------- /account/favorites ---------- */
+
+.unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  block-size: 100%;
+  padding: var(--space-3);
+  border: 1px dashed var(--color-control-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-card);
+}
+
+.unavailable h3 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.unavailable p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.actions {
+  margin-block-start: auto;
+}

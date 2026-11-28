@@ -13,7 +13,7 @@ import { EmptyState, ErrorState } from "../components/ui/States";
 import { loadCatalog } from "../lib/catalog";
 import { appDb } from "../lib/db/app-client";
 import { traceIdOf } from "../lib/http/trace";
-import { loadListingsPage, pageNow } from "../lib/listings/pages";
+import { loadListingsPage, pageFavoriteMode, pageNow } from "../lib/listings/pages";
 import { routes } from "../lib/routes";
 import styles from "./page.module.css";
 
@@ -34,6 +34,7 @@ export default async function HomePage() {
     (HOME_CATEGORY_KEYS as readonly string[]).includes(category.key),
   );
   const now = pageNow();
+  const favorite = { mode: await pageFavoriteMode(), returnTo: routes.home };
 
   return (
     <div className={styles.page}>
@@ -78,7 +79,7 @@ export default async function HomePage() {
             <ul className={styles.grid}>
               {result.page.cards.map((card, index) => (
                 <li key={card.id}>
-                  <ListingCard card={card} now={now} eager={index < 4} />
+                  <ListingCard card={card} now={now} eager={index < 4} favorite={favorite} />
                 </li>
               ))}
             </ul>

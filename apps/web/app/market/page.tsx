@@ -16,7 +16,7 @@ import { loadCatalog } from "../../lib/catalog";
 import { appDb } from "../../lib/db/app-client";
 import { DEFAULT_LIMIT } from "../../lib/http/cursor";
 import { traceIdOf } from "../../lib/http/trace";
-import { loadListingsPage, pageNow } from "../../lib/listings/pages";
+import { loadListingsPage, pageFavoriteMode, pageNow } from "../../lib/listings/pages";
 import { routes } from "../../lib/routes";
 import styles from "./page.module.css";
 
@@ -97,6 +97,7 @@ export default async function MarketPage({
               initialCursor={result.page.nextCursor}
               query={query}
               now={pageNow().toISOString()}
+              favorite={{ mode: await pageFavoriteMode(), returnTo: here }}
             />
           ))}
         {result.kind === "invalid" && (

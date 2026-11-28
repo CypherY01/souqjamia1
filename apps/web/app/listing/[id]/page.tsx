@@ -5,6 +5,7 @@
 // is the generic «غير متاح» page, the same for every reason. The contact button and the guest's
 // sign-in come with task 5.1 (owner item 6): the capabilities are already computed (API032).
 // Task 4.4: the seller's note links to «إعلاناتي».
+// Task 4.5: the favorite control next to the price (the seller may save their own, DEC86).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -15,7 +16,8 @@ import { Alert, SafeMeetupNotice } from "../../../components/ui/Alert";
 import { NegotiableBadge, StudentBadge } from "../../../components/ui/Badge";
 import { LinkButton } from "../../../components/ui/Button";
 import { DateText, Price } from "../../../components/ui/Display";
-import { loadPublicListing } from "../../../lib/listings/pages";
+import { FavoriteButton } from "../../../components/listings/FavoriteButton";
+import { loadPublicListing, pageFavoriteMode } from "../../../lib/listings/pages";
 import { routes } from "../../../lib/routes";
 import styles from "./page.module.css";
 
@@ -52,6 +54,14 @@ export default async function ListingPage({ params }: Props) {
             <Price halalas={listing.price_minor} />
             {listing.is_negotiable && <NegotiableBadge />}
           </p>
+          <FavoriteButton
+            listingId={listing.id}
+            title={listing.title}
+            saved={listing.is_favorite === true}
+            mode={await pageFavoriteMode()}
+            returnTo={routes.listing(listing.id)}
+            size="page"
+          />
           {listing.status === "sold" && (
             <Alert variant="info" title={t("market.listing.soldTitle")}>
               {listing.sold_at !== null && (

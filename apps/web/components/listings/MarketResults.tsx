@@ -15,7 +15,7 @@ import type { ListingCard as Card } from "../../lib/listings/public";
 import { routes } from "../../lib/routes";
 import { Alert } from "../ui/Alert";
 import { buttonClassName } from "../ui/Button";
-import { ListingCard } from "./ListingCard";
+import { ListingCard, type CardFavorite } from "./ListingCard";
 import styles from "./listings.module.css";
 
 interface MarketResultsProps {
@@ -25,6 +25,8 @@ interface MarketResultsProps {
   query: string;
   /** The server's time of the page, as ISO text. */
   now: string;
+  /** Task 4.5: the favorite control of every card. */
+  favorite: CardFavorite;
 }
 
 type LoadState =
@@ -39,19 +41,35 @@ function withCursor(base: string, query: string, cursor: string): string {
   return `${base}?${params.toString()}`;
 }
 
-function CardList({ cards, first, now }: { cards: Card[]; first: number; now: Date }) {
+function CardList({
+  cards,
+  first,
+  now,
+  favorite,
+}: {
+  cards: Card[];
+  first: number;
+  now: Date;
+  favorite: CardFavorite;
+}) {
   return (
     <ul className={styles.grid}>
       {cards.map((card, index) => (
         <li key={card.id} data-index={first + index} tabIndex={-1} className={styles.item}>
-          <ListingCard card={card} now={now} eager={first + index < 4} />
+          <ListingCard card={card} now={now} eager={first + index < 4} favorite={favorite} />
         </li>
       ))}
     </ul>
   );
 }
 
-export function MarketResults({ initialCards, initialCursor, query, now }: MarketResultsProps) {
+export function MarketResults({
+  initialCards,
+  initialCursor,
+  query,
+  now,
+  favorite,
+}: MarketResultsProps) {
   const [cards, setCards] = useState(initialCards);
   const [cursor, setCursor] = useState(initialCursor);
   const [state, setState] = useState<LoadState>({ kind: "idle" });
@@ -96,12 +114,12 @@ export function MarketResults({ initialCards, initialCursor, query, now }: Marke
 
   return (
     <div ref={container} className={styles.results} data-hydrated={hydrated ? "true" : undefined}>
-      {exact.length > 0 && <CardList cards={exact} first={0} now={time} />}
+      {exact.length > 0 && <CardList cards={exact} first={0} now={time} favorite={favorite} />}
       {close.length > 0 && (
         <section aria-labelledby="close-results" className={styles.close}>
           <h2 id="close-results">{t("market.market.closeTitle")}</h2>
           <p className={styles.closeHint}>{t("market.market.closeHint")}</p>
-          <CardList cards={close} first={exact.length} now={time} />
+          <CardList cards={close} first={exact.length} now={time} favorite={favorite} />
         </section>
       )}
       <div className={styles.more}>

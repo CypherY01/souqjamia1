@@ -7,6 +7,8 @@ import dev from "./ar/dev.json" with { type: "json" };
 // Supabase Auth email templates are generated from these keys (packages/db, task 1.4).
 import email from "./ar/email.json" with { type: "json" };
 import errors from "./ar/errors.json" with { type: "json" };
+// Task 4.5: the favorite button and /account/favorites.
+import favorites from "./ar/favorites.json" with { type: "json" };
 import format from "./ar/format.json" with { type: "json" };
 import layout from "./ar/layout.json" with { type: "json" };
 // Task 4.2: listing values shared by the wizard and the market (conditions, places).
@@ -30,6 +32,7 @@ export const messages = {
   dev,
   email,
   errors,
+  favorites,
   format,
   layout,
   listing,
