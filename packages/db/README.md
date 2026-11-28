@@ -267,6 +267,23 @@ perform app.idempotency_complete('POST /api/listings', p_key, v_result);
 - **7.5** تضيف مهمة `media.publish` عند الإخفاء ورفعه، و`app.media_public_eligible` يستبعد المخفي من الآن.
 - **اختبار يطابق الحدود** بين الهجرة و`packages/domain/src/listing-lifecycle.ts` في `listings-manage.test.ts`.
 
+## المفضلة (المهمة 4.5، DEC86)
+
+`20261128090000_favorites.sql`، وتفاصيله في `plan/task-4.5.md`:
+
+| الكائن | العمل |
+| --- | --- |
+| `public.favorite` | `(user_id, listing_id)` مفتاح أساسي (TC06: قيد في القاعدة، لا فحص ثم إدراج)، و`created_at` وقت الحفظ. RLS مفعّل بلا سياسة ولا صلاحية: المتصفح لا يقرؤه. الفهرسان `(user_id, created_at desc, listing_id desc)` للقائمة و`(listing_id)` |
+| `app.save_favorite(listing)` | لـ `souq_web` (API049): `assert_active_member`، ثم `NOT_FOUND` لإعلان لا يراه العامة (`app.public_listing_visible`)، وقفل صف `profile`، والحفظ المكرر لا يغيّر شيئاً ولا يُعدّ، ثم سقف 500 (`LIMIT_REACHED`، يُعدّ «غير المتاح» أيضاً)، والإدراج، ثم حد النجاح `DEC86:hour` (120). المباع وإعلان العضو نفسه يُحفظان |
+| `app.remove_favorite(listing)` | لـ `souq_web` (API050): `assert_active_member` ثم الحذف. تنجح دائماً، بلا حد |
+| `app.my_favorites(after_key, after_id, limit)` | لـ `souq_web` (API048): مفضلة العضو بالأحدث حفظاً ثم المعرّف، والمؤشر `(saved_key, listing_id)`. `available` هو `public_listing_visible`، وإن كان خطأً فكل أعمدة البطاقة null (UC05) |
+| `app.favorite_flags(listing_ids)` | لـ `souq_web`: ما حفظه القارئ من القائمة (51 على الأكثر)، لـ `is_favorite` في API031 وAPI032. القارئ من `app.public_viewer()`، فالزائر والجلسة المحدودة بلا صفوف ولا خطأ |
+
+- **دالتا السوق لم تتغيرا:** `is_favorite` من `app.favorite_flags` في نفس المعاملة، فلا تتغير خطط `EXPLAIN` في `search-quality.test.ts`.
+- **الحذف النهائي (8.1):** صف `profile` يبقى مستعاراً بعد حذف الحساب، فـ `on delete cascade` لا يحذف المفضلة وحده. على 8.1 أن يحذف مفضلة الحساب المحذوف صراحة (RET06). وحذف الإعلان النهائي (RET03) يحذف صفوفه بالـ cascade.
+- **لا إشعار للبائع ولا تدقيق:** العلاقة خاصة (FR15).
+- **اختبار يطابق الحدود** بين الهجرة و`packages/domain/src/favorites.ts` في `favorites.test.ts`.
+
 ## schema `rls`
 
 - دوال تستدعيها سياسات RLS: `security invoker` وSTABLE أو IMMUTABLE، و`set search_path = ''`. EXECUTE لـ `anon` أو `authenticated` صراحة لكل دالة.
