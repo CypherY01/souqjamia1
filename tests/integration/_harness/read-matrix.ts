@@ -120,6 +120,17 @@ export const READ_MATRIX: Readonly<Record<string, ReadFunctionTests>> = {
     thirdParty: "DEC77 app.public_listing_images(): a member reads the same images as a guest",
     guest: "DEC77 app.public_listing_images(): a guest reads the images of a public listing only",
   },
+  "app.my_favorites(text, uuid, integer)": {
+    reads:
+      "API048: the session member's own favorites; an unavailable listing is only its id (task 4.5)",
+    thirdParty: "DEC77 app.my_favorites(): another member's session reads only its own favorites",
+    guest: "DEC77 app.my_favorites(): a guest is UNAUTHENTICATED",
+  },
+  "app.favorite_flags(uuid[])": {
+    reads: "is_favorite: which of the given listings the reader saved (task 4.5)",
+    thirdParty: "DEC77 app.favorite_flags(): another member's session reads only its own saves",
+    guest: "DEC77 app.favorite_flags(): a guest reads no row",
+  },
   "app.media_publish_files(uuid)": {
     reads:
       "media.publish: the private variants of an active listing to copy, worker only (task 4.2)",
