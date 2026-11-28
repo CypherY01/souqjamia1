@@ -854,7 +854,7 @@ ListingCard:
       type: boolean
     is_favorite:
       type: boolean
-      description: يظهر للعضو المسجّل فقط.
+      description: للعضو المسجّل فقط، في API031 وAPI032 وAPI048 (المهمة 4.5). لا يُرسل للزائر.
     match:
       type: string
       enum: [exact, close]
@@ -1034,7 +1034,7 @@ ListingTransition:
 FavoriteItem:
   type: object
   required: [listing_id, available, listing, saved_at]
-  description: الإعلان المخفي يظهر غير متاح بلا تفاصيله (UC05).
+  description: الإعلان الذي لم يعد ظاهراً للعامة يظهر غير متاح بلا تفاصيله (UC05)، و`listing` null. المباع متاح بحالته.
   properties:
     listing_id:
       $ref: '#/Uuid'

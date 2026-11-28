@@ -8,6 +8,8 @@ import type { MarketFilters } from "@souq/domain";
 import type { SessionAuth } from "../auth/guards.ts";
 import { pageSession } from "../auth/page.ts";
 import { appDb } from "../db/app-client.ts";
+import { favoritesRequest, readMyFavorites, type FavoritePage } from "../favorites/favorites.ts";
+import { favoriteModeOf, type FavoriteMode } from "../favorites/mode.ts";
 import { serverEnv } from "../env.ts";
 import { ApiError } from "../http/errors.ts";
 import { traceIdOf } from "../http/trace.ts";
@@ -82,6 +84,11 @@ export async function loadListingsPage(
   }
 }
 
+/** Task 4.5: the favorite control of the page's reader (the session is cached per request). */
+export async function pageFavoriteMode(): Promise<FavoriteMode> {
+  return favoriteModeOf(await pageSession());
+}
+
 /** API032 for /listing/{id}: the public listing or null (the generic «غير متاح»). */
 export async function loadPublicListing(id: string): Promise<ListingDetail | null> {
   const { ctx } = await reader();
@@ -124,6 +131,37 @@ export async function loadMyListingsPage(
       return { kind: "invalid" };
     }
     log.error("listings.owner_page_read_failed", {
+      trace_id: traceId,
+      error: error instanceof ApiError ? error.code : "unexpected",
+    });
+    return { kind: "failed" };
+  }
+}
+
+// Task 4.5: /account/favorites (API048), with the page's verified session.
+
+export type FavoritesPageResult =
+  { kind: "ok"; page: FavoritePage } | { kind: "invalid" } | { kind: "failed" };
+
+/** API048 for /account/favorites: one page of the member's favorites, or the page's state. */
+export async function loadFavoritesPage(
+  auth: SessionAuth,
+  params: URLSearchParams,
+): Promise<FavoritesPageResult> {
+  const traceId = traceIdOf(await headers());
+  try {
+    return {
+      kind: "ok",
+      page: await readMyFavorites(ownerContext(auth, traceId), favoritesRequest(params)),
+    };
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      (error.code === "INVALID_CURSOR" || error.code === "BAD_REQUEST")
+    ) {
+      return { kind: "invalid" };
+    }
+    log.error("favorites.page_read_failed", {
       trace_id: traceId,
       error: error instanceof ApiError ? error.code : "unexpected",
     });

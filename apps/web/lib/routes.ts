@@ -89,5 +89,8 @@ export const routes = {
     // API033 and API036 (task 4.4).
     myListings: "/api/me/listings",
     listingTransition: (id: string) => `/api/listings/${encodeURIComponent(id)}/transition`,
+    // API048, API049 and API050 (task 4.5).
+    myFavorites: "/api/me/favorites",
+    favorite: (listingId: string) => `/api/favorites/${encodeURIComponent(listingId)}`,
   },
 } as const;

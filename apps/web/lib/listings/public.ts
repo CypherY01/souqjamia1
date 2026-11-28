@@ -8,6 +8,8 @@
 //  - The cursor (NFR14, TC29) is signed and bound to the filters and the order: its keys are the
 //    last card's match tier, its sort value (created_at as text, to the microsecond, or the
 //    price) and its id.
+//  - Task 4.5: is_favorite on every card and on the listing for a member (app.favorite_flags in
+//    the same transaction); a guest's answer has no such field.
 //  - Seller fields of later tasks: avatar null (4.7), student badge false (7.6), rating count 0
 //    (6.2), so the page shows «بائع جديد».
 import {
@@ -19,11 +21,12 @@ import {
 } from "@souq/domain";
 import type { CatalogRef, MeetingPointRef } from "../catalog.ts";
 import type { AppDb, Tx } from "../db/app-client.ts";
+import { favoriteIds } from "../favorites/flags.ts";
 import { decodeCursor, encodeCursor, parseLimit } from "../http/cursor.ts";
 import { ApiError } from "../http/errors.ts";
 import { publicImageSet, type ImageSet } from "../media/public.ts";
 
-/** The contract's ListingCard (without is_favorite, task 4.5). */
+/** The contract's ListingCard. */
 export interface ListingCard {
   id: string;
   title: string;
@@ -36,6 +39,8 @@ export interface ListingCard {
   status: enums.ListingStatus;
   seller_student_badge: boolean;
   created_at: string;
+  /** Task 4.5: for a member only; left out for a guest. */
+  is_favorite?: boolean;
   /** DEC84: with a query only. */
   match?: MatchKind;
 }
@@ -86,7 +91,7 @@ export interface PublicReadContext {
   claims: Readonly<Record<string, unknown>> | null;
 }
 
-interface RefColumns {
+export interface RefColumns {
   category_id: string;
   category_key: string;
   category_label_ar: string;
@@ -98,7 +103,8 @@ interface RefColumns {
   location_label_en: string | null;
 }
 
-interface CardRow extends RefColumns {
+/** The card columns that app.market_listings() and app.my_favorites() both return. */
+export interface CardColumns extends RefColumns {
   listing_id: string;
   title: string;
   price_minor: number;
@@ -107,9 +113,12 @@ interface CardRow extends RefColumns {
   status: enums.ListingStatus;
   seller_student_badge: boolean;
   created_at: Date;
-  created_key: string;
   primary_media_id: string | null;
   primary_public_ready: boolean;
+}
+
+interface CardRow extends CardColumns {
+  created_key: string;
   match_tier: number;
 }
 
@@ -143,7 +152,7 @@ interface ImageRow {
   public_ready: boolean;
 }
 
-const REF_COLUMNS = `category_id, category_key::text as category_key, category_label_ar,
+export const REF_COLUMNS = `category_id, category_key::text as category_key, category_label_ar,
   category_label_en, location_id, location_key, location_kind::text as location_kind,
   location_label_ar, location_label_en`;
 
@@ -179,6 +188,25 @@ function refsOf(row: RefColumns): Pick<ListingCard, "category" | "location"> {
             label_ar: row.location_label_ar ?? "",
             label_en: row.location_label_en,
           },
+  };
+}
+
+/** One card from its columns; the image only when its public copies exist. */
+export function cardOf(row: CardColumns, supabaseUrl: string): ListingCard {
+  return {
+    id: row.listing_id,
+    title: row.title,
+    price_minor: row.price_minor,
+    is_negotiable: row.is_negotiable,
+    condition: row.condition,
+    ...refsOf(row),
+    primary_image:
+      row.primary_public_ready && row.primary_media_id !== null
+        ? publicImageSet(supabaseUrl, row.primary_media_id)
+        : null,
+    status: row.status,
+    seller_student_badge: row.seller_student_badge,
+    created_at: row.created_at.toISOString(),
   };
 }
 
@@ -222,7 +250,7 @@ export async function searchListings(
   limit: number,
 ): Promise<ListingPage> {
   const after = afterOf(ctx.appSecret, cursor, filters);
-  const rows = await ctx.db.withActor(ctx.claims, ctx.traceId, async (tx) => {
+  const { rows, saved } = await ctx.db.withActor(ctx.claims, ctx.traceId, async (tx) => {
     const result = await tx.query<CardRow>(
       `select ${CARD_COLUMNS}
          from app.market_listings($1, $2::public.category_key, $3::public.item_condition,
@@ -239,25 +267,17 @@ export async function searchListings(
         limit + 1,
       ],
     );
-    return result.rows;
+    // Task 4.5: is_favorite for a member, in the same transaction.
+    const ids = result.rows.slice(0, limit).map((row) => row.listing_id);
+    return {
+      rows: result.rows,
+      saved: ctx.claims === null ? null : await favoriteIds(tx, ids),
+    };
   });
   const page = rows.slice(0, limit);
   const cards = page.map((row): ListingCard => {
-    const card: ListingCard = {
-      id: row.listing_id,
-      title: row.title,
-      price_minor: row.price_minor,
-      is_negotiable: row.is_negotiable,
-      condition: row.condition,
-      ...refsOf(row),
-      primary_image:
-        row.primary_public_ready && row.primary_media_id !== null
-          ? publicImageSet(ctx.supabaseUrl, row.primary_media_id)
-          : null,
-      status: row.status,
-      seller_student_badge: row.seller_student_badge,
-      created_at: row.created_at.toISOString(),
-    };
+    const card = cardOf(row, ctx.supabaseUrl);
+    if (saved !== null) card.is_favorite = saved.has(row.listing_id);
     if (filters.q !== null) card.match = matchKindOf(row.match_tier);
     return card;
   });
@@ -318,10 +338,14 @@ export async function readPublicListing(
     );
     const row = listing.rows[0];
     if (row === undefined) return null;
-    return { row, images: await readImages(tx, id) };
+    return {
+      row,
+      images: await readImages(tx, id),
+      saved: ctx.claims === null ? null : (await favoriteIds(tx, [id])).has(id),
+    };
   });
   if (found === null) return null;
-  const { row, images } = found;
+  const { row, images, saved } = found;
   const ready = images
     .filter((image) => image.public_ready)
     .map((image) => publicImageSet(ctx.supabaseUrl, image.media_id));
@@ -338,6 +362,7 @@ export async function readPublicListing(
     status: row.status,
     seller_student_badge: row.seller_student_badge,
     created_at: row.created_at.toISOString(),
+    ...(saved === null ? {} : { is_favorite: saved }),
     description: row.description,
     images: ready,
     seller: {

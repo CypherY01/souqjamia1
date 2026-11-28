@@ -266,6 +266,10 @@ myFavorites:
     operationId: api048ListMyFavorites
     tags: [favorites]
     summary: المفضلة
+    description: |-
+      مفضلة العضو، الأحدث حفظاً أولاً ثم معرّف الإعلان، بمؤشر موقّع (المهمة 4.5).
+      `available` بنفس شرط API032: النشط والمباع ظاهران، والمخفي إدارياً والمؤرشف وإعلان البائع الموقوف أو المحظور أو بانتظار الحذف «غير متاح».
+      الإعلان غير المتاح `listing: null`، ولا يُكشف منه إلا معرّفه و`saved_at` (UC05).
     x-spec-ids: [API048, FR15, TC06]
     x-access: member
     parameters:
@@ -286,8 +290,11 @@ favorite:
     operationId: api049SaveFavorite
     tags: [favorites]
     summary: حفظ إعلان في المفضلة
-    description: الحفظ المكرر لا يضيف سجلاً ثانياً (TC06).
-    x-spec-ids: [API049, FR15, TC06]
+    description: |-
+      الحفظ المكرر لا يضيف سجلاً ثانياً ولا يغيّر وقت الحفظ (TC06).
+      إعلان لا يراه العامة 404 بلا تمييز السبب. وحفظ العضو إعلانه نفسه مسموح (DEC86).
+      DEC86: سقف 500 إعلان في المفضلة (422 `LIMIT_REACHED`)، و120 حفظاً جديداً في الساعة لكل عضو (429 `RATE_LIMITED`)؛ الحفظ المكرر لا يُعدّ.
+    x-spec-ids: [API049, FR15, TC06, DEC86]
     x-access: member
     security:
       - sessionCookie: []
@@ -303,11 +310,15 @@ favorite:
         $ref: '../components/responses.yaml#/Forbidden'
       '404':
         $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../components/responses.yaml#/Unprocessable'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
   delete:
     operationId: api050RemoveFavorite
     tags: [favorites]
     summary: إزالة إعلان من المفضلة
-    description: الإزالة المكررة تنجح أيضاً (TC06).
+    description: الإزالة المكررة تنجح أيضاً (TC06)، وكذلك إزالة إعلان غير متاح أو غير موجود. بلا حد (DEC86).
     x-spec-ids: [API050, FR15, TC06]
     x-access: member
     security:
