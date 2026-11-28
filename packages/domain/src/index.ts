@@ -1,5 +1,11 @@
 // Business rules, zod schemas, permissions and state transitions, one vertical slice at a time.
 export { normalizeDigits } from "./digits.ts";
+export {
+  FAVORITE_SAVES_PER_HOUR,
+  FAVORITES_MAX,
+  favoriteView,
+  type FavoriteView,
+} from "./favorites.ts";
 export { linkify, type TextPart } from "./linkify.ts";
 export { LOCAL_PATH_MAX, safeLocalPath } from "./local-path.ts";
 export { parseAmount, type ParseAmountError, type ParseAmountResult } from "./money.ts";
